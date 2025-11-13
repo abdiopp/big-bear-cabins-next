@@ -1,0 +1,220 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import Link from "next/link";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import {
+  Copy,
+  BookOpen,
+  Star,
+  Calendar,
+  Gift,
+  Percent,
+  Mountain,
+  Waves,
+  Dumbbell,
+  Beer,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { CouponsDocument, CouponsDocumentDataOffersItem, Simplify } from "../../../prismicio-types";
+import { PrismicRichText } from "@prismicio/react";
+import { PrismicNextImage, PrismicNextLink } from "@prismicio/next";
+
+function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumentDataOffersItem> }) {
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const copyCode = useCallback((code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  }, []);
+
+  return (
+    <div className={`book-page p-6`} key={key}>
+      <Card className="h-full border-0 shadow-none bg-white">
+        {/* Image Section */}
+        <div className="relative h-40 overflow-hidden rounded-t-lg bg-gray-200">
+          <PrismicNextImage
+            field={offer.offer_image}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop";
+            }}
+          />
+          <div className="absolute inset-0 bg-black/10" />
+
+          {/* Icon overlay on image */}
+          <div className="absolute top-2 left-2">
+            <div className="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
+              {/* <Icon className="h-4 w-4 text-gray-700" /> */}
+              <PrismicNextImage field={offer.icon} className="h-4 w-4 text-gray-700" />
+            </div>
+          </div>
+
+          {/* Discount text on image */}
+          <div className="absolute bottom-2 right-2">
+            <div className="bg-black/70 text-white px-2 py-1 rounded text-xs">{offer.badge_label}</div>
+          </div>
+        </div>
+
+        <CardHeader className="pb-2 px-3">
+          <CardTitle className="text-sm mb-1 text-gray-800 leading-tight">
+            <PrismicRichText field={offer.offer_title} />
+          </CardTitle>
+          <div className="flex items-center space-x-1">
+            <Calendar className="h-3 w-3 text-gray-500" />
+            <CardDescription className="text-xs text-gray-600">{offer.offer_subtitle}</CardDescription>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0 px-3 pb-3">
+          <div className="text-gray-600 text-xs mb-3 leading-relaxed">
+            <PrismicRichText field={offer.offer_description} />
+          </div>
+
+          {/* Code display */}
+          <div className="bg-gray-50 rounded p-2 mb-3 border border-dashed border-gray-300">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500">Code:</span>
+              <code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border">{offer.promo_code}</code>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => copyCode(offer.promo_code as string)}
+              size="sm"
+              variant="outline"
+              className={`flex-1 text-xs px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${
+                copiedCode === offer.promo_code
+                  ? "bg-gradient-to-r from-green-500 to-green-600 text-white border-green-500 shadow-green-200"
+                  : "border-blue-300 text-blue-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-500"
+              }`}
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              {copiedCode === offer.promo_code ? "Copied!" : "Copy"}
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1 text-xs px-3 py-2 h-8 font-medium bg-black hover:bg-gray-800 text-white border-0 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+            >
+              <BookOpen className="h-3 w-3 mr-1" />
+              Read More
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+type SpecialOffersClientProps = { coupons: CouponsDocument<string> | null };
+
+export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
+  const [currentSpread, setCurrentSpread] = useState(0);
+
+  const spreads = [];
+  if (coupons) {
+    for (let i = 0; i < coupons.data.offers.length; i += 2) {
+      spreads.push(coupons.data.offers.slice(i, i + 2));
+    }
+  }
+
+  const nextSpread = useCallback(() => {
+    if (currentSpread < spreads.length - 1) {
+      setCurrentSpread((prev) => prev + 1);
+    }
+  }, [currentSpread, spreads.length]);
+
+  const prevSpread = useCallback(() => {
+    if (currentSpread > 0) {
+      setCurrentSpread((prev) => prev - 1);
+    }
+  }, [currentSpread]);
+
+  const goToSpread = useCallback((index: number) => {
+    setCurrentSpread(index);
+  }, []);
+
+  return (
+    <section className="py-16 bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="text-4xl md:text-5xl mb-4 text-gray-800">
+            <PrismicRichText field={coupons?.data.carousel_title} />
+          </div>
+        </div>
+
+        {/* Book Container */}
+        <div className="max-w-8xl mx-auto mb-12 relative">
+          {/* Left Navigation Arrow */}
+          <Button
+            onClick={prevSpread}
+            disabled={currentSpread === 0}
+            variant="outline"
+            size="icon"
+            className="absolute -left-16 top-1/2 -translate-y-1/2 z-20 w-20 h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
+          >
+            <ChevronLeft className="h-12 w-12 text-black" />
+          </Button>
+
+          {/* Right Navigation Arrow */}
+          <Button
+            onClick={nextSpread}
+            disabled={currentSpread === spreads.length - 1}
+            variant="outline"
+            size="icon"
+            className="absolute -right-16 top-1/2 -translate-y-1/2 z-20 w-20 h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
+          >
+            <ChevronRight className="h-12 w-12 text-black" />
+          </Button>
+
+          <div className="book-container">
+            {/* Book Pages */}
+            <div className="book-pages">
+              <div className="book-spread">
+                <div className="grid grid-cols-2 gap-6 bg-transparent">
+                  {spreads[currentSpread]?.map((offer, index) => (
+                    <OfferCard key={index} offer={offer} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Page Indicators */}
+            <div className="flex justify-center items-center space-x-3 mt-6">
+              {spreads.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSpread(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 border ${
+                    index === currentSpread ? "bg-black border-black" : "bg-white border-black hover:bg-gray-200"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* View More Button */}
+        <div className="text-center">
+          <PrismicNextLink field={coupons?.data.view_all_button}>
+            <Button
+              size="lg"
+              className="bg-black hover:bg-gray-800 text-white px-10 py-4 rounded-xl font-medium hover:shadow-xl hover:scale-105 transition-all duration-300 border-0"
+            >
+              <Star className="h-5 w-5 mr-2 animate-pulse" />
+              {coupons?.data.view_all_button?.text || "View All Offers"}
+            </Button>
+          </PrismicNextLink>
+        </div>
+      </div>
+    </section>
+  );
+}
