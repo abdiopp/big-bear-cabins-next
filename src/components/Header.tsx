@@ -76,6 +76,7 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
+    router.push("/");
     router.refresh();
   };
 
@@ -340,7 +341,12 @@ export function Header() {
 
               {/* User Avatar - Show when logged in */}
               {session?.user && (
-                <Button variant="ghost" size="sm" className="rounded-full p-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-full p-2"
+                  onClick={() => router.push("/profile")}
+                >
                   <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-xs font-medium text-gray-700">
                       {session.user.name?.charAt(0).toUpperCase() || "U"}

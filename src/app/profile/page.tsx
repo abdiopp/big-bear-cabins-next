@@ -1,22 +1,16 @@
 "use client"
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Star, User, Calendar, Heart, Sparkles } from 'lucide-react';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('about-me');
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
-
+  // Show loading state while session is being checked
+  // Middleware handles redirect for unauthenticated users
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -25,8 +19,14 @@ export default function ProfilePage() {
     );
   }
 
+  // If no session after loading, show nothing (middleware should have redirected)
+  // This is a safety check in case middleware didn't catch it
   if (!session) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Please log in to view your profile.</div>
+      </div>
+    );
   }
 
   // Mock user data - in production, this would come from the database

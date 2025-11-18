@@ -56,6 +56,7 @@ export const config = {
 
     // Protected routes (require authentication)
     "/dashboard/:path*",
+    "/profile",
     "/profile/:path*",
     "/settings/:path*",
 
