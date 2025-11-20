@@ -160,12 +160,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Profile Heading */}
-        <h1 className="text-3xl font-semibold text-gray-900 mb-8">Profile</h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-3">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+          {/* Left Sidebar - Profile (8/24 = 1/3) */}
+          <div className="w-full lg:w-1/3 lg:max-w-[33.333%]">
+            <h2 className="text-3xl font-semibold text-gray-900 mb-6">Profile</h2>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <nav className="space-y-1">
                 {menuItems.map((item) => {
@@ -189,12 +187,12 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Right Content */}
-          <div className="lg:col-span-9">
+          {/* Right Content - About Me (16/24 = 2/3) */}
+          <div className="w-full lg:w-2/3 lg:flex-1">
             {activeTab === 'about-me' && (
-              <div className="space-y-6">
+              <div>
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-semibold text-gray-900">About me</h2>
                   <Button variant="outline" className="rounded-lg px-6">
                     Edit
@@ -269,7 +267,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* My Reviews Section */}
-                <div className="bg-white rounded-lg shadow-sm p-8">
+                <div className="bg-white rounded-lg shadow-sm p-8 mt-6">
                   <h3 className="text-2xl font-semibold text-gray-900 mb-6">My reviews</h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -310,9 +308,9 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'past-bookings' && (
-              <div className="space-y-6">
+              <div>
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-semibold text-gray-900">Past bookings</h2>
                 </div>
 
@@ -358,9 +356,9 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'cabins-wishlist' && (
-              <div className="space-y-6">
+              <div>
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-semibold text-gray-900">Cabins Wishlist</h2>
                 </div>
 
@@ -401,9 +399,9 @@ export default function ProfilePage() {
             )}
 
             {activeTab === 'favourite-activities' && (
-              <div className="space-y-6">
+              <div>
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-semibold text-gray-900">Favourite Activities</h2>
                 </div>
 

@@ -35,12 +35,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
+import { useIsMobile } from "./ui/use-mobile";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
   const [guestCounts, setGuestCounts] = useState({
@@ -83,10 +87,22 @@ export function Header() {
   const isOnCategoryPage = pathname?.startsWith("/category/");
   const isHomePage = pathname === "/";
 
+  const handleMobileMenuItemClick = (path: string) => {
+    router.push(path);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleMobileLogout = async () => {
+    await signOut({ redirect: false });
+    router.push("/");
+    router.refresh();
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20 min-h-[4rem]">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/">
@@ -95,7 +111,7 @@ export function Header() {
                 alt="Big Bear Cabins"
                 width={112}
                 height={56}
-                className="h-14 w-auto hover:opacity-80 transition-opacity"
+                className="h-10 sm:h-14 w-auto hover:opacity-80 transition-opacity"
               />
             </Link>
           </div>
@@ -250,7 +266,7 @@ export function Header() {
           )}
 
           {/* Right side menu */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <button
               className="hidden lg:block text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-full px-3 py-2 transition-colors"
               onClick={() => router.push("/list-property")}
@@ -263,98 +279,266 @@ export function Header() {
               <Map className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center border border-border rounded-full p-1 hover:shadow-md transition-shadow">
-              {/* Dropdown Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-full p-2">
+            {/* Mobile Menu - Sheet */}
+            {isMobile ? (
+              <>
+                <div className="flex items-center border border-border rounded-full p-1 hover:shadow-md transition-shadow">
+                  {/* Login Modal - Only show when not logged in */}
+                  {!session?.user && (
+                    <LoginDialog
+                      isOpen={isLoginOpen}
+                      onOpenChange={setIsLoginOpen}
+                      trigger={
+                        <Button variant="ghost" size="sm" className="rounded-full p-2">
+                          <User className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                  )}
+
+                  {/* User Avatar - Show when logged in */}
+                  {session?.user && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="rounded-full p-2"
+                      onClick={() => router.push("/profile")}
+                    >
+                      <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-xs font-medium text-gray-700">
+                          {session.user.name?.charAt(0).toUpperCase() || "U"}
+                        </span>
+                      </div>
+                    </Button>
+                  )}
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full p-2"
+                    onClick={() => setIsMobileMenuOpen(true)}
+                  >
                     <Menu className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {/* User Profile Section - Show when logged in */}
-                  {session?.user && (
-                    <>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{session.user.name}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{session.user.email}</p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => router.push("/profile")}>
-                        <UserCircle className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push("/settings")}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
+                </div>
 
-                  {/* Special Offers - Always visible */}
-                  <DropdownMenuItem
-                    onClick={() => router.push("/special-offers")}
-                    className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-b border-green-300 relative overflow-hidden special-offers-glow"
-                  >
-                    <span className="relative z-10 font-semibold text-[#477023]">✨ Special Offers</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem>
-                  <DropdownMenuItem>About Big Bear</DropdownMenuItem>
-                  <DropdownMenuItem>Blog</DropdownMenuItem>
-                  <DropdownMenuItem>Attractions</DropdownMenuItem>
-                  <DropdownMenuItem>Directions</DropdownMenuItem>
-                  <DropdownMenuItem>Events</DropdownMenuItem>
-                  <DropdownMenuItem>Experiences</DropdownMenuItem>
-                  <DropdownMenuItem>Holidays</DropdownMenuItem>
-                  <DropdownMenuItem>Journeys</DropdownMenuItem>
-                  <DropdownMenuItem>Restaurants</DropdownMenuItem>
-                  <DropdownMenuItem>Ski Guide</DropdownMenuItem>
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                  <SheetContent side="right" className="w-[85vw] sm:w-[400px] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Menu</SheetTitle>
+                      <SheetDescription>Navigation menu</SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-6 flex flex-col space-y-1">
+                      {/* User Profile Section - Show when logged in */}
+                      {session?.user && (
+                        <>
+                          <div className="px-3 py-2 mb-4 border-b">
+                            <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                            <p className="text-xs leading-none text-muted-foreground mt-1">{session.user.email}</p>
+                          </div>
+                          <button
+                            onClick={() => handleMobileMenuItemClick("/profile")}
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                          >
+                            <UserCircle className="mr-2 h-4 w-4" />
+                            <span>Profile</span>
+                          </button>
+                          <button
+                            onClick={() => handleMobileMenuItemClick("/settings")}
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                          >
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
+                          </button>
+                          <div className="my-2 border-t"></div>
+                        </>
+                      )}
 
-                  {/* Logout - Show when logged in */}
-                  {session?.user && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      {/* Special Offers - Always visible */}
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/special-offers")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border border-green-300 font-semibold text-[#477023] transition-colors"
+                      >
+                        <span>✨ Special Offers</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/about")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>About</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/about")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>About Big Bear</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/blog")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Blog</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/attractions")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Attractions</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/directions")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Directions</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/events")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Events</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/experiences")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Experiences</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/holidays")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Holidays</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/journeys")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Journeys</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/restaurants")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Restaurants</span>
+                      </button>
+                      <button
+                        onClick={() => handleMobileMenuItemClick("/ski-guide")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>Ski Guide</span>
+                      </button>
 
-              {/* Login Modal - Only show when not logged in */}
-              {!session?.user && (
-                <LoginDialog
-                  isOpen={isLoginOpen}
-                  onOpenChange={setIsLoginOpen}
-                  trigger={
+                      {/* Logout - Show when logged in */}
+                      {session?.user && (
+                        <>
+                          <div className="my-2 border-t"></div>
+                          <button
+                            onClick={handleMobileLogout}
+                            className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-destructive"
+                          >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            <span>Log out</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </>
+            ) : (
+              /* Desktop Menu - Dropdown */
+              <div className="flex items-center border border-border rounded-full p-1 hover:shadow-md transition-shadow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="rounded-full p-2">
-                      <User className="h-4 w-4" />
+                      <Menu className="h-4 w-4" />
                     </Button>
-                  }
-                />
-              )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 max-h-[80vh] overflow-y-auto">
+                    {/* User Profile Section - Show when logged in */}
+                    {session?.user && (
+                      <>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                            <p className="text-xs leading-none text-muted-foreground">{session.user.email}</p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push("/profile")}>
+                          <UserCircle className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push("/settings")}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
 
-              {/* User Avatar - Show when logged in */}
-              {session?.user && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-full p-2"
-                  onClick={() => router.push("/profile")}
-                >
-                  <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-xs font-medium text-gray-700">
-                      {session.user.name?.charAt(0).toUpperCase() || "U"}
-                    </span>
-                  </div>
-                </Button>
-              )}
-            </div>
+                    {/* Special Offers - Always visible */}
+                    <DropdownMenuItem
+                      onClick={() => router.push("/special-offers")}
+                      className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-b border-green-300 relative overflow-hidden special-offers-glow"
+                    >
+                      <span className="relative z-10 font-semibold text-[#477023]">✨ Special Offers</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem>
+                    <DropdownMenuItem>About Big Bear</DropdownMenuItem>
+                    <DropdownMenuItem>Blog</DropdownMenuItem>
+                    <DropdownMenuItem>Attractions</DropdownMenuItem>
+                    <DropdownMenuItem>Directions</DropdownMenuItem>
+                    <DropdownMenuItem>Events</DropdownMenuItem>
+                    <DropdownMenuItem>Experiences</DropdownMenuItem>
+                    <DropdownMenuItem>Holidays</DropdownMenuItem>
+                    <DropdownMenuItem>Journeys</DropdownMenuItem>
+                    <DropdownMenuItem>Restaurants</DropdownMenuItem>
+                    <DropdownMenuItem>Ski Guide</DropdownMenuItem>
+
+                    {/* Logout - Show when logged in */}
+                    {session?.user && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Login Modal - Only show when not logged in */}
+                {!session?.user && (
+                  <LoginDialog
+                    isOpen={isLoginOpen}
+                    onOpenChange={setIsLoginOpen}
+                    trigger={
+                      <Button variant="ghost" size="sm" className="rounded-full p-2">
+                        <User className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                )}
+
+                {/* User Avatar - Show when logged in */}
+                {session?.user && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full p-2"
+                    onClick={() => router.push("/profile")}
+                  >
+                    <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-xs font-medium text-gray-700">
+                        {session.user.name?.charAt(0).toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
