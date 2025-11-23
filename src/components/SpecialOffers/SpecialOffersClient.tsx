@@ -32,7 +32,7 @@ function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumen
   }, []);
 
   return (
-    <div className={`book-page p-6`} key={key}>
+    <div className={`book-page p-3 md:p-6`} key={key}>
       <Card className="h-full border-0 shadow-none bg-white">
         {/* Image Section */}
         <div className="relative h-40 overflow-hidden rounded-t-lg bg-gray-200">
@@ -61,50 +61,50 @@ function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumen
           </div>
         </div>
 
-        <CardHeader className="pb-2 px-3">
-          <CardTitle className="text-sm mb-1 text-gray-800 leading-tight">
+        <CardHeader className="pb-2 px-2 md:px-3">
+          <CardTitle className="text-xs md:text-sm mb-1 text-gray-800 leading-tight">
             <PrismicRichText field={offer.offer_title} />
           </CardTitle>
           <div className="flex items-center space-x-1">
-            <Calendar className="h-3 w-3 text-gray-500" />
-            <CardDescription className="text-xs text-gray-600">{offer.offer_subtitle}</CardDescription>
+            <Calendar className="h-3 w-3 text-gray-500 flex-shrink-0" />
+            <CardDescription className="text-xs text-gray-600 truncate">{offer.offer_subtitle}</CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0 px-3 pb-3">
+        <CardContent className="pt-0 px-2 md:px-3 pb-3">
           <div className="text-gray-600 text-xs mb-3 leading-relaxed">
             <PrismicRichText field={offer.offer_description} />
           </div>
 
           {/* Code display */}
           <div className="bg-gray-50 rounded p-2 mb-3 border border-dashed border-gray-300">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Code:</span>
-              <code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border">{offer.promo_code}</code>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-gray-500 flex-shrink-0">Code:</span>
+              <code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border truncate max-w-full">{offer.promo_code}</code>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:gap-0">
             <Button
               onClick={() => copyCode(offer.promo_code as string)}
               size="sm"
               variant="outline"
-              className={`flex-1 text-xs px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${
+              className={`flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${
                 copiedCode === offer.promo_code
                   ? "bg-gradient-to-r from-green-500 to-green-600 text-white border-green-500 shadow-green-200"
                   : "border-blue-300 text-blue-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-500"
               }`}
             >
-              <Copy className="h-3 w-3 mr-1" />
-              {copiedCode === offer.promo_code ? "Copied!" : "Copy"}
+              <Copy className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{copiedCode === offer.promo_code ? "Copied!" : "Copy"}</span>
             </Button>
             <Button
               size="sm"
-              className="flex-1 text-xs px-3 py-2 h-8 font-medium bg-black hover:bg-gray-800 text-white border-0 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+              className="flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium bg-black hover:bg-gray-800 text-white border-0 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
             >
-              <BookOpen className="h-3 w-3 mr-1" />
-              Read More
+              <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
+              <span className="truncate">Read More</span>
             </Button>
           </div>
         </CardContent>
@@ -142,26 +142,26 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
   }, []);
 
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-8 md:py-16 bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full overflow-hidden">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-4xl md:text-5xl mb-4 text-gray-800">
+        <div className="text-center mb-6 md:mb-8 px-2">
+          <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 text-gray-800">
             <PrismicRichText field={coupons?.data.carousel_title} />
           </div>
         </div>
 
         {/* Book Container */}
-        <div className="max-w-8xl mx-auto mb-12 relative">
+        <div className="max-w-8xl mx-auto mb-12 relative px-8 md:px-0">
           {/* Left Navigation Arrow */}
           <Button
             onClick={prevSpread}
             disabled={currentSpread === 0}
             variant="outline"
             size="icon"
-            className="absolute -left-16 top-1/2 -translate-y-1/2 z-20 w-20 h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
+            className="absolute left-0 md:-left-16 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-20 md:h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
           >
-            <ChevronLeft className="h-12 w-12 text-black" />
+            <ChevronLeft className="h-6 w-6 md:h-12 md:w-12 text-black" />
           </Button>
 
           {/* Right Navigation Arrow */}
@@ -170,16 +170,16 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
             disabled={currentSpread === spreads.length - 1}
             variant="outline"
             size="icon"
-            className="absolute -right-16 top-1/2 -translate-y-1/2 z-20 w-20 h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
+            className="absolute right-0 md:-right-16 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-20 md:h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
           >
-            <ChevronRight className="h-12 w-12 text-black" />
+            <ChevronRight className="h-6 w-6 md:h-12 md:w-12 text-black" />
           </Button>
 
           <div className="book-container">
             {/* Book Pages */}
             <div className="book-pages">
               <div className="book-spread">
-                <div className="grid grid-cols-2 gap-6 bg-transparent">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-transparent">
                   {spreads[currentSpread]?.map((offer, index) => (
                     <OfferCard key={index} offer={offer} />
                   ))}
