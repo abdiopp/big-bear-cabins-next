@@ -25,55 +25,10 @@ import {
   Medal,
 } from "lucide-react";
 
-interface Property {
-  id: string;
-  title: string;
-  location: string;
-  price: number;
-  rating: number;
-  reviewCount: number;
-  images: string[];
-  bedrooms: number;
-  bathrooms: number;
-  guests: number;
-  amenities: string[];
-  description: string;
-  host: {
-    name: string;
-    joinedYear: number;
-    isSupderhost: boolean;
-  };
-  badge: "platinum" | "gold" | "silver" | "bronze";
-}
-
-// Mock property data
-const mockProperty: Property = {
-  id: "1",
-  title: "Luxury Mountain Cabin with Stunning Views",
-  location: "Big Bear Lake, CA",
-  price: 299,
-  rating: 4.95,
-  reviewCount: 127,
-  images: [
-    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop",
-    "https://images.unsplash.com/photo-1520637836862-4d197d17c155?w=400&h=300&fit=crop",
-  ],
-  bedrooms: 3,
-  bathrooms: 2,
-  guests: 8,
-  amenities: ["Wifi", "Kitchen", "Parking", "Pool", "Hot tub", "TV", "Air conditioning"],
-  description:
-    "Experience the perfect mountain getaway in this beautifully appointed luxury cabin. Located in the heart of Big Bear Lake, this stunning property offers breathtaking views, modern amenities, and the perfect blend of rustic charm and contemporary comfort. The cabin features expansive windows that frame panoramic mountain vistas, a gourmet kitchen with top-of-the-line appliances, and a spacious living area with a stone fireplace perfect for cozy evenings. The master suite boasts a private balcony and spa-like bathroom with a soaking tub. Additional amenities include a private hot tub on the deck, game room with pool table, and direct access to hiking trails.",
-  host: {
-    name: "Sarah Johnson",
-    joinedYear: 2019,
-    isSupderhost: true,
-  },
-  badge: "platinum",
-};
+import { useProperty } from "@/hooks/useProperty";
+import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const amenityIcons = {
   Wifi: Wifi,
@@ -83,12 +38,15 @@ const amenityIcons = {
   "Air conditioning": Wind,
 };
 
+const defaultAmenities = ["Wifi", "Kitchen", "Parking", "TV", "Air conditioning", "Heating", "Smoke alarm"];
+
 export function PropertyDetailPage() {
   const { id } = useParams();
+  const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const getBadgeColor = (badge: string) => {
+  const getBadgeColor = (badge?: string) => {
     switch (badge) {
       case "platinum":
         return "bg-gray-800 text-white";
@@ -99,9 +57,44 @@ export function PropertyDetailPage() {
       case "bronze":
         return "bg-orange-600 text-white";
       default:
-        return "bg-gray-600 text-white";
+        return "bg-yellow-500 text-white";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="h-8 w-64 bg-gray-200 animate-pulse rounded mb-8" />
+        <div className="aspect-video w-full bg-gray-200 animate-pulse rounded-xl mb-12" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="h-4 w-full bg-gray-200 animate-pulse rounded" />
+            <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-semibold mb-2">Error Loading Property</h1>
+          <p className="text-gray-600 mb-6">{error || "Property could not be found."}</p>
+          <Button onClick={() => window.location.href = "/search"}>
+            Back to Search
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const propertyImages = property.images && property.images.length > 0 ? property.images : [property.imageUrl];
+  const propertyAmenities = property.amenities && property.amenities.length > 0 ? property.amenities : defaultAmenities;
+  const propertyDescription = property.description || "No description available for this property.";
+  const propertyBadge = property.isSuperhost ? "platinum" : "gold";
 
   if (showAllPhotos) {
     return (
@@ -114,11 +107,11 @@ export function PropertyDetailPage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mockProperty.images.map((image, index) => (
+            {propertyImages.map((image: string, index: number) => (
               <ImageWithFallback
                 key={index}
                 src={image}
-                alt={`${mockProperty.title} ${index + 1}`}
+                alt={`${property.title} ${index + 1}`}
                 className="w-full aspect-square object-cover rounded-lg"
               />
             ))}
@@ -134,7 +127,7 @@ export function PropertyDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{mockProperty.title}</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{property.title}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" className="flex items-center space-x-2">
@@ -156,22 +149,21 @@ export function PropertyDetailPage() {
             {/* Main large image - left side (60% width) */}
             <div className="w-3/5">
               <ImageWithFallback
-                src={mockProperty.images[0]}
-                alt={mockProperty.title}
+                src={propertyImages[0]}
+                alt={property.title}
                 className="w-full h-full object-cover rounded-l-xl"
               />
             </div>
 
             {/* Right side - 2x2 grid of smaller images (40% width) */}
             <div className="w-2/5 grid grid-cols-2 gap-2">
-              {mockProperty.images.slice(1, 5).map((image, index) => (
+              {propertyImages.slice(1, 5).map((image: string, index: number) => (
                 <div key={index} className="relative">
                   <ImageWithFallback
                     src={image}
-                    alt={`${mockProperty.title} ${index + 2}`}
-                    className={`w-full h-full object-cover ${
-                      index === 1 ? "rounded-tr-xl" : index === 3 ? "rounded-br-xl" : ""
-                    }`}
+                    alt={`${property.title} ${index + 2}`}
+                    className={`w-full h-full object-cover ${index === 1 ? "rounded-tr-xl" : index === 3 ? "rounded-br-xl" : ""
+                      }`}
                   />
                   {/* Show all photos button on the last image (bottom-right) */}
                   {index === 3 && (
@@ -197,15 +189,15 @@ export function PropertyDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Cabin Type and Location */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Entire cabin in {mockProperty.location.split(",")[0]}</h2>
+          <h2 className="text-xl font-semibold mb-2">Entire cabin in {property.location.split(",")[0]}</h2>
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
-              <span className="text-sm font-medium">{mockProperty.rating}</span>
-              <span className="text-sm text-gray-600">({mockProperty.reviewCount} reviews)</span>
+              <span className="text-sm font-medium">{property.rating}</span>
+              <span className="text-sm text-gray-600">({property.reviewCount} reviews)</span>
             </div>
             <span className="text-gray-400">·</span>
-            <span className="text-sm text-gray-600 underline">{mockProperty.location}</span>
+            <span className="text-sm text-gray-600 underline">{property.location}</span>
           </div>
         </div>
 
@@ -216,15 +208,15 @@ export function PropertyDetailPage() {
             <div className="flex items-center space-x-6 text-sm text-gray-600">
               <div className="flex items-center space-x-1">
                 <Users className="w-4 h-4" />
-                <span>{mockProperty.guests} guests</span>
+                <span>{property.guests || 2} guests</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Bed className="w-4 h-4" />
-                <span>{mockProperty.bedrooms} bedrooms</span>
+                <span>{property.bedrooms || 1} bedrooms</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Bath className="w-4 h-4" />
-                <span>{mockProperty.bathrooms} bathrooms</span>
+                <span>{property.bathrooms || 1} bathrooms</span>
               </div>
             </div>
 
@@ -234,8 +226,8 @@ export function PropertyDetailPage() {
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <Medal className="w-5 h-5 text-yellow-500" />
-                <Badge className={`${getBadgeColor(mockProperty.badge)} px-3 py-1 text-xs uppercase font-medium`}>
-                  {mockProperty.badge}
+                <Badge className={`${getBadgeColor(propertyBadge)} px-3 py-1 text-xs uppercase font-medium`}>
+                  {propertyBadge}
                 </Badge>
               </div>
             </div>
@@ -243,7 +235,7 @@ export function PropertyDetailPage() {
             {/* Description with Show More */}
             <div>
               <p className="text-gray-700 leading-relaxed">
-                {showFullDescription ? mockProperty.description : `${mockProperty.description.substring(0, 200)}...`}
+                {showFullDescription ? propertyDescription : `${propertyDescription.substring(0, 200)}...`}
               </p>
               <Button
                 variant="ghost"
@@ -260,7 +252,7 @@ export function PropertyDetailPage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">What this place offers</h3>
               <div className="grid grid-cols-2 gap-3">
-                {mockProperty.amenities.map((amenity, index) => {
+                {propertyAmenities.map((amenity: string, index: number) => {
                   const IconComponent = amenityIcons[amenity as keyof typeof amenityIcons];
                   return (
                     <div key={index} className="flex items-center space-x-3">
@@ -289,7 +281,7 @@ export function PropertyDetailPage() {
             {/* CALENDAR SECTION - 6 nights selection */}
             <div className="py-8 border-b border-gray-200">
               <div className="mb-6">
-                <h3 className="text-xl font-medium mb-2">6 nights in Islamabad</h3>
+                <h3 className="text-xl font-medium mb-2">6 nights in {property.location.split(",")[0]}</h3>
                 <p className="text-gray-600 text-sm">Feb 2, 2026 - Feb 8, 2026</p>
               </div>
 
@@ -443,14 +435,9 @@ export function PropertyDetailPage() {
 
             {/* SECOND IMAGE - Reviews Section */}
             <div className="py-6 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-black fill-current" />
-                  <span className="text-xl font-medium">{mockProperty.rating}</span>
-                  <span className="text-gray-600">·</span>
-                  <span className="text-xl font-medium">{mockProperty.reviewCount} reviews</span>
-                </div>
-              </div>
+              <span className="text-xl font-medium">{property.rating}</span>
+              <span className="text-gray-600">·</span>
+              <span className="text-xl font-medium">{property.reviewCount} reviews</span>
 
               {/* Reviews Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -478,7 +465,7 @@ export function PropertyDetailPage() {
                   </div>
                   <p className="text-gray-900 leading-relaxed">
                     I stayed with my family for 2 nights. It was a great experience, the place was clean and the host
-                    was very accommodating. I will always choose this place when visiting Islamabad
+                    was very accommodating. I will always choose this place when visiting {property.location.split(",")[0]}
                   </p>
                   <Button variant="ghost" className="p-0 h-auto text-sm underline font-medium">
                     Show more
@@ -649,13 +636,13 @@ export function PropertyDetailPage() {
             {/* THIRD IMAGE - Where You'll Be Section */}
             <div className="py-6">
               <h3 className="text-xl font-semibold mb-4">Where you'll be</h3>
-              <p className="text-gray-700 mb-6">Islamabad, Islamabad Capital Territory, Pakistan</p>
+              <p className="text-gray-700 mb-6">{property.location}</p>
 
               {/* Map Container */}
               <div className="relative w-full h-96 bg-gray-100 rounded-lg overflow-hidden">
                 <ImageWithFallback
                   src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800&h=400&fit=crop"
-                  alt="Map of Islamabad location"
+                  alt={`Map of ${property.location} location`}
                   className="w-full h-full object-cover"
                 />
 
@@ -671,7 +658,7 @@ export function PropertyDetailPage() {
 
                     {/* Map Labels */}
                     <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-medium border border-gray-200">
-                      BLUE AREA
+                      CABIN LOCATION
                     </div>
 
                     <div className="absolute top-1/3 left-1/4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
@@ -687,7 +674,7 @@ export function PropertyDetailPage() {
                     </div>
 
                     <div className="absolute top-1/2 right-1/4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🏛️ Gumbdi Pakwan
+                      🌲 Forest Trails
                     </div>
 
                     <div className="absolute bottom-4 right-4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
@@ -741,7 +728,7 @@ export function PropertyDetailPage() {
                 <CardContent className="p-0 space-y-4">
                   {/* Price */}
                   <div className="flex items-baseline space-x-1">
-                    <span className="text-2xl font-semibold">${mockProperty.price}</span>
+                    <span className="text-2xl font-semibold">${property.price}</span>
                     <span className="text-gray-600">night</span>
                   </div>
 
@@ -771,8 +758,8 @@ export function PropertyDetailPage() {
                   {/* Fee Breakdown */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">${mockProperty.price} × 5 nights</span>
-                      <span>${mockProperty.price * 5}</span>
+                      <span className="text-gray-600">${property.price} × 5 nights</span>
+                      <span>${property.price * 5}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Cleaning fee</span>
@@ -785,7 +772,7 @@ export function PropertyDetailPage() {
                     <Separator />
                     <div className="flex justify-between font-semibold">
                       <span>Total before taxes</span>
-                      <span>${mockProperty.price * 5 + 50 + 75}</span>
+                      <span>${property.price * 5 + 50 + 75}</span>
                     </div>
                   </div>
                 </CardContent>

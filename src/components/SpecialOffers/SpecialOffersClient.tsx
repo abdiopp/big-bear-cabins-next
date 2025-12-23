@@ -22,7 +22,7 @@ import { CouponsDocument, CouponsDocumentDataOffersItem, Simplify } from "../../
 import { PrismicRichText } from "@prismicio/react";
 import { PrismicNextImage, PrismicNextLink } from "@prismicio/next";
 
-function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumentDataOffersItem> }) {
+function OfferCard({ offer }: { offer: Simplify<CouponsDocumentDataOffersItem> }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyCode = useCallback((code: string) => {
@@ -32,7 +32,7 @@ function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumen
   }, []);
 
   return (
-    <div className={`book-page p-3 md:p-6`} key={key}>
+    <div className={`book-page p-3 md:p-6`}>
       <Card className="h-full border-0 shadow-none bg-white">
         {/* Image Section */}
         <div className="relative h-40 overflow-hidden rounded-t-lg bg-gray-200">
@@ -90,11 +90,10 @@ function OfferCard({ key, offer }: { key: number; offer: Simplify<CouponsDocumen
               onClick={() => copyCode(offer.promo_code as string)}
               size="sm"
               variant="outline"
-              className={`flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${
-                copiedCode === offer.promo_code
+              className={`flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${copiedCode === offer.promo_code
                   ? "bg-gradient-to-r from-green-500 to-green-600 text-white border-green-500 shadow-green-200"
                   : "border-blue-300 text-blue-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-500"
-              }`}
+                }`}
             >
               <Copy className="h-3 w-3 mr-1 flex-shrink-0" />
               <span className="truncate">{copiedCode === offer.promo_code ? "Copied!" : "Copy"}</span>
@@ -193,9 +192,8 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
                 <button
                   key={index}
                   onClick={() => goToSpread(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 border ${
-                    index === currentSpread ? "bg-black border-black" : "bg-white border-black hover:bg-gray-200"
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 hover:scale-125 border ${index === currentSpread ? "bg-black border-black" : "bg-white border-black hover:bg-gray-200"
+                    }`}
                 />
               ))}
             </div>

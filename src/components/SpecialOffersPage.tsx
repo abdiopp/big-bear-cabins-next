@@ -101,14 +101,14 @@ function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
+
         {/* Icon overlay on image */}
         <div className="absolute top-4 left-4">
           <div className="p-2 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
             <Icon className="h-5 w-5 text-gray-700" />
           </div>
         </div>
-        
+
         {/* Discount badge */}
         <div className="absolute bottom-4 right-4">
           <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-lg flex items-center space-x-1">
@@ -134,7 +134,7 @@ function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
         <p className="text-gray-600 text-sm leading-relaxed">
           {offer.description}
         </p>
-        
+
         {/* Code display */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
           <div className="flex items-center justify-between">
@@ -148,11 +148,10 @@ function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
               onClick={() => copyCode(offer.code)}
               size="sm"
               variant="outline"
-              className={`font-medium transition-all duration-300 ${
-                copiedCode === offer.code 
-                  ? 'bg-green-500 text-white border-green-500 hover:bg-green-600' 
+              className={`font-medium transition-all duration-300 ${copiedCode === offer.code
+                  ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
                   : 'border-blue-400 text-blue-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'
-              }`}
+                }`}
             >
               <Copy className="h-4 w-4 mr-1" />
               {copiedCode === offer.code ? 'Copied!' : 'Copy'}
@@ -187,7 +186,7 @@ export function SpecialOffersPage() {
               className="absolute inset-0 w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent lg:hidden" />
-            
+
             {/* Decorative floating badges on image */}
             <div className="absolute top-8 left-8 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg animate-fade-in">
               <div className="flex items-center space-x-2">
@@ -195,7 +194,7 @@ export function SpecialOffersPage() {
                 <span className="font-medium">6 Active Offers</span>
               </div>
             </div>
-            
+
             <div className="absolute bottom-8 right-8 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg animate-fade-in-delayed">
               <div className="flex items-center space-x-2">
                 <Gift className="h-5 w-5 text-green-600" />
@@ -266,7 +265,7 @@ export function SpecialOffersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {specialOffers.map((offer) => (
               <div key={offer.id}>
-                <OfferCard offer={offer} />
+                <OfferCard offer={offer} key={offer.id} />
               </div>
             ))}
           </div>

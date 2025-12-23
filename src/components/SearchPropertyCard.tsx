@@ -6,7 +6,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import Link from "next/link";;
 
 interface SearchPropertyCardProps {
-  id: string;
+  id: string | number;
   imageUrl: string;
   title: string;
   location: string;
@@ -39,14 +39,14 @@ export function SearchPropertyCard({
           alt={title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Superhost badge */}
         {isSuperhost && (
           <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1">
             <span className="text-xs font-medium">Superhost</span>
           </div>
         )}
-        
+
         {/* Favorite button */}
         <Button
           variant="ghost"
@@ -59,9 +59,8 @@ export function SearchPropertyCard({
           }}
         >
           <Heart
-            className={`h-4 w-4 ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
-            }`}
+            className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
+              }`}
           />
         </Button>
       </div>
@@ -76,10 +75,10 @@ export function SearchPropertyCard({
             <span className="text-sm text-muted-foreground">({reviewCount})</span>
           </div>
         </div>
-        
+
         <p className="text-muted-foreground text-sm truncate">{title}</p>
         <p className="text-muted-foreground text-sm">{dates}</p>
-        
+
         <div className="flex items-baseline space-x-1">
           <span className="font-medium">${price.toLocaleString()}</span>
           <span className="text-sm text-muted-foreground">night</span>
