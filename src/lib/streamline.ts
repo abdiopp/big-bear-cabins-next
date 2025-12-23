@@ -1,6 +1,13 @@
 // lib/streamline.ts
+import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
 export async function streamlineRequest(methodName: string, params: any, retries = 3) {
     let lastError: any;
+
+    // Create the proxy agent if FIXIE_URL is present (provided by Fixie integration)
+    const proxyUrl = process.env.FIXIE_URL;
+    const httpsAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
 
     for (let i = 0; i <= retries; i++) {
         try {
@@ -10,29 +17,29 @@ export async function streamlineRequest(methodName: string, params: any, retries
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
 
-            const res = await fetch('https://web.streamlinevrs.com/api/json', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    methodName,
-                    params: {
-                        token_key: process.env.STREAMLINE_KEY,
-                        token_secret: process.env.STREAMLINE_SECRET,
-                        ...params
-                    }
-                })
+            const response = await axios.post('https://web.streamlinevrs.com/api/json', {
+                methodName,
+                params: {
+                    token_key: process.env.STREAMLINE_KEY,
+                    token_secret: process.env.STREAMLINE_SECRET,
+                    ...params
+                }
+            }, {
+                httpsAgent,
+                proxy: false, // Tells axios to use the agent, not its internal proxy logic
+                timeout: 10000 // 10 second timeout
             });
 
-            if (!res.ok) {
-                throw new Error(`Streamline API responded with status ${res.status}`);
-            }
-
-            return await res.json();
+            return response.data;
         } catch (error: any) {
             lastError = error;
             console.error(`Attempt ${i + 1} failed for ${methodName}:`, error.message);
 
-            // Don't retry if it's not a timeout or network error (optional, but ETIMEDOUT should be retried)
+            // If it's a 4xx error (except maybe 429), it might not be worth retrying
+            if (error.response && error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
+                break;
+            }
+
             if (i === retries) break;
         }
     }
