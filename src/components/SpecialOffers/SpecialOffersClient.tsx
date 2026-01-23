@@ -9,20 +9,28 @@ import {
   BookOpen,
   Star,
   Calendar,
-  Gift,
-  Percent,
-  Mountain,
-  Waves,
-  Dumbbell,
-  Beer,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { CouponsDocument, CouponsDocumentDataOffersItem, Simplify } from "../../../prismicio-types";
-import { PrismicRichText } from "@prismicio/react";
-import { PrismicNextImage, PrismicNextLink } from "@prismicio/next";
 
-function OfferCard({ offer }: { offer: Simplify<CouponsDocumentDataOffersItem> }) {
+type CouponOffer = {
+  offerImage: string;
+  badgeLabel?: string | null;
+  icon?: string | null;
+  offerTitle: string;
+  offerSubtitle?: string | null;
+  offerDescription: string;
+  promoCode?: string | null;
+};
+
+type CouponsData = {
+  carouselTitle: string;
+  offers: CouponOffer[];
+  viewAllBtnLabel?: string | null;
+  viewAllBtnUrl?: string | null;
+};
+
+function OfferCard({ offer }: { offer: CouponOffer }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyCode = useCallback((code: string) => {
@@ -36,8 +44,9 @@ function OfferCard({ offer }: { offer: Simplify<CouponsDocumentDataOffersItem> }
       <Card className="h-full border-0 shadow-none bg-white">
         {/* Image Section */}
         <div className="relative h-40 overflow-hidden rounded-t-lg bg-gray-200">
-          <PrismicNextImage
-            field={offer.offer_image}
+          <img
+            src={offer.offerImage}
+            alt={offer.offerTitle}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
@@ -48,56 +57,61 @@ function OfferCard({ offer }: { offer: Simplify<CouponsDocumentDataOffersItem> }
           <div className="absolute inset-0 bg-black/10" />
 
           {/* Icon overlay on image */}
-          <div className="absolute top-2 left-2">
-            <div className="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
-              {/* <Icon className="h-4 w-4 text-gray-700" /> */}
-              <PrismicNextImage field={offer.icon} className="h-4 w-4 text-gray-700" />
+          {offer.icon && (
+            <div className="absolute top-2 left-2">
+              <div className="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
+                <img src={offer.icon} alt="" className="h-4 w-4" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Discount text on image */}
-          <div className="absolute bottom-2 right-2">
-            <div className="bg-black/70 text-white px-2 py-1 rounded text-xs">{offer.badge_label}</div>
-          </div>
+          {offer.badgeLabel && (
+            <div className="absolute bottom-2 right-2">
+              <div className="bg-black/70 text-white px-2 py-1 rounded text-xs">{offer.badgeLabel}</div>
+            </div>
+          )}
         </div>
 
         <CardHeader className="pb-2 px-2 md:px-3">
           <CardTitle className="text-xs md:text-sm mb-1 text-gray-800 leading-tight">
-            <PrismicRichText field={offer.offer_title} />
+            {offer.offerTitle}
           </CardTitle>
           <div className="flex items-center space-x-1">
             <Calendar className="h-3 w-3 text-gray-500 flex-shrink-0" />
-            <CardDescription className="text-xs text-gray-600 truncate">{offer.offer_subtitle}</CardDescription>
+            <CardDescription className="text-xs text-gray-600 truncate">{offer.offerSubtitle}</CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="pt-0 px-2 md:px-3 pb-3">
-          <div className="text-gray-600 text-xs mb-3 leading-relaxed">
-            <PrismicRichText field={offer.offer_description} />
-          </div>
+          <div className="text-gray-600 text-xs mb-3 leading-relaxed" dangerouslySetInnerHTML={{ __html: offer.offerDescription }} />
 
           {/* Code display */}
-          <div className="bg-gray-50 rounded p-2 mb-3 border border-dashed border-gray-300">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-gray-500 flex-shrink-0">Code:</span>
-              <code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border truncate max-w-full">{offer.promo_code}</code>
+          {offer.promoCode && (
+            <div className="bg-gray-50 rounded p-2 mb-3 border border-dashed border-gray-300">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-gray-500 flex-shrink-0">Code:</span>
+                <code className="bg-white px-1.5 py-0.5 rounded text-xs font-mono border truncate max-w-full">{offer.promoCode}</code>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:gap-0">
-            <Button
-              onClick={() => copyCode(offer.promo_code as string)}
-              size="sm"
-              variant="outline"
-              className={`flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${copiedCode === offer.promo_code
+            {offer.promoCode && (
+              <Button
+                onClick={() => copyCode(offer.promoCode as string)}
+                size="sm"
+                variant="outline"
+                className={`flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium border-2 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md ${copiedCode === offer.promoCode
                   ? "bg-gradient-to-r from-green-500 to-green-600 text-white border-green-500 shadow-green-200"
                   : "border-blue-300 text-blue-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-500"
-                }`}
-            >
-              <Copy className="h-3 w-3 mr-1 flex-shrink-0" />
-              <span className="truncate">{copiedCode === offer.promo_code ? "Copied!" : "Copy"}</span>
-            </Button>
+                  }`}
+              >
+                <Copy className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{copiedCode === offer.promoCode ? "Copied!" : "Copy"}</span>
+              </Button>
+            )}
             <Button
               size="sm"
               className="flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium bg-black hover:bg-gray-800 text-white border-0 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
@@ -112,15 +126,15 @@ function OfferCard({ offer }: { offer: Simplify<CouponsDocumentDataOffersItem> }
   );
 }
 
-type SpecialOffersClientProps = { coupons: CouponsDocument<string> | null };
+type SpecialOffersClientProps = { coupons: CouponsData | null };
 
 export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
   const [currentSpread, setCurrentSpread] = useState(0);
 
   const spreads = [];
-  if (coupons) {
-    for (let i = 0; i < coupons.data.offers.length; i += 2) {
-      spreads.push(coupons.data.offers.slice(i, i + 2));
+  if (coupons && coupons.offers) {
+    for (let i = 0; i < coupons.offers.length; i += 2) {
+      spreads.push(coupons.offers.slice(i, i + 2));
     }
   }
 
@@ -140,13 +154,15 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
     setCurrentSpread(index);
   }, []);
 
+  if (!coupons) return null;
+
   return (
     <section className="py-8 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full overflow-hidden">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8 px-2">
           <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 text-gray-800">
-            <PrismicRichText field={coupons?.data.carousel_title} />
+            {coupons.carouselTitle}
           </div>
         </div>
 
@@ -201,17 +217,19 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
         </div>
 
         {/* View More Button */}
-        <div className="text-center">
-          <PrismicNextLink field={coupons?.data.view_all_button}>
-            <Button
-              size="lg"
-              className="bg-black hover:bg-gray-800 text-white px-10 py-4 rounded-xl font-medium hover:shadow-xl hover:scale-105 transition-all duration-300 border-0"
-            >
-              <Star className="h-5 w-5 mr-2 animate-pulse" />
-              {coupons?.data.view_all_button?.text || "View All Offers"}
-            </Button>
-          </PrismicNextLink>
-        </div>
+        {coupons.viewAllBtnUrl && (
+          <div className="text-center">
+            <Link href={coupons.viewAllBtnUrl}>
+              <Button
+                size="lg"
+                className="bg-black hover:bg-gray-800 text-white px-10 py-4 rounded-xl font-medium hover:shadow-xl hover:scale-105 transition-all duration-300 border-0"
+              >
+                <Star className="h-5 w-5 mr-2 animate-pulse" />
+                {coupons.viewAllBtnLabel || "View All Offers"}
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

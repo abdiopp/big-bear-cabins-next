@@ -29,3 +29,47 @@ model User {
   password String
   role     String @default("user")
 }
+
+model HomeHero {
+  id      String          @id @default(auto()) @map("_id") @db.ObjectId
+  heading String
+  images  HomeHeroImage[]
+  links   HomeHeroLink[]
+}
+
+type HomeHeroImage {
+  url String
+}
+
+type HomeHeroLink {
+  url   String
+  text  String?
+  icon  String?
+}
+
+model CouponSection {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  carouselTitle   String
+  offers          CouponOffer[]
+  viewAllBtnLabel String?
+  viewAllBtnUrl   String?
+}
+
+type CouponOffer {
+  slug             String
+  offerImage       String
+  badgeLabel       String?
+  icon             String?
+  offerTitle       String
+  offerSubtitle    String?
+  offerDescription String
+  promoCode        String?
+  discount         String?
+  heroImage        String?
+  longDescription  String?
+  dates            String?
+  location         String?
+  features         String[]
+  inclusions       String[]
+  images           String[]
+}

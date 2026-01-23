@@ -2,21 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { Categories } from "../Categories";
-import { HomeHeroDocument, HomeHeroDocumentData, Simplify } from "../../../prismicio-types";
-import { PrismicNextImage } from "@prismicio/next";
 
-type HeroProps = { data: Simplify<HomeHeroDocumentData> };
+type HeroData = {
+  heading: string;
+  images: { url: string }[];
+  links: { url: string; text: string | null; icon: string | null }[];
+};
+
+type HeroProps = { data: HeroData };
 
 export function HeroClient({ data }: HeroProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    if (data.images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex === data.images.length - 1 ? 0 : prevIndex + 1));
     }, 2000); // Change image every 2 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [data.images.length]);
 
   return (
     <div className="relative h-[70vh] min-h-[500px] overflow-hidden">
@@ -25,11 +30,11 @@ export function HeroClient({ data }: HeroProps) {
         {data.images.map((image, index) => (
           <div
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentImageIndex ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 transition-opacity duration-1000 ${index === currentImageIndex ? "opacity-100" : "opacity-0"
+              }`}
           >
-            <PrismicNextImage field={image.image} fallbackAlt="" className="w-full h-full object-cover object-center" />
+            {/* Using standard img for external URLs. Next/Image requires domain config. */}
+            <img src={image.url} alt="" className="w-full h-full object-cover object-center" />
           </div>
         ))}
         {/* Dark overlay for better text readability */}

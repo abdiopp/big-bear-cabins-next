@@ -1,84 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";;
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Copy, BookOpen, Calendar, Gift, Percent, Mountain, Waves, Dumbbell, Beer, Star, Tag } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Copy, BookOpen, Calendar, Gift, Percent, Mountain, Waves, Dumbbell, Beer, Star, Tag, Check, MapPin, Phone, Mail, ArrowLeft, Users, Clock } from "lucide-react";
 
-const specialOffers = [
-  {
-    id: 1,
-    slug: "oktoberfest",
-    title: "BIG BEAR OKTOBERFEST",
-    subtitle: "Traditional Celebration",
-    description: "Prost! Experience authentic German festivities with live music, traditional foods, and craft brews. Your cozy cabin awaits!",
-    code: "OKTOBERFEST",
-    discount: "15% Off",
-    icon: Beer,
-    image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop"
-  },
-  {
-    id: 2,
-    slug: "yoga-festival",
-    title: "YOGA FESTIVAL",
-    subtitle: "10/4",
-    description: "Find your zen in the mountains. Restore your mind, body, and soul with guided sessions surrounded by nature's beauty.",
-    code: "YOGABLISS",
-    discount: "Wellness Package",
-    icon: Mountain,
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop"
-  },
-  {
-    id: 3,
-    slug: "third-night-free",
-    title: "3RD NIGHT FREE!",
-    subtitle: "Extended Stay Special",
-    description: "Stay 2 nights, get the 3rd absolutely FREE! Perfect for long weekends and extra relaxation time in your mountain retreat.",
-    code: "STAY3FREE",
-    discount: "33% Savings",
-    icon: Gift,
-    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop"
-  },
-  {
-    id: 4,
-    slug: "midweek-discount",
-    title: "25% OFF MIDWEEK",
-    subtitle: "Monday - Thursday",
-    description: "Escape the crowds and enjoy peaceful mountain serenity. Midweek stays offer the perfect work-from-cabin experience.",
-    code: "MIDWEEK25",
-    discount: "25% Off",
-    icon: Percent,
-    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
-  },
-  {
-    id: 5,
-    slug: "kodiak-ultra",
-    title: "KODIAK ULTRA MARATHON",
-    subtitle: "September Event",
-    description: "Push your limits in the mountains! Book your recovery cabin for the ultimate ultra marathon experience. Rest and recharge after conquering the trails.",
-    code: "KODIAK2025",
-    discount: "Runner Special",
-    icon: Dumbbell,
-    image: "https://images.unsplash.com/photo-1613953294671-977cfceec099?w=400&h=300&fit=crop"
-  },
-  {
-    id: 6,
-    slug: "run-revel",
-    title: "RUN REVEL BIG BEAR",
-    subtitle: "11/8",
-    description: "Run the scenic downhill course through Big Bear! Secure your cabin for race weekend and enjoy the perfect mountain running experience.",
-    code: "REVEL2025",
-    discount: "Race Package",
-    icon: Waves,
-    image: "https://images.unsplash.com/photo-1617428436811-055267a14013?w=400&h=300&fit=crop"
-  }
-];
+// Icon mapping
+const ICON_MAP: Record<string, any> = {
+  Beer,
+  Mountain,
+  Gift,
+  Percent,
+  Dumbbell,
+  Waves,
+  Star,
+  Tag,
+  Calendar,
+  Check,
+  MapPin,
+  Phone,
+  Mail,
+  ArrowLeft,
+  Users,
+  Clock
+};
 
-function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
+export type SpecialOffer = {
+  slug: string;
+  offerTitle: string;
+  offerSubtitle?: string;
+  offerDescription: string;
+  promoCode?: string;
+  discount?: string;
+  offerImage: string;
+  icon?: string;
+  // ... other fields
+};
+
+function OfferCard({ offer }: { offer: SpecialOffer }) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const router = useRouter();
-  const Icon = offer.icon;
+
+  // Resolve icon component
+  const IconComponent = offer.icon && ICON_MAP[offer.icon] ? ICON_MAP[offer.icon] : Tag;
+
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -91,73 +57,74 @@ function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
       {/* Image Section */}
       <div className="relative h-56 overflow-hidden bg-gray-200">
         <img
-          src={offer.image}
-          alt={offer.title}
+          src={offer.offerImage}
+          alt={offer.offerTitle}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           loading="lazy"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop";
-          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
         {/* Icon overlay on image */}
         <div className="absolute top-4 left-4">
           <div className="p-2 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
-            <Icon className="h-5 w-5 text-gray-700" />
+            <IconComponent className="h-5 w-5 text-gray-700" />
           </div>
         </div>
 
         {/* Discount badge */}
-        <div className="absolute bottom-4 right-4">
-          <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-lg flex items-center space-x-1">
-            <Tag className="h-4 w-4" />
-            <span className="text-sm">{offer.discount}</span>
+        {offer.discount && (
+          <div className="absolute bottom-4 right-4">
+            <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-lg flex items-center space-x-1">
+              <Tag className="h-4 w-4" />
+              <span className="text-sm">{offer.discount}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <CardHeader className="pb-3">
         <CardTitle className="text-lg mb-2 text-gray-800 leading-tight">
-          {offer.title}
+          {offer.offerTitle}
         </CardTitle>
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-gray-500" />
           <CardDescription className="text-sm text-gray-600">
-            {offer.subtitle}
+            {offer.offerSubtitle}
           </CardDescription>
         </div>
       </CardHeader>
 
       <CardContent className="pt-0 space-y-4">
-        <p className="text-gray-600 text-sm leading-relaxed">
-          {offer.description}
-        </p>
+        <div
+          className="text-gray-600 text-sm leading-relaxed line-clamp-3"
+          dangerouslySetInnerHTML={{ __html: offer.offerDescription }}
+        />
 
         {/* Code display */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs text-gray-600 font-medium">Promo Code:</span>
-              <code className="block mt-1 text-lg font-mono font-bold text-gray-900">
-                {offer.code}
-              </code>
-            </div>
-            <Button
-              onClick={() => copyCode(offer.code)}
-              size="sm"
-              variant="outline"
-              className={`font-medium transition-all duration-300 ${copiedCode === offer.code
+        {offer.promoCode && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs text-gray-600 font-medium">Promo Code:</span>
+                <code className="block mt-1 text-lg font-mono font-bold text-gray-900">
+                  {offer.promoCode}
+                </code>
+              </div>
+              <Button
+                onClick={() => copyCode(offer.promoCode!)}
+                size="sm"
+                variant="outline"
+                className={`font-medium transition-all duration-300 ${copiedCode === offer.promoCode
                   ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
                   : 'border-blue-400 text-blue-700 hover:bg-blue-500 hover:text-white hover:border-blue-500'
-                }`}
-            >
-              <Copy className="h-4 w-4 mr-1" />
-              {copiedCode === offer.code ? 'Copied!' : 'Copy'}
-            </Button>
+                  }`}
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                {copiedCode === offer.promoCode ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action button */}
         <Button
@@ -172,7 +139,11 @@ function OfferCard({ offer }: { offer: typeof specialOffers[0] }) {
   );
 }
 
-export function SpecialOffersPage() {
+export function SpecialOffersPage({ offers }: { offers: any[] }) {
+  // If no offers passed, show empty state or fallback? 
+  // Usually we expect offers here from the server page.
+  const displayOffers = offers || [];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Split Screen Hero Section */}
@@ -191,7 +162,7 @@ export function SpecialOffersPage() {
             <div className="absolute top-8 left-8 bg-white/95 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg animate-fade-in">
               <div className="flex items-center space-x-2">
                 <Tag className="h-5 w-5 text-red-600" />
-                <span className="font-medium">6 Active Offers</span>
+                <span className="font-medium">{displayOffers.length} Active Offers</span>
               </div>
             </div>
 
@@ -263,9 +234,9 @@ export function SpecialOffersPage() {
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {specialOffers.map((offer) => (
-              <div key={offer.id}>
-                <OfferCard offer={offer} key={offer.id} />
+            {displayOffers.map((offer: any, index: number) => (
+              <div key={index}>
+                <OfferCard offer={offer} />
               </div>
             ))}
           </div>
@@ -298,3 +269,4 @@ export function SpecialOffersPage() {
     </div>
   );
 }
+

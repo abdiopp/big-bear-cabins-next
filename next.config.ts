@@ -11,4 +11,5 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Trigger restart for prisma update
 export default nextConfig;
