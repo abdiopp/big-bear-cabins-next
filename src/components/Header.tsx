@@ -298,9 +298,9 @@ export function Header() {
 
                   {/* User Avatar - Show when logged in */}
                   {session?.user && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="rounded-full p-2"
                       onClick={() => router.push("/profile")}
                     >
@@ -312,9 +312,9 @@ export function Header() {
                     </Button>
                   )}
 
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="rounded-full p-2"
                     onClick={() => setIsMobileMenuOpen(true)}
                   >
@@ -484,17 +484,19 @@ export function Header() {
                     >
                       <span className="relative z-10 font-semibold text-[#477023]">✨ Special Offers</span>
                     </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => router.push("/activities")}>Activities</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem>
-                    <DropdownMenuItem>About Big Bear</DropdownMenuItem>
-                    <DropdownMenuItem>Blog</DropdownMenuItem>
-                    <DropdownMenuItem>Attractions</DropdownMenuItem>
-                    <DropdownMenuItem>Directions</DropdownMenuItem>
-                    <DropdownMenuItem>Events</DropdownMenuItem>
-                    <DropdownMenuItem>Experiences</DropdownMenuItem>
-                    <DropdownMenuItem>Holidays</DropdownMenuItem>
-                    <DropdownMenuItem>Journeys</DropdownMenuItem>
-                    <DropdownMenuItem>Restaurants</DropdownMenuItem>
-                    <DropdownMenuItem>Ski Guide</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/about")}>About Big Bear</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/blog")}>Blog</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/attractions")}>Attractions</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/directions")}>Directions</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/events")}>Events</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/experiences")}>Experiences</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/holidays")}>Holidays</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/journeys")}>Journeys</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/restaurants")}>Restaurants</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/ski-guide")}>Ski Guide</DropdownMenuItem>
 
                     {/* Logout - Show when logged in */}
                     {session?.user && (
@@ -524,9 +526,9 @@ export function Header() {
 
                 {/* User Avatar - Show when logged in */}
                 {session?.user && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="rounded-full p-2"
                     onClick={() => router.push("/profile")}
                   >
