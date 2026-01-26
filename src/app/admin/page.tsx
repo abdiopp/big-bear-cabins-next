@@ -26,6 +26,26 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </Link>
+                <Link href="/admin/blog-categories">
+                    <Card className="hover:shadow-lg transition cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Blog Categories</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            Manage blog category pages (e.g., Activities).
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/admin/blogs">
+                    <Card className="hover:shadow-lg transition cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Blog Posts</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            Create and manage blog posts.
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );
