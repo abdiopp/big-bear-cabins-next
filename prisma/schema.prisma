@@ -73,3 +73,12 @@ type CouponOffer {
   inclusions       String[]
   images           String[]
 }
+
+model StreamlineToken {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenKey    String   @unique
+  tokenSecret String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

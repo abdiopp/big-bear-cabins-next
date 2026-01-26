@@ -26,9 +26,13 @@ import {
 } from "lucide-react";
 
 import { useProperty } from "@/hooks/useProperty";
+import { useAvailability } from "@/hooks/useAvailability";
 import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
+import { BookingForm } from "./BookingForm";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
 
 const amenityIcons = {
   Wifi: Wifi,
@@ -45,6 +49,19 @@ export function PropertyDetailPage() {
   const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const { blockedDays } = useAvailability({
+    unitId: Number(id),
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+    autoFetch: true
+  });
+
+  const disabledDates = [
+    { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+    ...blockedDays.map((d) => new Date(d.date))
+  ];
 
   const getBadgeColor = (badge?: string) => {
     switch (badge) {
@@ -279,147 +296,29 @@ export function PropertyDetailPage() {
             </div>
 
             {/* CALENDAR SECTION - 6 nights selection */}
-            <div className="py-8 border-b border-gray-200">
+            <div id="calendar-section" className="py-8 border-b border-gray-200">
               <div className="mb-6">
-                <h3 className="text-xl font-medium mb-2">6 nights in {property.location.split(",")[0]}</h3>
-                <p className="text-gray-600 text-sm">Feb 2, 2026 - Feb 8, 2026</p>
+                <h3 className="text-xl font-medium mb-2">
+                  {dateRange?.from && dateRange?.to
+                    ? `${Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))} nights in ${property.location.split(",")[0]}`
+                    : "Select dates"}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {dateRange?.from ? dateRange.from.toLocaleDateString() : "Add dates"}
+                  {dateRange?.to ? ` - ${dateRange.to.toLocaleDateString()}` : ""}
+                </p>
               </div>
 
               {/* Calendar Grid */}
-              <div className="flex flex-col lg:flex-row gap-8">
-                {/* August 2026 Calendar */}
-                <div className="flex-1">
-                  <div className="text-center mb-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <h4 className="font-medium">August 2026</h4>
-                      <div className="w-8"></div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                    {/* Day headers */}
-                    <div className="p-2 text-gray-500 font-medium">S</div>
-                    <div className="p-2 text-gray-500 font-medium">M</div>
-                    <div className="p-2 text-gray-500 font-medium">T</div>
-                    <div className="p-2 text-gray-500 font-medium">W</div>
-                    <div className="p-2 text-gray-500 font-medium">T</div>
-                    <div className="p-2 text-gray-500 font-medium">F</div>
-                    <div className="p-2 text-gray-500 font-medium">S</div>
-
-                    {/* Calendar days */}
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">1</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">2</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">3</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">4</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">5</div>
-                    <div className="p-2 bg-black text-white rounded-full cursor-pointer">6</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">7</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">8</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">9</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">10</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">11</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">12</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">13</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">14</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">15</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">16</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">17</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">18</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">19</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">20</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">21</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">22</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">23</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">24</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">25</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">26</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">27</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">28</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">29</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">30</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">31</div>
-                  </div>
-                </div>
-
-                {/* September 2026 Calendar */}
-                <div className="flex-1">
-                  <div className="text-center mb-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-8"></div>
-                      <h4 className="font-medium">September 2026</h4>
-                      <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                    {/* Day headers */}
-                    <div className="p-2 text-gray-500 font-medium">S</div>
-                    <div className="p-2 text-gray-500 font-medium">M</div>
-                    <div className="p-2 text-gray-500 font-medium">T</div>
-                    <div className="p-2 text-gray-500 font-medium">W</div>
-                    <div className="p-2 text-gray-500 font-medium">T</div>
-                    <div className="p-2 text-gray-500 font-medium">F</div>
-                    <div className="p-2 text-gray-500 font-medium">S</div>
-
-                    {/* Calendar days */}
-                    <div className="p-2"></div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">1</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">2</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">3</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">4</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">5</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">6</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">7</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">8</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">9</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">10</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">11</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">12</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">13</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">14</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">15</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">16</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">17</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">18</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">19</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">20</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">21</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">22</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">23</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">24</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">25</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">26</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">27</div>
-
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">28</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">29</div>
-                    <div className="p-2 text-gray-900 hover:bg-gray-100 rounded-full cursor-pointer">30</div>
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                    <div className="p-2"></div>
-                  </div>
-                </div>
+              <div className="flex justify-center">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  disabled={disabledDates}
+                  className="border rounded-md p-4"
+                />
               </div>
 
               {/* Clear Dates Button */}
@@ -427,7 +326,11 @@ export function PropertyDetailPage() {
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <div className="w-4 h-4 border border-gray-400 rounded flex items-center justify-center">📅</div>
                 </div>
-                <Button variant="ghost" className="text-sm underline font-medium">
+                <Button
+                  variant="ghost"
+                  className="text-sm underline font-medium"
+                  onClick={() => setDateRange(undefined)}
+                >
                   Clear dates
                 </Button>
               </div>
@@ -718,66 +621,26 @@ export function PropertyDetailPage() {
 
           {/* Right Column - Booking Widget */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6">
-              {/* All Fees Included Badge - Above the price box */}
-              <div className="flex justify-center mb-4">
-                <Badge className="bg-black text-white px-6 py-3 text-sm font-medium">All fees included</Badge>
-              </div>
-
-              <Card className="p-6 shadow-lg border border-gray-200">
-                <CardContent className="p-0 space-y-4">
-                  {/* Price */}
-                  <div className="flex items-baseline space-x-1">
-                    <span className="text-2xl font-semibold">${property.price}</span>
-                    <span className="text-gray-600">night</span>
-                  </div>
-
-                  {/* Dates and Guests */}
-                  <div className="border border-gray-300 rounded-lg">
-                    <div className="grid grid-cols-2">
-                      <div className="p-3 border-r border-gray-300">
-                        <div className="text-xs font-medium text-gray-700 uppercase">Check-in</div>
-                        <div className="text-sm text-gray-500">Add date</div>
-                      </div>
-                      <div className="p-3">
-                        <div className="text-xs font-medium text-gray-700 uppercase">Checkout</div>
-                        <div className="text-sm text-gray-500">Add date</div>
-                      </div>
-                    </div>
-                    <div className="p-3 border-t border-gray-300">
-                      <div className="text-xs font-medium text-gray-700 uppercase">Guests</div>
-                      <div className="text-sm text-gray-500">1 guest</div>
-                    </div>
-                  </div>
-
-                  {/* Book Button */}
-                  <Button className="w-full text-white py-3 font-medium" style={{ backgroundColor: "#477023" }}>
-                    Let's Book!
-                  </Button>
-
-                  {/* Fee Breakdown */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">${property.price} × 5 nights</span>
-                      <span>${property.price * 5}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Cleaning fee</span>
-                      <span>$50</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Service fee</span>
-                      <span>$75</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total before taxes</span>
-                      <span>${property.price * 5 + 50 + 75}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <BookingForm
+              propertyId={Number(property.id)}
+              propertyName={property.title}
+              basePrice={property.price}
+              maxGuests={property.guests || 10}
+              checkInDate={dateRange?.from}
+              checkOutDate={dateRange?.to}
+              onDateChange={(range) => {
+                setDateRange({
+                  from: range.from,
+                  to: range.to
+                });
+              }}
+              onDateClick={() => {
+                const calendarSection = document.getElementById('calendar-section');
+                if (calendarSection) {
+                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            />
           </div>
         </div>
       </div>
