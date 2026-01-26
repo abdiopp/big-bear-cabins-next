@@ -1,21 +1,13 @@
+import { getCoupons } from "@/actions/cms";
 import React from "react";
 import { SpecialOffersClient } from "./SpecialOffersClient";
-import { createClient } from "@/prismicio";
 
 async function SpecialOffers() {
-  const client = createClient();
-  // fetch coupons data from prismic
-  const coupons = await client.getSingle("coupons").catch((e) => {
-    console.error("Error fetching coupons data:", e);
-    return null;
-  });
+  const coupons = await getCoupons();
 
-  return (
-    <>
-      123
-      <SpecialOffersClient coupons={coupons} />
-    </>
-  );
+  if (!coupons) return null;
+
+  return <SpecialOffersClient coupons={coupons as any} />;
 }
 
 export default SpecialOffers;

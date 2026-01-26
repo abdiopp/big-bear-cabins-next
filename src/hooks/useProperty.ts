@@ -23,12 +23,37 @@ export function useProperty(id: string | number) {
 
         async function fetchProperty() {
             try {
+                // Fetch property info
                 const response = await fetch('/api/properties', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id }),
+                    body: JSON.stringify({
+                        id,
+                        // User requested payload parameters to ensure unit 89614 is found with correct details
+                        show_rooms: 1,
+                        location_variables: {
+                            variable: {
+                                value: "4x2 14",
+                                name: "Air Filters"
+                            }
+                        },
+                        variables: {
+                            variable: {
+                                value: 1,
+                                name: "Towels"
+                            }
+                        },
+                        additional_field: {
+                            value: "Grey",
+                            "name": "Tiles"
+                        },
+                        owning_type_id: 1,
+                        status_id: 1,
+                        return_owning_startdate: 1,
+                        return_owner_id: 1
+                    }),
                 });
 
                 if (!response.ok) {
@@ -46,6 +71,28 @@ export function useProperty(id: string | number) {
                 const raw = rawProperties[0];
                 mappedProperty.description = raw.global_description || raw.description;
 
+                // Fetch full gallery images
+                try {
+                    const galleryResponse = await fetch('/api/properties/gallery', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id }),
+                    });
+
+                    if (galleryResponse.ok) {
+                        const galleryData = await galleryResponse.json();
+                        const images = galleryData.data?.image || galleryData.data?.images || galleryData.data?.property?.images || [];
+                        if (images.length > 0) {
+                            mappedProperty.images = images.map((img: any) => img.image_path || img);
+                        }
+                    }
+                } catch (galleryError) {
+                    // If gallery fetch fails, keep the default images from property list
+                    console.warn('Failed to fetch gallery images:', galleryError);
+                }
+
                 setProperty(mappedProperty);
                 setError(null);
             } catch (err) {
@@ -60,3 +107,4 @@ export function useProperty(id: string | number) {
 
     return { property, loading, error };
 }
+

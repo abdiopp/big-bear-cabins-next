@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Users, Minus, Plus } from "lucide-react";
 import { cn } from "./ui/utils";
 
-interface GuestCounts {
+export interface GuestCounts {
   adults: number;
   children: number;
   infants: number;
@@ -31,13 +31,13 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
   const updateGuestCount = (type: keyof GuestCounts, operation: 'add' | 'subtract') => {
     setGuestCounts(prev => {
       const newCounts = { ...prev };
-      
+
       if (operation === 'add') {
         newCounts[type] += 1;
       } else if (operation === 'subtract' && newCounts[type] > 0) {
         newCounts[type] -= 1;
       }
-      
+
       onGuestCountChange?.(newCounts);
       return newCounts;
     });
@@ -50,15 +50,15 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
   const getDisplayText = () => {
     const total = getTotalGuests();
     const petText = guestCounts.pets > 0 ? `, ${guestCounts.pets} pet${guestCounts.pets > 1 ? 's' : ''}` : '';
-    
+
     if (total === 0 && guestCounts.pets === 0) {
       return "Add guests";
     }
-    
+
     if (total === 1) {
       return `1 guest${petText}`;
     }
-    
+
     return `${total} guests${petText}`;
   };
 
@@ -79,9 +79,9 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
           </div>
         </div>
       </PopoverTrigger>
-      
-      <PopoverContent 
-        className="w-96 p-6 bg-white shadow-lg rounded-3xl border border-gray-200" 
+
+      <PopoverContent
+        className="w-96 p-6 bg-white shadow-lg rounded-3xl border border-gray-200"
         align="end"
         sideOffset={8}
       >

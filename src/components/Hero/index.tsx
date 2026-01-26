@@ -1,15 +1,13 @@
-import { createClient } from "@/prismicio";
+import { getHomeHero } from "@/actions/cms";
 import React from "react";
 import { HeroClient } from "./HeroClient";
 
 async function Hero() {
-  const client = createClient();
-  // fetch hero data from prismic
-  const hero = await client.getSingle("home_hero").catch((e) => {
-    console.error("Error fetching hero data:", e);
-    return null;
-  });
-  return <>{hero?.data && <HeroClient data={hero.data} />}</>;
+  const hero = await getHomeHero();
+
+  if (!hero) return null;
+
+  return <HeroClient data={hero as any} />;
 }
 
 export default Hero;
