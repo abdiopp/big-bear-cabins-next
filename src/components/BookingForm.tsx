@@ -406,14 +406,10 @@ export function BookingForm({
                                             <span>${fee.amount}</span>
                                         </div>
                                     ))}
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Taxes</span>
-                                        <span>${price.taxes}</span>
-                                    </div>
                                     <Separator />
                                     <div className="flex justify-between font-semibold">
-                                        <span>Total</span>
-                                        <span>${price.total}</span>
+                                        <span>Total before taxes</span>
+                                        <span>${price.total - price.taxes}</span>
                                     </div>
                                 </>
                             ) : (
