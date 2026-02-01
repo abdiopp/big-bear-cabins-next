@@ -16,7 +16,10 @@ export interface StreamlineProperty {
         image_path: string;
         thumbnail_path: string;
     }>;
+    lat?: number;
+    lng?: number;
 }
+
 
 export interface Property {
     id: string | number;
@@ -35,8 +38,8 @@ export interface Property {
     description?: string;
     amenities?: string[];
     host?: {
-        name: string;
-        joinedYear: number;
         isSuperhost: boolean;
     };
+    latitude?: number;
+    longitude?: number;
 }

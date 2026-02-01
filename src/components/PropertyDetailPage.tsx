@@ -34,6 +34,8 @@ import { BookingForm } from "./BookingForm";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 
+import { Map } from "./Map";
+
 const amenityIcons = {
   Wifi: Wifi,
   Kitchen: Coffee,
@@ -542,80 +544,26 @@ export function PropertyDetailPage() {
               <p className="text-gray-700 mb-6">{property.location}</p>
 
               {/* Map Container */}
+              {/* Map Container */}
               <div className="relative w-full h-96 bg-gray-100 rounded-lg overflow-hidden">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800&h=400&fit=crop"
-                  alt={`Map of ${property.location} location`}
-                  className="w-full h-full object-cover"
-                />
-
-                {/* Map Overlay with Location Pin */}
-                <div className="absolute inset-0 bg-green-50 bg-opacity-90">
-                  <div className="relative w-full h-full">
-                    {/* Location Pin */}
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                      <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
-                        <MapPin className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-
-                    {/* Map Labels */}
-                    <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-sm font-medium border border-gray-200">
-                      CABIN LOCATION
-                    </div>
-
-                    <div className="absolute top-1/3 left-1/4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🌳 Corner Park
-                    </div>
-
-                    <div className="absolute bottom-1/3 right-1/3 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🌹 Rose And Jasmine Garden
-                    </div>
-
-                    <div className="absolute bottom-1/4 left-1/3 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🥘 Basit The Food Street
-                    </div>
-
-                    <div className="absolute top-1/2 right-1/4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🌲 Forest Trails
-                    </div>
-
-                    <div className="absolute bottom-4 right-4 bg-white px-2 py-1 rounded text-xs border border-gray-200">
-                      🌲 Shakarparian National Park
+                {(property.latitude && property.longitude) || property.location ? (
+                  <Map latitude={property.latitude} longitude={property.longitude} address={property.location} />
+                ) : (
+                  <div className="w-full h-full relative">
+                    <ImageWithFallback
+                      src="https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?w=800&h=400&fit=crop"
+                      alt={`Map of ${property.location} location`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                      <span className="bg-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
+                        Map location not available
+                      </span>
                     </div>
                   </div>
-                </div>
-
-                {/* Map Controls */}
-                <div className="absolute top-4 left-4 flex flex-col space-y-2">
-                  <Button size="sm" variant="outline" className="w-10 h-10 p-0 bg-white hover:bg-gray-50">
-                    🔍
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-10 h-10 p-0 bg-white hover:bg-gray-50">
-                    ⛶
-                  </Button>
-                </div>
-
-                <div className="absolute bottom-4 left-4 flex flex-col space-y-1">
-                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 bg-white hover:bg-gray-50 text-lg">
-                    +
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-8 h-8 p-0 bg-white hover:bg-gray-50 text-lg">
-                    −
-                  </Button>
-                </div>
-
-                {/* Expand Map Button */}
-                <div className="absolute bottom-4 right-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-white hover:bg-gray-50 px-3 py-2 text-sm border border-gray-300"
-                  >
-                    ⛶ Show area
-                  </Button>
-                </div>
+                )}
               </div>
+
             </div>
           </div>
 
