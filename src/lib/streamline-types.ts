@@ -165,6 +165,10 @@ export interface MakeReservationParams {
     first_name: string;
     last_name: string;
     zip: string | number;
+    address: string;
+    city: string;
+    state: string;
+    cellphone: string;
     phone?: string;
     madetype_id?: number;
     type_id?: number;
@@ -308,5 +312,70 @@ export interface VerifyAvailabilityParams {
     adults?: number;
     children?: number;
     pets?: number;
+}
+
+// PreReservationPrice Types (GetPreReservationPrice API)
+export interface PreReservationPriceFee {
+    id: string;
+    name: string | null;
+    value: string;
+    description: string | null;
+    damage_waiver: string;
+    travel_insurance: string;
+    cfar: string;
+    group_by_name?: string;
+}
+
+export interface PreReservationPriceOptionalFee extends PreReservationPriceFee {
+    active: string;
+}
+
+export interface PreReservationPriceGuestDeposit {
+    id: string;
+    value: string;
+    name: string;
+    due_today: string;
+    deposit_required: string;
+}
+
+export interface PreReservationPriceDay {
+    date: string;
+    season_id: string;
+    season: string;
+    price: string;
+    extra: string;
+    discount: string;
+}
+
+export interface PreReservationPriceSecurityDepositItem {
+    ledger_id: string;
+    description: string;
+    deposit_required: string;
+}
+
+export interface PreReservationPriceSecurityDeposits {
+    security_deposit: PreReservationPriceSecurityDepositItem[];
+}
+
+export interface PreReservationPriceResponse {
+    unit_id: string;
+    price: string;
+    taxes: string;
+    coupon_discount: string;
+    total: string;
+    first_day_price: string;
+    unit_name: string;
+    location_name: string;
+    unit_rewards?: string;
+    company_rewards?: string;
+    reward_points_discount?: string | null;
+    guest_deposits?: PreReservationPriceGuestDeposit | PreReservationPriceGuestDeposit[];
+    required_fees?: PreReservationPriceFee[];
+    optional_fees?: PreReservationPriceOptionalFee[];
+    taxes_details?: PreReservationPriceFee[];
+    reservation_days?: PreReservationPriceDay[];
+    security_deposits?: PreReservationPriceSecurityDeposits;
+    security_deposit_text?: string;
+    due_today?: string;
 }
 

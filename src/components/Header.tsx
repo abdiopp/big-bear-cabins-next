@@ -131,7 +131,7 @@ export function Header() {
                   />
 
                   {/* Guests */}
-                  <GuestSelector onGuestCountChange={handleGuestCountChange} />
+                  <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">
@@ -157,7 +157,7 @@ export function Header() {
                   />
 
                   {/* Guests */}
-                  <GuestSelector onGuestCountChange={handleGuestCountChange} />
+                  <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">

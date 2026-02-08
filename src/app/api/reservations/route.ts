@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         // Validate required fields
-        const requiredFields = ['unit_id', 'startdate', 'enddate', 'email', 'occupants', 'first_name', 'last_name', 'zip'];
+        const requiredFields = ['unit_id', 'startdate', 'enddate', 'email', 'occupants', 'first_name', 'last_name', 'zip', 'address', 'city', 'state', 'cell_phone'];
         const missingFields = requiredFields.filter(field => !body[field]);
 
         if (missingFields.length > 0) {
@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
             first_name: body.first_name,
             last_name: body.last_name,
             zip: body.zip,
+            address: body.address,
+            city: body.city,
+            state: body.state,
+            cellphone: body.cell_phone,
             phone: body.phone,
             coupon_code: body.coupon_code,
             // Payment fields for testing - no real charge

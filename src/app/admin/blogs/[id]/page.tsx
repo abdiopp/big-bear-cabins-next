@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -91,7 +92,7 @@ export default function EditBlogPost({ params }: { params: Promise<{ id: string 
             });
             router.push("/admin/blogs");
         } catch (error) {
-            alert("Error updating blog post");
+            toast.error("Error updating blog post");
             console.error(error);
         }
         setLoading(false);

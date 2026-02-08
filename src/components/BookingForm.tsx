@@ -8,6 +8,9 @@ import { Separator } from './ui/separator';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Calendar } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { format } from "date-fns";
+import { toast } from "sonner";
 import { useReservationPrice } from '@/hooks/useReservationPrice';
 import { useAvailability } from '@/hooks/useAvailability';
 import { useReservations } from '@/hooks/useReservations';
@@ -35,8 +38,9 @@ export function BookingForm({
     onDateClick
 }: BookingFormProps) {
     // Local state for formatted string dates (sync with props)
-    const checkIn = checkInDate ? checkInDate.toISOString().split('T')[0] : '';
-    const checkOut = checkOutDate ? checkOutDate.toISOString().split('T')[0] : '';
+    // Use date-fns format to preserve local date instead of converting to UTC
+    const checkIn = checkInDate ? format(checkInDate, 'yyyy-MM-dd') : '';
+    const checkOut = checkOutDate ? format(checkOutDate, 'yyyy-MM-dd') : '';
 
     const [guestCounts, setGuestCounts] = useState<GuestCounts>({
         adults: 1,
@@ -50,12 +54,16 @@ export function BookingForm({
 
     const [couponCode, setCouponCode] = useState('');
     const [showBookingForm, setShowBookingForm] = useState(false);
+    const [includeTaxes, setIncludeTaxes] = useState(false);
 
     // Guest info for reservation
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [cellPhone, setCellPhone] = useState('');
+    const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
     const [zip, setZip] = useState('');
 
     const { price, loading: priceLoading, error: priceError, calculatePrice } = useReservationPrice();
@@ -79,6 +87,8 @@ export function BookingForm({
                 startDate: checkIn,
                 endDate: checkOut,
                 occupants: totalOccupants,
+                occupants_small: guestCounts.children,
+                pets: guestCounts.pets,
                 couponCode: couponCode || undefined
             });
         }
@@ -86,7 +96,7 @@ export function BookingForm({
 
     const handleCheckAvailability = async () => {
         if (!checkIn || !checkOut) {
-            alert('Please select check-in and check-out dates');
+            toast.error('Please select check-in and check-out dates');
             return;
         }
         await verifyAvailability();
@@ -94,7 +104,7 @@ export function BookingForm({
 
     const handleBookNow = () => {
         if (!checkIn || !checkOut) {
-            alert('Please select check-in and check-out dates');
+            toast.error('Please select check-in and check-out dates');
             return;
         }
         setShowBookingForm(true);
@@ -103,8 +113,8 @@ export function BookingForm({
     const handleSubmitReservation = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!firstName || !lastName || !email || !zip) {
-            alert('Please fill in all required fields');
+        if (!firstName || !lastName || !email || !cellPhone || !address || !city || !state || !zip) {
+            toast.error('Please fill in all required fields');
             return;
         }
 
@@ -117,13 +127,16 @@ export function BookingForm({
             firstName,
             lastName,
             zip,
-            phone: phone || undefined,
+            address,
+            city,
+            state,
+            cellPhone,
             couponCode: couponCode || undefined
         });
 
         if (result) {
             setShowBookingForm(false);
-            alert(`Reservation confirmed! Confirmation ID: ${result.confirmation_id}`);
+            toast.success(`Reservation confirmed! Confirmation ID: ${result.confirmation_id}`);
         }
     };
 
@@ -134,137 +147,174 @@ export function BookingForm({
 
     if (currentReservation) {
         return (
-            <Card className="p-6 shadow-lg border border-gray-200">
-                <CardContent className="p-0 space-y-4">
-                    <div className="text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
+            <div className="sticky top-6">
+                <Card className="p-6 shadow-lg border border-gray-200">
+                    <CardContent className="p-0 space-y-4">
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Booking Confirmed!</h3>
+                            <p className="text-gray-600">Confirmation ID: {currentReservation.confirmation_id}</p>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">Booking Confirmed!</h3>
-                        <p className="text-gray-600">Confirmation ID: {currentReservation.confirmation_id}</p>
-                    </div>
-                    <Separator />
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Property</span>
-                            <span className="font-medium">{propertyName}</span>
+                        <Separator />
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Property</span>
+                                <span className="font-medium">{propertyName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Check-in</span>
+                                <span>{currentReservation.startdate}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Check-out</span>
+                                <span>{currentReservation.enddate}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Check-in</span>
-                            <span>{currentReservation.startdate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Check-out</span>
-                            <span>{currentReservation.enddate}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
         );
     }
 
     if (showBookingForm) {
         return (
-            <Card className="p-6 shadow-lg border border-gray-200">
-                <CardContent className="p-0 space-y-4">
-                    <h3 className="text-lg font-semibold">Complete Your Booking</h3>
+            <div className="sticky top-6">
+                <Card className="p-6 shadow-lg border border-gray-200">
+                    <CardContent className="p-0 space-y-4">
+                        <h3 className="text-lg font-semibold">Complete Your Booking</h3>
 
-                    <form onSubmit={handleSubmitReservation} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3">
+                        <form onSubmit={handleSubmitReservation} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label htmlFor="firstName">First Name *</Label>
+                                    <Input
+                                        id="firstName"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="lastName">Last Name *</Label>
+                                    <Input
+                                        id="lastName"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
                             <div>
-                                <Label htmlFor="firstName">First Name *</Label>
+                                <Label htmlFor="email">Email *</Label>
                                 <Input
-                                    id="firstName"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
                             </div>
-                            <div>
-                                <Label htmlFor="lastName">Last Name *</Label>
-                                <Input
-                                    id="lastName"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
 
-                        <div>
-                            <Label htmlFor="email">Email *</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="cellPhone">Cell Phone *</Label>
                                 <Input
-                                    id="phone"
+                                    id="cellPhone"
                                     type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="zip">ZIP Code *</Label>
-                                <Input
-                                    id="zip"
-                                    value={zip}
-                                    onChange={(e) => setZip(e.target.value)}
+                                    value={cellPhone}
+                                    onChange={(e) => setCellPhone(e.target.value)}
+                                    placeholder="(555) 123-4567"
                                     required
                                 />
                             </div>
-                        </div>
 
-                        <Separator />
-
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">{nights} night{nights > 1 ? 's' : ''}</span>
-                                <span>${price?.total || (basePrice * nights)}</span>
+                            <div>
+                                <Label htmlFor="address">Address *</Label>
+                                <Input
+                                    id="address"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="123 Main Street"
+                                    required
+                                />
                             </div>
-                            <div className="flex justify-between font-semibold text-lg">
-                                <span>Total</span>
-                                <span>${price?.total || (basePrice * nights)}</span>
-                            </div>
-                        </div>
 
-                        {reservationError && (
-                            <div className="text-red-500 text-sm p-2 bg-red-50 rounded">
-                                {reservationError}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <Label htmlFor="city">City *</Label>
+                                    <Input
+                                        id="city"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="state">State *</Label>
+                                    <Input
+                                        id="state"
+                                        value={state}
+                                        onChange={(e) => setState(e.target.value)}
+                                        placeholder="CA"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="zip">ZIP *</Label>
+                                    <Input
+                                        id="zip"
+                                        value={zip}
+                                        onChange={(e) => setZip(e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        )}
 
-                        <div className="flex space-x-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => setShowBookingForm(false)}
-                            >
-                                Back
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1 text-white"
-                                style={{ backgroundColor: '#477023' }}
-                                disabled={reservationLoading}
-                            >
-                                {reservationLoading ? 'Booking...' : 'Confirm Booking'}
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+                            <Separator />
+
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">{nights} night{nights > 1 ? 's' : ''}</span>
+                                    <span>${price?.total || (basePrice * nights)}</span>
+                                </div>
+                                <div className="flex justify-between font-semibold text-lg">
+                                    <span>Total</span>
+                                    <span>${price?.total || (basePrice * nights)}</span>
+                                </div>
+                            </div>
+
+                            {reservationError && (
+                                <div className="text-red-500 text-sm p-2 bg-red-50 rounded">
+                                    {reservationError}
+                                </div>
+                            )}
+
+                            <div className="flex space-x-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setShowBookingForm(false)}
+                                >
+                                    Back
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1 text-white"
+                                    style={{ backgroundColor: '#477023' }}
+                                    disabled={reservationLoading}
+                                >
+                                    {reservationLoading ? 'Booking...' : 'Confirm Booking'}
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
         );
     }
 
@@ -288,38 +338,34 @@ export function BookingForm({
                     {/* Dates and Guests */}
                     <div className="border border-gray-300 rounded-lg">
                         <div className="grid grid-cols-2">
-                            <div className="p-3 border-r border-gray-300">
-                                <div className="text-xs font-medium text-gray-700 uppercase">Check-in</div>
-                                <Input
-                                    type="date"
-                                    value={checkIn}
-                                    onChange={(e) => {
-                                        const newDate = e.target.value ? new Date(e.target.value) : undefined;
-                                        onDateChange?.({ from: newDate, to: checkOutDate });
-                                    }}
-                                    className="border-0 p-0 h-auto text-sm focus:ring-0"
-                                    min={new Date().toISOString().split('T')[0]}
-                                    onClick={onDateClick}
-                                />
+                            <div
+                                className="p-3 border-r border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={onDateClick}
+                            >
+                                <div className="text-xs font-medium text-gray-700 uppercase">CHECK-IN</div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className={checkIn ? "text-gray-900" : "text-gray-400"}>
+                                        {checkIn ? new Date(checkIn + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "dd/mm/yyyy"}
+                                    </span>
+                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                </div>
                             </div>
-                            <div className="p-3">
-                                <div className="text-xs font-medium text-gray-700 uppercase">Checkout</div>
-                                <Input
-                                    type="date"
-                                    value={checkOut}
-                                    onChange={(e) => {
-                                        const newDate = e.target.value ? new Date(e.target.value) : undefined;
-                                        onDateChange?.({ from: checkInDate, to: newDate });
-                                    }}
-                                    className="border-0 p-0 h-auto text-sm focus:ring-0"
-                                    min={checkIn || new Date().toISOString().split('T')[0]}
-                                    onClick={onDateClick}
-                                />
+                            <div
+                                className="p-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={onDateClick}
+                            >
+                                <div className="text-xs font-medium text-gray-700 uppercase">CHECKOUT</div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className={checkOut ? "text-gray-900" : "text-gray-400"}>
+                                        {checkOut ? new Date(checkOut + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "dd/mm/yyyy"}
+                                    </span>
+                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                </div>
                             </div>
                         </div>
                         <div className="p-3 border-t border-gray-300">
                             <GuestSelector
-                                initialCounts={guestCounts}
+                                counts={guestCounts}
                                 onGuestCountChange={setGuestCounts}
                                 className="p-0 hover:bg-transparent"
                             />
@@ -396,20 +442,82 @@ export function BookingForm({
                                 </>
                             ) : price ? (
                                 <>
+                                    {/* Nightly Rate */}
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">${price.average_nightly_rate} × {price.nights} nights</span>
-                                        <span>${price.subtotal}</span>
+                                        <span className="text-gray-600">${price.average_nightly_rate.toFixed(2)} × {price.nights} nights</span>
+                                        <span>${price.subtotal.toFixed(2)}</span>
                                     </div>
-                                    {price.fees.map((fee, index) => (
-                                        <div key={index} className="flex justify-between">
-                                            <span className="text-gray-600">{fee.name}</span>
-                                            <span>${fee.amount}</span>
+
+                                    {/* Required Fees (detailed) */}
+                                    {price.required_fees && price.required_fees.length > 0 ? (
+                                        price.required_fees.map((fee, index) => (
+                                            <div key={`req-${index}`} className="flex justify-between">
+                                                <span className="text-gray-600">{fee.name}</span>
+                                                <span>${fee.amount.toFixed(2)}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        // Fallback to legacy fees
+                                        price.fees.map((fee, index) => (
+                                            <div key={index} className="flex justify-between">
+                                                <span className="text-gray-600">{fee.name}</span>
+                                                <span>${fee.amount}</span>
+                                            </div>
+                                        ))
+                                    )}
+
+                                    {/* Tax Details */}
+                                    {includeTaxes && price.taxes_details && price.taxes_details.length > 0 && (
+                                        <>
+                                            <Separator />
+                                            <div className="text-xs text-gray-500 font-medium">Taxes</div>
+                                            {price.taxes_details.map((tax, index) => (
+                                                <div key={`tax-${index}`} className="flex justify-between">
+                                                    <span className="text-gray-600">{tax.name}</span>
+                                                    <span>${tax.amount.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
+                                    {/* Coupon Discount */}
+                                    {price.coupon_discount && price.coupon_discount > 0 && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span>Coupon discount</span>
+                                            <span>-${price.coupon_discount.toFixed(2)}</span>
                                         </div>
-                                    ))}
+                                    )}
+
+                                    {/* Guest Deposits */}
+                                    {price.guest_deposits && price.guest_deposits.length > 0 && (
+                                        <>
+                                            <Separator />
+                                            <div className="text-xs text-gray-500 font-medium">Security Deposits</div>
+                                            {price.guest_deposits.map((deposit, index) => (
+                                                <div key={`dep-${index}`} className="flex justify-between">
+                                                    <span className="text-gray-600">{deposit.name}</span>
+                                                    <span>${deposit.deposit_required.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+
                                     <Separator />
+
+                                    <div className="flex items-center justify-between py-2">
+                                        <Label htmlFor="tax-mode" className="text-sm font-medium text-gray-600">
+                                            Include taxes and fees
+                                        </Label>
+                                        <Switch
+                                            id="tax-mode"
+                                            checked={includeTaxes}
+                                            onCheckedChange={setIncludeTaxes}
+                                        />
+                                    </div>
+
                                     <div className="flex justify-between font-semibold">
-                                        <span>Total before taxes</span>
-                                        <span>${price.total - price.taxes}</span>
+                                        <span>Total {includeTaxes ? '(incl. taxes)' : '(excl. taxes)'}</span>
+                                        <span>${includeTaxes ? price.total.toFixed(2) : (price.total - (price.taxes || 0)).toFixed(2)}</span>
                                     </div>
                                 </>
                             ) : (

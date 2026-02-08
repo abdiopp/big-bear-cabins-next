@@ -91,7 +91,11 @@ function Calendar({
           defaultClassNames.today,
         ),
         outside: cn("text-muted-foreground aria-selected:text-muted-foreground", defaultClassNames.outside),
-        disabled: cn("text-muted-foreground opacity-50", defaultClassNames.disabled),
+        disabled: cn(
+          "text-muted-foreground opacity-50 relative",
+          "before:content-[''] before:absolute before:left-1/2 before:top-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:w-6 before:h-[2px] before:bg-muted-foreground before:rotate-[-45deg]",
+          defaultClassNames.disabled
+        ),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
       }}

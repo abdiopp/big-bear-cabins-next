@@ -8,6 +8,33 @@ interface Fee {
     type: string;
 }
 
+interface DetailedFee {
+    id: string;
+    name: string;
+    amount: number;
+    description: string | null;
+    type: string;
+}
+
+interface OptionalFee extends DetailedFee {
+    active: boolean;
+}
+
+interface TaxDetail {
+    id: string;
+    name: string;
+    amount: number;
+    description: string | null;
+}
+
+interface GuestDeposit {
+    id: string;
+    name: string;
+    amount: number;
+    deposit_required: number;
+    due_today: boolean;
+}
+
 interface ReservationPrice {
     total: number;
     subtotal: number;
@@ -17,6 +44,14 @@ interface ReservationPrice {
     currency: string;
     nights: number;
     average_nightly_rate: number;
+    // Enhanced fields from GetPreReservationPrice
+    coupon_discount?: number;
+    required_fees?: DetailedFee[];
+    optional_fees?: OptionalFee[];
+    taxes_details?: TaxDetail[];
+    guest_deposits?: GuestDeposit[];
+    security_deposit_text?: string;
+    due_today?: boolean;
 }
 
 interface UseReservationPriceOptions {
@@ -24,6 +59,8 @@ interface UseReservationPriceOptions {
     startDate: string;
     endDate: string;
     occupants: number;
+    occupants_small?: number;
+    pets?: number;
     couponCode?: string;
 }
 
@@ -33,7 +70,7 @@ export function useReservationPrice() {
     const [error, setError] = useState<string | null>(null);
 
     const calculatePrice = useCallback(async (options: UseReservationPriceOptions) => {
-        const { unitId, startDate, endDate, occupants, couponCode } = options;
+        const { unitId, startDate, endDate, occupants, occupants_small, pets, couponCode } = options;
 
         if (!unitId || !startDate || !endDate || !occupants) {
             setError('Missing required parameters');
@@ -53,6 +90,8 @@ export function useReservationPrice() {
                     startdate: startDate,
                     enddate: endDate,
                     occupants,
+                    occupants_small: occupants_small || 0,
+                    pets: pets || 0,
                     coupon_code: couponCode
                 })
             });
@@ -63,7 +102,7 @@ export function useReservationPrice() {
 
             const data = await response.json();
 
-            // Map the response to our interface
+            // Map the response to our interface including enhanced fields
             const priceData: ReservationPrice = {
                 total: data.data?.total || 0,
                 subtotal: data.data?.subtotal || 0,
@@ -72,7 +111,15 @@ export function useReservationPrice() {
                 security_deposit: data.data?.security_deposit,
                 currency: data.data?.currency || 'USD',
                 nights: data.data?.nights || 0,
-                average_nightly_rate: data.data?.average_nightly_rate || 0
+                average_nightly_rate: data.data?.average_nightly_rate || 0,
+                // Enhanced fields
+                coupon_discount: data.data?.coupon_discount || 0,
+                required_fees: data.data?.required_fees || [],
+                optional_fees: data.data?.optional_fees || [],
+                taxes_details: data.data?.taxes_details || [],
+                guest_deposits: data.data?.guest_deposits || [],
+                security_deposit_text: data.data?.security_deposit_text,
+                due_today: data.data?.due_today || false
             };
 
             setPrice(priceData);

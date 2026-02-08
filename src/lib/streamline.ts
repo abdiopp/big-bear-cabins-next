@@ -214,8 +214,27 @@ export async function getPreReservationPrice(params: {
     startdate: string;
     enddate: string;
     occupants: number;
+    occupants_small?: number;
+    pets?: number;
+    coupon_code?: string;
+    pricing_model?: number;
+    separate_taxes?: number;
+    show_package_addons?: number;
+    guest_deposits_show_all?: number;
+    show_due_today?: number;
+    optional_default_enabled?: number;
+    return_payments?: string;
 }) {
-    return streamlineRequest('GetPreReservationPrice', params);
+    return streamlineRequest('GetPreReservationPrice', {
+        pricing_model: 1,
+        separate_taxes: 1,
+        show_package_addons: 1,
+        guest_deposits_show_all: 1,
+        show_due_today: 1,
+        optional_default_enabled: 1,
+        return_payments: 'true',
+        ...params
+    });
 }
 
 export async function makeReservation(params: {
@@ -227,6 +246,10 @@ export async function makeReservation(params: {
     first_name: string;
     last_name: string;
     zip: string | number;
+    address: string;
+    city: string;
+    state: string;
+    cellphone: string;
     phone?: string;
     coupon_code?: string;
     // Payment fields - set to minimal for testing
@@ -252,8 +275,34 @@ export async function makeReservation(params: {
         status_id: 9,
         credit_card_amount: 0, // No charge for testing
         credit_card_charge_required: 0, // Don't require charge
-        ...params
+        ...params,
+        // Send multiple variations to ensures API picks one up
+        state: params.state,
+        client_state: params.state,
+        State: params.state,
+        ClientState: params.state,
+        guest_state: params.state,
+        GuestState: params.state,
+        // Correct parameter names found via GetPropertyInfo
+        state_name: params.state,
+        country_name: 'US',
+        region: params.state,
+        province: params.state,
+        state_id: params.state,
+        StateID: params.state,
+        state_province: params.state,
+        state_code: params.state,
+        country: 'US',
+        client_country: 'US',
+
+        cell_phone: params.cellphone,
+        cellphone: params.cellphone,
+        client_cell_phone: params.cellphone,
+        mobile_phone: params.cellphone,
+        CellPhone: params.cellphone
     };
+
+    console.log('🔍 MakeReservation params being sent:', JSON.stringify(reservationParams, null, 2));
 
     return streamlineRequest('MakeReservation', reservationParams);
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,7 +70,7 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
             });
             router.push("/admin/blog-categories");
         } catch (error) {
-            alert("Error updating category");
+            toast.error("Error updating category");
             console.error(error);
         }
         setLoading(false);

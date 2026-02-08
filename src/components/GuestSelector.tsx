@@ -17,41 +17,45 @@ interface GuestSelectorProps {
   className?: string;
   onGuestCountChange?: (counts: GuestCounts) => void;
   initialCounts?: GuestCounts;
+  counts?: GuestCounts;
 }
 
-export function GuestSelector({ className, onGuestCountChange, initialCounts }: GuestSelectorProps) {
+export function GuestSelector({ className, onGuestCountChange, initialCounts, counts }: GuestSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [guestCounts, setGuestCounts] = useState<GuestCounts>(initialCounts || {
+  const [internalCounts, setInternalCounts] = useState<GuestCounts>(initialCounts || {
     adults: 0,
     children: 0,
     infants: 0,
     pets: 0
   });
 
+  const effectiveCounts = counts || internalCounts;
+
   const updateGuestCount = (type: keyof GuestCounts, operation: 'add' | 'subtract') => {
-    setGuestCounts(prev => {
-      const newCounts = { ...prev };
+    const newCounts = { ...effectiveCounts };
 
-      if (operation === 'add') {
-        newCounts[type] += 1;
-      } else if (operation === 'subtract' && newCounts[type] > 0) {
-        newCounts[type] -= 1;
-      }
+    if (operation === 'add') {
+      newCounts[type] += 1;
+    } else if (operation === 'subtract' && newCounts[type] > 0) {
+      newCounts[type] -= 1;
+    }
 
-      onGuestCountChange?.(newCounts);
-      return newCounts;
-    });
+    if (!counts) {
+      setInternalCounts(newCounts);
+    }
+
+    onGuestCountChange?.(newCounts);
   };
 
   const getTotalGuests = () => {
-    return guestCounts.adults + guestCounts.children + guestCounts.infants;
+    return effectiveCounts.adults + effectiveCounts.children + effectiveCounts.infants;
   };
 
   const getDisplayText = () => {
     const total = getTotalGuests();
-    const petText = guestCounts.pets > 0 ? `, ${guestCounts.pets} pet${guestCounts.pets > 1 ? 's' : ''}` : '';
+    const petText = effectiveCounts.pets > 0 ? `, ${effectiveCounts.pets} pet${effectiveCounts.pets > 1 ? 's' : ''}` : '';
 
-    if (total === 0 && guestCounts.pets === 0) {
+    if (total === 0 && effectiveCounts.pets === 0) {
       return "Add guests";
     }
 
@@ -98,12 +102,12 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
                 size="sm"
                 className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
                 onClick={() => updateGuestCount('adults', 'subtract')}
-                disabled={guestCounts.adults === 0}
+                disabled={effectiveCounts.adults === 0}
               >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="font-medium text-lg min-w-[2rem] text-center">
-                {guestCounts.adults}
+                {effectiveCounts.adults}
               </span>
               <Button
                 variant="outline"
@@ -131,12 +135,12 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
                 size="sm"
                 className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
                 onClick={() => updateGuestCount('children', 'subtract')}
-                disabled={guestCounts.children === 0}
+                disabled={effectiveCounts.children === 0}
               >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="font-medium text-lg min-w-[2rem] text-center">
-                {guestCounts.children}
+                {effectiveCounts.children}
               </span>
               <Button
                 variant="outline"
@@ -164,12 +168,12 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
                 size="sm"
                 className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
                 onClick={() => updateGuestCount('infants', 'subtract')}
-                disabled={guestCounts.infants === 0}
+                disabled={effectiveCounts.infants === 0}
               >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="font-medium text-lg min-w-[2rem] text-center">
-                {guestCounts.infants}
+                {effectiveCounts.infants}
               </span>
               <Button
                 variant="outline"
@@ -201,12 +205,12 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts }: 
                 size="sm"
                 className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
                 onClick={() => updateGuestCount('pets', 'subtract')}
-                disabled={guestCounts.pets === 0}
+                disabled={effectiveCounts.pets === 0}
               >
                 <Minus className="h-3 w-3" />
               </Button>
               <span className="font-medium text-lg min-w-[2rem] text-center">
-                {guestCounts.pets}
+                {effectiveCounts.pets}
               </span>
               <Button
                 variant="outline"

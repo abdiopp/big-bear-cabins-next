@@ -34,6 +34,10 @@ interface CreateReservationParams {
     firstName: string;
     lastName: string;
     zip: string;
+    address: string;
+    city: string;
+    state: string;
+    cellPhone: string;
     phone?: string;
     couponCode?: string;
 }
@@ -94,9 +98,11 @@ export function useReservations() {
             }
 
             const data = await response.json();
-            setCurrentReservation(data.data);
+            // Handle potential nested reservation object
+            const reservationData = data.data?.reservation || data.data;
+            setCurrentReservation(reservationData);
             setLoading(false);
-            return data.data;
+            return reservationData;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An error occurred';
             setError(errorMessage);
@@ -123,6 +129,10 @@ export function useReservations() {
                     first_name: params.firstName,
                     last_name: params.lastName,
                     zip: params.zip,
+                    address: params.address,
+                    city: params.city,
+                    state: params.state,
+                    cell_phone: params.cellPhone,
                     phone: params.phone,
                     coupon_code: params.couponCode
                 })
@@ -134,9 +144,11 @@ export function useReservations() {
             }
 
             const data = await response.json();
-            setCurrentReservation(data.data);
+            // Handle potential nested reservation object
+            const reservationData = data.data?.reservation || data.data;
+            setCurrentReservation(reservationData);
             setLoading(false);
-            return data.data;
+            return reservationData;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An error occurred';
             setError(errorMessage);

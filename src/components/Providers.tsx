@@ -2,10 +2,17 @@
 
 import { SessionProvider } from "next-auth/react";
 
+import { Toaster } from "sonner";
+
 /**
  * Client-side Providers Component
  * Wraps children with SessionProvider to enable authentication context
  */
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    <SessionProvider>
+      {children}
+      <Toaster position="top-center" richColors />
+    </SessionProvider>
+  );
 }

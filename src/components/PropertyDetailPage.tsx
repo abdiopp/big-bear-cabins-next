@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -28,6 +28,7 @@ import {
 import { useProperty } from "@/hooks/useProperty";
 import { useAvailability } from "@/hooks/useAvailability";
 import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
+import { PropertyPageSkeleton } from "./PropertyPageSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
 import { BookingForm } from "./BookingForm";
@@ -53,16 +54,60 @@ export function PropertyDetailPage() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const { blockedDays } = useAvailability({
+  // Helper to format date as MM/DD/YYYY for Streamline API
+  const formatDateForAPI = (date: Date): string => {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const today = new Date();
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+  const { blockedDays, fetchCalendarRawData } = useAvailability({
     unitId: Number(id),
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    autoFetch: true
+    startDate: formatDateForAPI(today),
+    endDate: formatDateForAPI(oneYearFromNow),
+    autoFetch: false
   });
 
+  // Fetch calendar data when component mounts
+  useEffect(() => {
+    if (id) {
+      fetchCalendarRawData();
+    }
+  }, [id, fetchCalendarRawData]);
+
+  // Parse date string to Date object
+  const parseBlockedDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+
+    // Try YYYY-MM-DD format first
+    if (dateStr.includes('-')) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    // Try MM/DD/YYYY format
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        return isNaN(date.getTime()) ? null : date;
+      }
+    }
+
+    return null;
+  };
+
+  // Use blockedDays from hook (now contains expanded dates from blocked_period ranges)
   const disabledDates = [
     { before: new Date(new Date().setHours(0, 0, 0, 0)) },
-    ...blockedDays.map((d) => new Date(d.date))
+    ...blockedDays
+      .map((d) => parseBlockedDate(d.date))
+      .filter((d): d is Date => d !== null)
   ];
 
   const getBadgeColor = (badge?: string) => {
@@ -81,18 +126,7 @@ export function PropertyDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="h-8 w-64 bg-gray-200 animate-pulse rounded mb-8" />
-        <div className="aspect-video w-full bg-gray-200 animate-pulse rounded-xl mb-12" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="h-4 w-full bg-gray-200 animate-pulse rounded" />
-            <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded" />
-          </div>
-        </div>
-      </div>
-    );
+    return <PropertyPageSkeleton />;
   }
 
   if (error || !property) {
