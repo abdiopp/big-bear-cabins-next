@@ -21,7 +21,16 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => ({
     longitude: p.lng
 });
 
-export function useProperties(page = 1) {
+export interface SearchParams {
+    startdate?: string;
+    enddate?: string;
+    occupants?: number;
+    occupants_small?: number;
+    pets?: number;
+    filters?: string[];
+}
+
+export function useProperties(page = 1, searchParams?: SearchParams) {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,7 +44,15 @@ export function useProperties(page = 1) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ page }),
+                    body: JSON.stringify({
+                        page,
+                        ...(searchParams?.startdate && { startdate: searchParams.startdate }),
+                        ...(searchParams?.enddate && { enddate: searchParams.enddate }),
+                        ...(searchParams?.occupants && { occupants: searchParams.occupants }),
+                        ...(searchParams?.occupants_small && { occupants_small: searchParams.occupants_small }),
+                        ...(searchParams?.pets && { pets: searchParams.pets }),
+                        ...(searchParams?.filters && { filters: searchParams.filters }),
+                    }),
                 });
 
                 if (!response.ok) {
@@ -58,7 +75,7 @@ export function useProperties(page = 1) {
         }
 
         fetchProperties();
-    }, [page]);
+    }, [page, searchParams?.startdate, searchParams?.enddate, searchParams?.occupants, searchParams?.occupants_small, searchParams?.pets, searchParams?.filters]);
 
     return { properties, loading, error };
 }

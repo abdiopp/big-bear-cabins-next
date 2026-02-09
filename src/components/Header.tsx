@@ -78,6 +78,50 @@ export function Header() {
     }));
   };
 
+  // Format date to MM/DD/YYYY for API
+  const formatDateForApi = (date: Date): string => {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const handleSearch = () => {
+    const searchParams = new URLSearchParams();
+
+    if (checkInDate) {
+      searchParams.set("checkIn", formatDateForApi(checkInDate));
+    }
+    if (checkOutDate) {
+      searchParams.set("checkOut", formatDateForApi(checkOutDate));
+    }
+
+    // occupants = adults, occupants_small = children (API terminology)
+    const totalAdults = guestCounts.adults;
+    const totalChildren = guestCounts.children + guestCounts.infants;
+    const totalPets = guestCounts.pets;
+
+    if (totalAdults > 0) {
+      searchParams.set("occupants", String(totalAdults));
+    }
+    if (totalChildren > 0) {
+      searchParams.set("occupants_small", String(totalChildren));
+    }
+    if (totalPets > 0) {
+      searchParams.set("pets", String(totalPets));
+    }
+
+    // Include active filters
+    const activeFilters = Object.entries(filters)
+      .filter(([, value]) => value)
+      .map(([key]) => key);
+    if (activeFilters.length > 0) {
+      searchParams.set("filters", activeFilters.join(","));
+    }
+
+    router.push(`/search?${searchParams.toString()}`);
+  };
+
   const handleLogout = async () => {
     await signOut({ redirect: false });
     router.push("/");
@@ -135,7 +179,7 @@ export function Header() {
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">
-                    <Button size="sm" className="rounded-full h-8 w-8 p-0">
+                    <Button size="sm" className="rounded-full h-8 w-8 p-0" onClick={handleSearch}>
                       <Search className="h-4 w-4" />
                     </Button>
                   </div>
@@ -161,7 +205,7 @@ export function Header() {
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">
-                    <Button size="sm" className="rounded-full h-8 w-8 p-0">
+                    <Button size="sm" className="rounded-full h-8 w-8 p-0" onClick={handleSearch}>
                       <Search className="h-4 w-4" />
                     </Button>
                   </div>
