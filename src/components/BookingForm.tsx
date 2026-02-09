@@ -8,7 +8,7 @@ import { Separator } from './ui/separator';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Calendar } from 'lucide-react';
-import { Switch } from "@/components/ui/switch";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useReservationPrice } from '@/hooks/useReservationPrice';
@@ -54,7 +54,7 @@ export function BookingForm({
 
     const [couponCode, setCouponCode] = useState('');
     const [showBookingForm, setShowBookingForm] = useState(false);
-    const [includeTaxes, setIncludeTaxes] = useState(false);
+
 
     // Guest info for reservation
     const [firstName, setFirstName] = useState('');
@@ -448,76 +448,17 @@ export function BookingForm({
                                         <span>${price.subtotal.toFixed(2)}</span>
                                     </div>
 
-                                    {/* Required Fees (detailed) */}
-                                    {price.required_fees && price.required_fees.length > 0 ? (
-                                        price.required_fees.map((fee, index) => (
-                                            <div key={`req-${index}`} className="flex justify-between">
-                                                <span className="text-gray-600">{fee.name}</span>
-                                                <span>${fee.amount.toFixed(2)}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        // Fallback to legacy fees
-                                        price.fees.map((fee, index) => (
-                                            <div key={index} className="flex justify-between">
-                                                <span className="text-gray-600">{fee.name}</span>
-                                                <span>${fee.amount}</span>
-                                            </div>
-                                        ))
-                                    )}
-
-                                    {/* Tax Details */}
-                                    {includeTaxes && price.taxes_details && price.taxes_details.length > 0 && (
-                                        <>
-                                            <Separator />
-                                            <div className="text-xs text-gray-500 font-medium">Taxes</div>
-                                            {price.taxes_details.map((tax, index) => (
-                                                <div key={`tax-${index}`} className="flex justify-between">
-                                                    <span className="text-gray-600">{tax.name}</span>
-                                                    <span>${tax.amount.toFixed(2)}</span>
-                                                </div>
-                                            ))}
-                                        </>
-                                    )}
-
-                                    {/* Coupon Discount */}
-                                    {price.coupon_discount && price.coupon_discount > 0 && (
-                                        <div className="flex justify-between text-green-600">
-                                            <span>Coupon discount</span>
-                                            <span>-${price.coupon_discount.toFixed(2)}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Guest Deposits */}
-                                    {price.guest_deposits && price.guest_deposits.length > 0 && (
-                                        <>
-                                            <Separator />
-                                            <div className="text-xs text-gray-500 font-medium">Security Deposits</div>
-                                            {price.guest_deposits.map((deposit, index) => (
-                                                <div key={`dep-${index}`} className="flex justify-between">
-                                                    <span className="text-gray-600">{deposit.name}</span>
-                                                    <span>${deposit.deposit_required.toFixed(2)}</span>
-                                                </div>
-                                            ))}
-                                        </>
-                                    )}
+                                    {/* Taxes and Fees (Calculated as Total - Subtotal) */}
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Taxes and Fees</span>
+                                        <span>${(price.total - price.subtotal).toFixed(2)}</span>
+                                    </div>
 
                                     <Separator />
 
-                                    <div className="flex items-center justify-between py-2">
-                                        <Label htmlFor="tax-mode" className="text-sm font-medium text-gray-600">
-                                            Include taxes and fees
-                                        </Label>
-                                        <Switch
-                                            id="tax-mode"
-                                            checked={includeTaxes}
-                                            onCheckedChange={setIncludeTaxes}
-                                        />
-                                    </div>
-
                                     <div className="flex justify-between font-semibold">
-                                        <span>Total {includeTaxes ? '(incl. taxes)' : '(excl. taxes)'}</span>
-                                        <span>${includeTaxes ? price.total.toFixed(2) : (price.total - (price.taxes || 0)).toFixed(2)}</span>
+                                        <span>Total Price</span>
+                                        <span>${price.total.toFixed(2)}</span>
                                     </div>
                                 </>
                             ) : (
