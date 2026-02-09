@@ -13,6 +13,7 @@ import {
   LogOut,
   UserCircle,
   Settings,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { LoginDialog } from "./LoginDialog";
@@ -311,6 +312,19 @@ export function Header() {
 
           {/* Right side menu */}
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            {/* CMS Button - Admin Only */}
+            {session?.user?.role === "admin" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                // className="hidden lg:flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => router.push("/admin")}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                CMS
+              </Button>
+            )}
+
             <button
               className="hidden lg:block text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-full px-3 py-2 transition-colors"
               onClick={() => router.push("/list-property")}

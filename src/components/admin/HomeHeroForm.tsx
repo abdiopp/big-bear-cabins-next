@@ -1,13 +1,14 @@
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { updateHomeHero } from "@/actions/cms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
+import ImagePicker from "./ImagePicker";
 
 type HomeHeroFormData = {
     heading: string;
@@ -57,9 +58,18 @@ export default function HomeHeroForm({ defaultValues }: { defaultValues: HomeHer
                 {imageFields.map((field, index) => (
                     <Card key={field.id}>
                         <CardContent className="flex gap-4 p-4 items-end">
-                            <div className="flex-1 space-y-2">
-                                <Label>Image URL</Label>
-                                <Input {...register(`images.${index}.url`)} placeholder="https://..." />
+                            <div className="flex-1">
+                                <Controller
+                                    control={control}
+                                    name={`images.${index}.url`}
+                                    render={({ field }) => (
+                                        <ImagePicker
+                                            label="Image"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
                             </div>
                             <Button type="button" variant="destructive" size="icon" onClick={() => removeImage(index)}>
                                 <Trash2 className="w-4 h-4" />

@@ -2,6 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/authOptions";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 export default async function AdminLayout({
     children,
@@ -22,10 +24,18 @@ export default async function AdminLayout({
                     <Link href="/admin" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Dashboard</Link>
                     <Link href="/admin/home-hero" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Home Hero</Link>
                     <Link href="/admin/coupons" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Coupons (Offers)</Link>
+                    <Link href="/admin/blogs" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blogs</Link>
+                    <Link href="/admin/blog-categories" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blog Categories</Link>
                 </nav>
             </aside>
             <main className="flex-1 p-8 overflow-auto">
-                {children}
+                <Suspense fallback={
+                    <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    </div>
+                }>
+                    {children}
+                </Suspense>
             </main>
         </div>
     );

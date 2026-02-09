@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Plus, ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import { useState } from "react";
+import ImagePicker from "./ImagePicker";
 
 type CouponOffer = {
     slug: string;
@@ -70,6 +71,69 @@ function ArrayInput({ value, onChange, placeholder }: { value: string[], onChang
                         <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm">
                             <span className="max-w-[200px] truncate">{item}</span>
                             <button type="button" onClick={() => removeItem(index)} className="text-destructive hover:text-destructive/80">
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ImageArrayInput({ value, onChange }: { value: string[], onChange: (val: string[]) => void }) {
+    const [showPicker, setShowPicker] = useState(false);
+    const [currentValue, setCurrentValue] = useState("");
+
+    const addImage = (url: string) => {
+        if (url.trim()) {
+            onChange([...value, url.trim()]);
+            setCurrentValue("");
+            setShowPicker(false);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        onChange(value.filter((_, i) => i !== index));
+    };
+
+    return (
+        <div className="space-y-3">
+            <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                    {showPicker ? (
+                        <ImagePicker
+                            value={currentValue}
+                            onChange={addImage}
+                        />
+                    ) : (
+                        <Button type="button" variant="outline" onClick={() => setShowPicker(true)} className="w-full">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Image
+                        </Button>
+                    )}
+                </div>
+                {showPicker && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowPicker(false)}>
+                        Cancel
+                    </Button>
+                )}
+            </div>
+            {value.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                    {value.map((url, index) => (
+                        <div key={index} className="relative group aspect-square bg-muted rounded-lg overflow-hidden border">
+                            <img
+                                src={url}
+                                alt={`Image ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
                                 <Trash2 className="w-3 h-3" />
                             </button>
                         </div>
@@ -208,14 +272,28 @@ export default function CouponsForm({ defaultValues }: { defaultValues: CouponsF
 
                             {/* Images */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Card Image URL*</Label>
-                                    <Input {...register(`offers.${index}.offerImage`)} placeholder="Image URL for card" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Hero Image URL</Label>
-                                    <Input {...register(`offers.${index}.heroImage`)} placeholder="Large hero image for detail page" />
-                                </div>
+                                <Controller
+                                    control={control}
+                                    name={`offers.${index}.offerImage`}
+                                    render={({ field }) => (
+                                        <ImagePicker
+                                            label="Card Image*"
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                                <Controller
+                                    control={control}
+                                    name={`offers.${index}.heroImage`}
+                                    render={({ field }) => (
+                                        <ImagePicker
+                                            label="Hero Image"
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,12 +336,12 @@ export default function CouponsForm({ defaultValues }: { defaultValues: CouponsF
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Gallery Images (URLs)</Label>
+                                <Label>Gallery Images</Label>
                                 <Controller
                                     control={control}
                                     name={`offers.${index}.images`}
                                     render={({ field }) => (
-                                        <ArrayInput value={field.value || []} onChange={field.onChange} placeholder="Add image URL..." />
+                                        <ImageArrayInput value={field.value || []} onChange={field.onChange} />
                                     )}
                                 />
                             </div>
