@@ -406,6 +406,12 @@ export function Header() {
                         <span>✨ Special Offers</span>
                       </button>
                       <button
+                        onClick={() => handleMobileMenuItemClick("/cabins")}
+                        className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span>All Cabins</span>
+                      </button>
+                      <button
                         onClick={() => handleMobileMenuItemClick("/about")}
                         className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
@@ -530,6 +536,7 @@ export function Header() {
                     </DropdownMenuItem>
 
                     <DropdownMenuItem onClick={() => router.push("/activities")}>Activities</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/cabins")}>All Cabins</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/about")}>About Big Bear</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/blog")}>Blog</DropdownMenuItem>
