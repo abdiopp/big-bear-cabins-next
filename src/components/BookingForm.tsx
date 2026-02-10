@@ -147,7 +147,7 @@ export function BookingForm({
 
     if (currentReservation) {
         return (
-            <div className="sticky top-6">
+            <div className="sticky top-28">
                 <Card className="p-6 shadow-lg border border-gray-200">
                     <CardContent className="p-0 space-y-4">
                         <div className="text-center">
@@ -182,7 +182,7 @@ export function BookingForm({
 
     if (showBookingForm) {
         return (
-            <div className="sticky top-6">
+            <div className="sticky top-28">
                 <Card className="p-6 shadow-lg border border-gray-200">
                     <CardContent className="p-0 space-y-4">
                         <h3 className="text-lg font-semibold">Complete Your Booking</h3>
@@ -319,7 +319,7 @@ export function BookingForm({
     }
 
     return (
-        <div className="sticky top-6">
+        <div className="sticky top-28">
             {/* All Fees Included Badge */}
             <div className="flex justify-center mb-4">
                 <Badge className="bg-black text-white px-6 py-3 text-sm font-medium">
