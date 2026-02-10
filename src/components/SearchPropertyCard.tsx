@@ -68,7 +68,7 @@ export function SearchPropertyCard({
       {/* Property details */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium truncate">{location}</h3>
+          <h3 className="font-medium truncate">{location.replace(/^\d+[-]/, "")}</h3>
           <div className="flex items-center space-x-1">
             <Star className="h-4 w-4 fill-current" />
             <span className="text-sm">{rating}</span>

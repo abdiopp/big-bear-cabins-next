@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -102,221 +103,29 @@ export function BookingForm({
         await verifyAvailability();
     };
 
+    const router = useRouter();
     const handleBookNow = () => {
         if (!checkIn || !checkOut) {
             toast.error('Please select check-in and check-out dates');
             return;
         }
-        setShowBookingForm(true);
-    };
 
-    const handleSubmitReservation = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!firstName || !lastName || !email || !cellPhone || !address || !city || !state || !zip) {
-            toast.error('Please fill in all required fields');
-            return;
-        }
-
-        const result = await createReservation({
-            unitId: propertyId,
-            startDate: checkIn,
-            endDate: checkOut,
-            email,
-            occupants: totalOccupants,
-            firstName,
-            lastName,
-            zip,
-            address,
-            city,
-            state,
-            cellPhone,
-            couponCode: couponCode || undefined
+        const params = new URLSearchParams({
+            propertyId: propertyId.toString(),
+            checkIn,
+            checkOut,
+            adults: guestCounts.adults.toString(),
+            children: guestCounts.children.toString(),
+            pets: guestCounts.pets.toString()
         });
 
-        if (result) {
-            setShowBookingForm(false);
-            toast.success(`Reservation confirmed! Confirmation ID: ${result.confirmation_id}`);
-        }
+        router.push(`/checkout?${params.toString()}`);
     };
 
     // Calculate nights
     const nights = checkIn && checkOut
         ? Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24))
         : 0;
-
-    if (currentReservation) {
-        return (
-            <div className="sticky top-28">
-                <Card className="p-6 shadow-lg border border-gray-200">
-                    <CardContent className="p-0 space-y-4">
-                        <div className="text-center">
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Booking Confirmed!</h3>
-                            <p className="text-gray-600">Confirmation ID: {currentReservation.confirmation_id}</p>
-                        </div>
-                        <Separator />
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Property</span>
-                                <span className="font-medium">{propertyName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Check-in</span>
-                                <span>{currentReservation.startdate}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Check-out</span>
-                                <span>{currentReservation.enddate}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    if (showBookingForm) {
-        return (
-            <div className="sticky top-28">
-                <Card className="p-6 shadow-lg border border-gray-200">
-                    <CardContent className="p-0 space-y-4">
-                        <h3 className="text-lg font-semibold">Complete Your Booking</h3>
-
-                        <form onSubmit={handleSubmitReservation} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label htmlFor="firstName">First Name *</Label>
-                                    <Input
-                                        id="firstName"
-                                        value={firstName}
-                                        onChange={(e) => setFirstName(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="lastName">Last Name *</Label>
-                                    <Input
-                                        id="lastName"
-                                        value={lastName}
-                                        onChange={(e) => setLastName(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <Label htmlFor="email">Email *</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="cellPhone">Cell Phone *</Label>
-                                <Input
-                                    id="cellPhone"
-                                    type="tel"
-                                    value={cellPhone}
-                                    onChange={(e) => setCellPhone(e.target.value)}
-                                    placeholder="(555) 123-4567"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="address">Address *</Label>
-                                <Input
-                                    id="address"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                    placeholder="123 Main Street"
-                                    required
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <Label htmlFor="city">City *</Label>
-                                    <Input
-                                        id="city"
-                                        value={city}
-                                        onChange={(e) => setCity(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="state">State *</Label>
-                                    <Input
-                                        id="state"
-                                        value={state}
-                                        onChange={(e) => setState(e.target.value)}
-                                        placeholder="CA"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="zip">ZIP *</Label>
-                                    <Input
-                                        id="zip"
-                                        value={zip}
-                                        onChange={(e) => setZip(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">{nights} night{nights > 1 ? 's' : ''}</span>
-                                    <span>${price?.total || (basePrice * nights)}</span>
-                                </div>
-                                <div className="flex justify-between font-semibold text-lg">
-                                    <span>Total</span>
-                                    <span>${price?.total || (basePrice * nights)}</span>
-                                </div>
-                            </div>
-
-                            {reservationError && (
-                                <div className="text-red-500 text-sm p-2 bg-red-50 rounded">
-                                    {reservationError}
-                                </div>
-                            )}
-
-                            <div className="flex space-x-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => setShowBookingForm(false)}
-                                >
-                                    Back
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    className="flex-1 text-white"
-                                    style={{ backgroundColor: '#477023' }}
-                                    disabled={reservationLoading}
-                                >
-                                    {reservationLoading ? 'Booking...' : 'Confirm Booking'}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="sticky top-28">

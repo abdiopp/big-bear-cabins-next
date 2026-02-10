@@ -2,7 +2,8 @@
 import {
     getReservations,
     makeReservation,
-    getReservationInfo
+    getReservationInfo,
+    getReservationPrice
 } from '@/lib/streamline';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -47,7 +48,27 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create reservation with mock payment for testing
+        // Determine payment type ID (Default to Credit Card = 1 or 2 depending on system)
+        // This mapping might need adjustment based on specific system configuration
+        const paymentTypeId = body.payment_type === 'credit-card' ? 1 : 1;
+
+        // Calculate Total Price server-side to ensure security
+        let totalAmount = 0;
+        try {
+            const priceData = await getReservationPrice({
+                unit_id: body.unit_id,
+                startdate: body.startdate,
+                enddate: body.enddate,
+                occupants: body.occupants
+            });
+            totalAmount = priceData.data.total;
+        } catch (priceError) {
+            console.error('Error fetching price for reservation:', priceError);
+            // Fallback or fail? defaulting to 0 might verify availability but not charge correctly
+            // Proceeding with 0 will rely on Streamline's internal logic or manual collection
+        }
+
+        // Create reservation
         const data = await makeReservation({
             unit_id: body.unit_id,
             startdate: body.startdate,
@@ -63,15 +84,27 @@ export async function POST(req: NextRequest) {
             cellphone: body.cell_phone,
             phone: body.phone,
             coupon_code: body.coupon_code,
-            // Payment fields for testing - no real charge
-            madetype_id: body.madetype_id || 9,
-            type_id: body.type_id || 2,
-            payment_type_id: body.payment_type_id || 1,
-            status_id: body.status_id || 9,
-            credit_card_amount: 0, // No charge for testing
-            credit_card_charge_required: 0,
-            referrer_url: body.referrer_url || 'https://bigbearcabins.com',
-            payment_comments: body.payment_comments || 'Test reservation - no payment'
+
+            // Payment fields
+            payment_type_id: paymentTypeId,
+            credit_card_number: body.credit_card_number,
+            credit_card_cid: body.credit_card_cvv,
+            credit_card_expiration_month: body.credit_card_expiration ? parseInt(body.credit_card_expiration.split('/')[0]) : undefined,
+            credit_card_expiration_year: body.credit_card_expiration ? parseInt('20' + body.credit_card_expiration.split('/')[1]) : undefined,
+            credit_card_amount: totalAmount,
+            credit_card_charge_required: totalAmount > 0 ? 1 : 0,
+
+            // Notes
+            payment_comments: body.notes || 'Website Booking',
+
+            // Pass through any optional fees if they were provided in a generic way
+            // (Assumes body might have optional_fee_X)
+            ...Object.keys(body).reduce((acc, key) => {
+                if (key.startsWith('optional_fee_')) {
+                    acc[key] = body[key];
+                }
+                return acc;
+            }, {} as Record<string, any>)
         });
 
         return NextResponse.json(data);

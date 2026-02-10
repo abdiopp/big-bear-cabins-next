@@ -40,6 +40,14 @@ interface CreateReservationParams {
     cellPhone: string;
     phone?: string;
     couponCode?: string;
+    // Payment and Add-ons
+    paymentType?: string;
+    creditCard?: string;
+    cvv?: string;
+    expiration?: string;
+    travelInsurance?: string;
+    petFee?: boolean;
+    notes?: string;
 }
 
 export function useReservations() {
@@ -134,7 +142,15 @@ export function useReservations() {
                     state: params.state,
                     cell_phone: params.cellPhone,
                     phone: params.phone,
-                    coupon_code: params.couponCode
+                    coupon_code: params.couponCode,
+                    // Payment and Add-on fields
+                    payment_type: params.paymentType,
+                    credit_card_number: params.creditCard,
+                    credit_card_cvv: params.cvv,
+                    credit_card_expiration: params.expiration,
+                    travel_insurance: params.travelInsurance,
+                    pet_fee: params.petFee,
+                    notes: params.notes
                 })
             });
 

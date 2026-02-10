@@ -49,7 +49,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           alt={title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Favorite button */}
         <Button
           variant="ghost"
@@ -62,9 +62,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
           }}
         >
           <Heart
-            className={`h-4 w-4 ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
-            }`}
+            className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
+              }`}
           />
         </Button>
 
@@ -84,17 +83,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
       {/* Property details */}
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium truncate">{location}</h3>
+          <h3 className="font-medium truncate">{location.replace(/^\d+[-]/, "")}</h3>
           <div className="flex items-center space-x-1">
             <Star className="h-4 w-4 fill-current" />
             <span className="text-sm">{rating}</span>
             <span className="text-sm text-muted-foreground">({reviewCount})</span>
           </div>
         </div>
-        
+
         <p className="text-muted-foreground text-sm truncate">{title}</p>
         <p className="text-muted-foreground text-sm">{dates}</p>
-        
+
         <div className="flex items-baseline space-x-1">
           <span className="font-medium">${price.toLocaleString()}</span>
           <span className="text-sm text-muted-foreground">{priceLabel}</span>
