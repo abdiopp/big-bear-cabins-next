@@ -1,171 +1,168 @@
-// app/api/properties/route.ts
 import { streamlineRequest } from '@/lib/streamline';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
     const body = await req.json();
 
-    // If a specific ID is requested, use GetPropertyInfo to ensure we get that exact unit
-    // nicely handling the "don't fetch all and filter locally" requirement by fetching just one.
-    // If a specific ID is requested, use GetPropertyInfo to ensure we get that exact unit
-    // nicely handling the "don't fetch all and filter locally" requirement by fetching just one.
-    if (body.id) {
-        try {
+    try {
+        // 1. Handle Specific Property Request (ID provided)
+        if (body.id) {
             const [propertyData, amenitiesData] = await Promise.all([
                 streamlineRequest('GetPropertyInfo', { unit_id: body.id }),
                 streamlineRequest('GetPropertyAmenities', { unit_id: body.id })
             ]);
 
-            // GetPropertyInfo returns { data: { ...property properties... } }
-            // GetPropertyAmenities returns { data: { amenity: [ ... ] } }
-
             if (propertyData.data) {
                 const property = propertyData.data;
-
-                // Attach amenities if available
                 if (amenitiesData.data?.amenity) {
                     property.amenities = amenitiesData.data.amenity;
                 }
-
-                return NextResponse.json({
-                    data: {
-                        property: [property]
-                    }
-                });
+                return NextResponse.json({ data: { property: [property] } });
             }
             return NextResponse.json({ data: { property: [] } });
-        } catch (e) {
-            console.error("Failed to fetch specific property info:", e);
-            return NextResponse.json({ data: { property: [] } });
         }
-    }
 
-    // If dates are provided, use GetPropertyAvailability for filtered results
-    if (body.startdate && body.enddate) {
-        try {
+        // 2. Handle Date-Based Search
+        if (body.startdate && body.enddate) {
+            console.log('🔍 Executing Date-Based Search:', { start: body.startdate, end: body.enddate, occupants: body.occupants });
+
+            // Step A: Get Availability & Pricing
             const availabilityParams: any = {
                 startdate: body.startdate,
                 enddate: body.enddate,
-                disable_minimal_days: 1,
-                show_total_units: 1,
+            };
+            if (body.occupants) availabilityParams.occupants = body.occupants;
+            if (body.occupants_small) availabilityParams.occupants_small = body.occupants_small;
+            if (body.pets) availabilityParams.pets = body.pets;
+
+            const availabilityPromise = streamlineRequest('GetPropertyAvailabilityWithRates', availabilityParams);
+
+            // Step B: Get All Properties (Static Details)
+            // Fetch a large number to ensure we cover available units.
+            // In a production app with thousands of units, we might cache this or use a different strategy.
+            const propertyListParams: any = {
+                sort_by: 'price_daily_low',
                 return_gallery: 1,
                 return_amenities: 1,
                 max_images_number: 10,
+                page_results_number: 500,
             };
+            const propertyListPromise = streamlineRequest('GetPropertyList', propertyListParams);
 
-            // Add occupants filter if provided
+            const [availabilityData, propertyListData] = await Promise.all([availabilityPromise, propertyListPromise]);
+
+            // Step C: Process Availability Data
+            // GetPropertyAvailabilityWithRates returns a list of available units with pricing
+            const availableDataRaw = (availabilityData as any).Response?.data || (availabilityData as any).data || availabilityData;
+
+            let availableUnits: any[] = [];
+            if (availableDataRaw?.property) {
+                availableUnits = Array.isArray(availableDataRaw.property) ? availableDataRaw.property : [availableDataRaw.property];
+            } else if (availableDataRaw?.available_properties?.property) {
+                availableUnits = Array.isArray(availableDataRaw.available_properties.property) ? availableDataRaw.available_properties.property : [availableDataRaw.available_properties.property];
+            } else if (Array.isArray(availableDataRaw)) {
+                availableUnits = availableDataRaw;
+            }
+
+            console.log(`📦 Found ${availableUnits.length} available units`);
+
+            // Create a map of available unit IDs for quick lookup and to store pricing info
+            const availabilityMap = new Map<string, any>();
+            availableUnits.forEach((unit: any) => {
+                if (unit.unit_id) {
+                    availabilityMap.set(String(unit.unit_id), unit);
+                }
+            });
+
+            // Step D: Process Property List Data
+            const propertyListRaw = (propertyListData as any).Response?.data || (propertyListData as any).data || propertyListData;
+            let allProperties: any[] = [];
+            if (propertyListRaw?.property) {
+                allProperties = Array.isArray(propertyListRaw.property) ? propertyListRaw.property : [propertyListRaw.property];
+            } else if (propertyListRaw?.available_properties?.property) {
+                allProperties = Array.isArray(propertyListRaw.available_properties.property) ? propertyListRaw.available_properties.property : [propertyListRaw.available_properties.property];
+            }
+
+            console.log(`📦 Fetched ${allProperties.length} total properties details`);
+
+            // Step E: Merge & Filter
+            let mergedProperties = allProperties.filter(prop => {
+                const unitId = String(prop.id || prop.unit_id);
+                return availabilityMap.has(unitId);
+            }).map(prop => {
+                const unitId = String(prop.id || prop.unit_id);
+                const pricingInfo = availabilityMap.get(unitId);
+
+                // Merge pricing info into the main property object
+                // We prioritize the pricing from availability search as it's accurate for the dates
+                return {
+                    ...prop,
+                    ...pricingInfo,
+                    // Ensure we keep the static details if they are missing in pricing info
+                    name: prop.name || pricingInfo.unit_name,
+                    id: unitId
+                };
+            });
+
+            console.log(`✅ Merged ${mergedProperties.length} properties`);
+
+            // Step F: Apply Additional Filters (if any)
             if (body.occupants) {
-                availabilityParams.occupants = body.occupants;
+                const required = parseInt(body.occupants);
+                mergedProperties = mergedProperties.filter(p => parseInt(p.max_occupants || p.occupants) >= required);
             }
-
-            // Add occupants_small (children) filter if provided
-            if (body.occupants_small) {
-                availabilityParams.occupants_small = body.occupants_small;
-            }
-
-            // Add pets filter if provided
             if (body.pets) {
-                availabilityParams.pets = body.pets;
+                // If pets required, filter for pet friendly (assuming pets > 0 means pets allowed)
+                // Streamline usually needs pets=1 param in availability, which we sent.
+                // But we can double check here.
+                mergedProperties = mergedProperties.filter(p => parseInt(p.pets) > 0 || String(p.pets).toLowerCase() === 'yes' || String(p.pets) === '1');
             }
 
-            console.log('🔍 GetPropertyAvailability params:', availabilityParams);
-            const data = await streamlineRequest('GetPropertyAvailability', availabilityParams);
+            return NextResponse.json({
+                data: {
+                    property: mergedProperties
+                }
+            });
 
-            console.log('📦 GetPropertyAvailability response keys:', Object.keys(data || {}));
-            console.log('📦 GetPropertyAvailability data keys:', Object.keys(data?.data || {}));
-            console.log('📦 GetPropertyAvailability full response:', JSON.stringify(data).slice(0, 1000));
-
-            // Normalize response structure to match GetPropertyList
-            // GetPropertyAvailability may return data in various formats
-            let properties: any[] = [];
-
-            if (data.data?.property) {
-                properties = Array.isArray(data.data.property) ? data.data.property : [data.data.property];
-            } else if (data.data?.unit) {
-                properties = Array.isArray(data.data.unit) ? data.data.unit : [data.data.unit];
-            } else if (data.data?.units) {
-                properties = Array.isArray(data.data.units) ? data.data.units : [data.data.units];
-            } else if (Array.isArray(data.data)) {
-                properties = data.data;
-            }
-
-            // If GetPropertyAvailability returned results, use them
-            if (properties.length > 0) {
-                return NextResponse.json({
-                    data: {
-                        property: properties
-                    }
-                });
-            }
-
-            // If no results from GetPropertyAvailability, try GetPropertyList with date params
-            // Some Streamline instances support date filtering on GetPropertyList
-            console.log('⚠️ GetPropertyAvailability returned no results, trying GetPropertyList with date params');
-
-        } catch (e) {
-            console.error("Failed to fetch property availability:", e);
-            // Fall back to regular property list on error
         }
-    }
 
-    // Default: Get all properties (with optional date filtering if supported)
-    const params: any = {
-        sort_by: 'price_daily_low',
-        return_gallery: 1,
-        return_amenities: 1,
-        max_images_number: 10,
-        page_results_number: 12, // Default page size
-    };
+        // 3. Handle General Search (No Dates)
+        console.log('🔍 Executing General Search (No Dates)');
+        const params: any = {
+            sort_by: 'price_daily_low',
+            return_gallery: 1,
+            return_amenities: 1,
+            max_images_number: 10,
+            page_results_number: 12,
+        };
 
-    if (body.page) {
-        params.page_number = body.page;
-    }
+        if (body.page) params.page_number = body.page;
 
-    // Try to pass date filters to GetPropertyList (some Streamline instances support this)
-    if (body.startdate) {
-        params.startdate = body.startdate;
-    }
-    if (body.enddate) {
-        params.enddate = body.enddate;
-    }
+        // Note: Filters for general search in Streamline GetPropertyList are limited.
+        // We fetch and then might need to filter client-side or assume partial backend filtering.
 
-    // Filter by max occupants if provided
-    if (body.occupants) {
-        params.max_occupants = body.occupants;
-        params.occupants = body.occupants;
-    }
+        const data = await streamlineRequest('GetPropertyList', params);
+        const responseData = (data as any).Response?.data || (data as any).data || data;
 
-    if (body.occupants_small) {
-        params.occupants_small = body.occupants_small;
-    }
+        let properties: any[] = [];
+        if (responseData?.property) {
+            properties = Array.isArray(responseData.property) ? responseData.property : [responseData.property];
+        }
 
-    if (body.pets) {
-        params.pets = body.pets;
-    }
+        // Client-side filtering for General Search
+        if (body.occupants) {
+            const required = parseInt(body.occupants);
+            properties = properties.filter(p => parseInt(p.max_occupants) >= required);
+        }
 
-    console.log('🔍 GetPropertyList params:', params);
-
-    // streamlineRequest handles token management
-    const data = await streamlineRequest('GetPropertyList', params);
-
-    // Since Streamline API doesn't filter server-side, apply filters post-fetch
-    let filteredProperties = data.data?.property || [];
-
-    // Filter by max_occupants (guests) - property must accommodate the requested guests
-    if (body.occupants && Array.isArray(filteredProperties)) {
-        const requestedOccupants = parseInt(body.occupants);
-        console.log(`🔍 Filtering by max_occupants >= ${requestedOccupants}`);
-        filteredProperties = filteredProperties.filter((prop: any) => {
-            const maxOccupants = parseInt(prop.max_occupants) || 0;
-            return maxOccupants >= requestedOccupants;
+        return NextResponse.json({
+            data: {
+                property: properties
+            }
         });
-        console.log(`📦 After occupants filter: ${filteredProperties.length} properties`);
-    }
 
-    // Return filtered results
-    return NextResponse.json({
-        data: {
-            property: filteredProperties
-        }
-    });
+    } catch (e) {
+        console.error("❌ Search API Error:", e);
+        return NextResponse.json({ data: { property: [] }, error: String(e) }, { status: 500 });
+    }
 }

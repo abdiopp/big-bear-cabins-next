@@ -7,7 +7,7 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => ({
     id: p.id,
     title: p.name,
     location: `${p.location_name}, ${p.state_name}`,
-    price: p.daily_pricing_starting > 0 ? p.daily_pricing_starting : 150, // Fallback price
+    price: p.prices?.nightly_price || (p.daily_pricing_starting > 0 ? p.daily_pricing_starting : 150), // Use calculated nightly price if available
     rating: p.rating_average || 0,
     reviewCount: p.rating_count || 0,
     imageUrl: p.default_image_path,

@@ -22,6 +22,11 @@ export interface StreamlineProperty {
         group_name: string;
         amenity_name: string;
     }>;
+    prices?: {
+        nightly_price: number;
+        total_price: number;
+        total_rent: number;
+    };
 }
 
 
