@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import ImagePicker from "@/components/admin/ImagePicker";
 import { Switch } from "@/components/ui/switch";
 import { getAllBlogCategories, updateBlogCategory } from "@/actions/blogs";
 
@@ -133,11 +134,10 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
 
                         <div className="space-y-2">
                             <Label htmlFor="heroImage">Hero Image URL *</Label>
-                            <Input
-                                id="heroImage"
+                            <ImagePicker
                                 value={form.heroImage}
-                                onChange={(e) => setForm({ ...form, heroImage: e.target.value })}
-                                required
+                                onChange={(url) => setForm({ ...form, heroImage: url })}
+                                label="Select Hero Image"
                             />
                         </div>
 

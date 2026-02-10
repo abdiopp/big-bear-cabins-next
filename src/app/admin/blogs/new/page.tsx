@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Switch } from "@/components/ui/switch";
+import ImagePicker from "@/components/admin/ImagePicker";
 import {
     Select,
     SelectContent,
@@ -155,12 +156,10 @@ export default function NewBlogPost() {
 
                         <div className="space-y-2">
                             <Label htmlFor="heroImage">Hero Image URL *</Label>
-                            <Input
-                                id="heroImage"
-                                placeholder="https://..."
+                            <ImagePicker
                                 value={form.heroImage}
-                                onChange={(e) => setForm({ ...form, heroImage: e.target.value })}
-                                required
+                                onChange={(url) => setForm({ ...form, heroImage: url })}
+                                label="Select Hero Image"
                             />
                         </div>
 
