@@ -16,9 +16,9 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-export function DateRangePicker({ 
-  checkInDate, 
-  checkOutDate, 
+export function DateRangePicker({
+  checkInDate,
+  checkOutDate,
   onDateRangeSelect,
   className
 }: DateRangePickerProps) {
@@ -34,7 +34,7 @@ export function DateRangePicker({
 
   const handleRangeSelect = (selectedRange: DateRange | undefined) => {
     setRange(selectedRange);
-    
+
     if (selectedRange?.from && selectedRange?.to) {
       onDateRangeSelect(selectedRange.from, selectedRange.to);
       // Small delay before closing to show the selection
@@ -95,9 +95,9 @@ export function DateRangePicker({
           </div>
         </div>
       </PopoverTrigger>
-      
-      <PopoverContent 
-        className="w-auto p-0 bg-white shadow-lg rounded-3xl border border-gray-200 calendar-popup-enter" 
+
+      <PopoverContent
+        className="w-auto p-0 bg-white shadow-lg rounded-3xl border border-gray-200 calendar-popup-enter"
         align="start"
         sideOffset={8}
       >
@@ -105,15 +105,15 @@ export function DateRangePicker({
           {/* Header with tabs */}
           <div className="flex justify-center mb-6">
             <div className="flex bg-gray-100 rounded-full p-1">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 className="bg-black text-white rounded-full px-6 py-1 text-sm font-medium"
               >
                 Dates
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 className="text-gray-600 hover:text-black rounded-full px-6 py-1 text-sm font-medium"
               >
@@ -132,7 +132,7 @@ export function DateRangePicker({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <div className="flex space-x-6">
               <div className="w-[252px] flex justify-center">
                 <h3 className="font-semibold text-lg">
@@ -174,6 +174,9 @@ export function DateRangePicker({
                 months: "flex",
                 month: "space-y-4",
                 caption: "hidden",
+                nav: "hidden",
+                month_caption: "hidden",
+                caption_label: "hidden",
                 head_row: "flex justify-center",
                 head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center py-2 flex items-center justify-center",
                 row: "flex w-full mt-2 justify-center",
@@ -189,7 +192,7 @@ export function DateRangePicker({
                 day_hidden: "invisible",
               }}
             />
-            
+
             <Calendar
               mode="range"
               selected={range}
@@ -205,6 +208,9 @@ export function DateRangePicker({
                 months: "flex",
                 month: "space-y-4",
                 caption: "hidden",
+                nav: "hidden",
+                month_caption: "hidden",
+                caption_label: "hidden",
                 head_row: "flex justify-center",
                 head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center py-2 flex items-center justify-center",
                 row: "flex w-full mt-2 justify-center",
