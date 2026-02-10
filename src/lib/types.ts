@@ -18,6 +18,10 @@ export interface StreamlineProperty {
     }>;
     lat?: number;
     lng?: number;
+    amenities?: Array<{
+        group_name: string;
+        amenity_name: string;
+    }>;
 }
 
 
@@ -36,7 +40,7 @@ export interface Property {
     dates: string;
     isSuperhost?: boolean;
     description?: string;
-    amenities?: string[];
+    amenities?: { group: string; name: string }[];
     host?: {
         isSuperhost: boolean;
     };

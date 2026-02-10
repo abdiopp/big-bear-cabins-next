@@ -45,12 +45,21 @@ const amenityIcons = {
   "Air conditioning": Wind,
 };
 
-const defaultAmenities = ["Wifi", "Kitchen", "Parking", "TV", "Air conditioning", "Heating", "Smoke alarm"];
+const defaultAmenities = [
+  { group: "General", name: "Wifi" },
+  { group: "Kitchen", name: "Kitchen" },
+  { group: "Parking", name: "Parking" },
+  { group: "Entertainment", name: "TV" },
+  { group: "Heating & Cooling", name: "Air conditioning" },
+  { group: "Heating & Cooling", name: "Heating" },
+  { group: "Safety", name: "Smoke alarm" },
+];
 
 export function PropertyDetailPage() {
   const { id } = useParams();
   const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
@@ -167,6 +176,52 @@ export function PropertyDetailPage() {
                 alt={`${property.title} ${index + 1}`}
                 className="w-full aspect-square object-cover rounded-lg"
               />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showAllAmenities) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 overflow-auto">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-semibold">Amenities</h1>
+            <Button variant="ghost" onClick={() => setShowAllAmenities(false)}>
+              Close
+            </Button>
+          </div>
+          <div className="space-y-8">
+            {Object.entries(
+              propertyAmenities.reduce((acc, amenity) => {
+                const group = amenity.group || "Other";
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(amenity);
+                return acc;
+              }, {} as Record<string, typeof propertyAmenities>)
+            ).map(([group, amenities]) => (
+              <div key={group}>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">{group}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {amenities.map((amenity, index) => {
+                    const IconComponent = amenityIcons[amenity.name as keyof typeof amenityIcons];
+                    return (
+                      <div key={`${group}-${index}`} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                        {IconComponent ? (
+                          <IconComponent className="w-5 h-5 text-gray-600" />
+                        ) : (
+                          <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs text-gray-400">
+                            •
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -305,16 +360,18 @@ export function PropertyDetailPage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">What this place offers</h3>
               <div className="grid grid-cols-2 gap-3">
-                {propertyAmenities.map((amenity: string, index: number) => {
-                  const IconComponent = amenityIcons[amenity as keyof typeof amenityIcons];
+                {propertyAmenities.slice(0, 10).map((amenity, index) => {
+                  const IconComponent = amenityIcons[amenity.name as keyof typeof amenityIcons];
                   return (
                     <div key={index} className="flex items-center space-x-3">
                       {IconComponent ? (
                         <IconComponent className="w-5 h-5 text-gray-600" />
                       ) : (
-                        <div className="w-5 h-5 bg-gray-300 rounded-full" />
+                        <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs text-gray-400">
+                          •
+                        </div>
                       )}
-                      <span className="text-sm">{amenity}</span>
+                      <span className="text-sm text-gray-600">{amenity.name}</span>
                     </div>
                   );
                 })}
@@ -325,9 +382,9 @@ export function PropertyDetailPage() {
             <div className="py-6 border-b border-gray-200">
               <Button
                 variant="outline"
-                className="bg-white hover:bg-gray-50 border border-gray-300 px-6 py-3 rounded-lg font-medium"
+                onClick={() => setShowAllAmenities(true)}
               >
-                Show all 46 amenities
+                Show all {propertyAmenities.length} amenities
               </Button>
             </div>
 

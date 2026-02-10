@@ -7,16 +7,29 @@ export async function POST(req: Request) {
 
     // If a specific ID is requested, use GetPropertyInfo to ensure we get that exact unit
     // nicely handling the "don't fetch all and filter locally" requirement by fetching just one.
+    // If a specific ID is requested, use GetPropertyInfo to ensure we get that exact unit
+    // nicely handling the "don't fetch all and filter locally" requirement by fetching just one.
     if (body.id) {
         try {
-            const data = await streamlineRequest('GetPropertyInfo', { unit_id: body.id });
+            const [propertyData, amenitiesData] = await Promise.all([
+                streamlineRequest('GetPropertyInfo', { unit_id: body.id }),
+                streamlineRequest('GetPropertyAmenities', { unit_id: body.id })
+            ]);
+
             // GetPropertyInfo returns { data: { ...property properties... } }
-            // GetPropertyList returns { data: { property: [ ... ] } }
-            // We need to normalize the response to match GetPropertyList structure for the frontend
-            if (data.data) {
+            // GetPropertyAmenities returns { data: { amenity: [ ... ] } }
+
+            if (propertyData.data) {
+                const property = propertyData.data;
+
+                // Attach amenities if available
+                if (amenitiesData.data?.amenity) {
+                    property.amenities = amenitiesData.data.amenity;
+                }
+
                 return NextResponse.json({
                     data: {
-                        property: [data.data]
+                        property: [property]
                     }
                 });
             }

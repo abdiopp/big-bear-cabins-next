@@ -18,7 +18,11 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => ({
     dates: "Available now", // Placeholder
     isSuperhost: p.rating_average >= 4.5,
     latitude: p.lat,
-    longitude: p.lng
+    longitude: p.lng,
+    amenities: p.amenities?.map(a => ({
+        group: a.group_name,
+        name: a.amenity_name
+    })) || []
 });
 
 export interface SearchParams {
