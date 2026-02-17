@@ -30,7 +30,7 @@ export interface SearchParams {
     enddate?: string;
     occupants?: number;
     occupants_small?: number;
-    pets?: number;
+    pets?: boolean;
     filters?: string[];
 }
 
@@ -38,7 +38,7 @@ export function useProperties(page = 1, searchParams?: SearchParams) {
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
+    console.log("searchParams =>", searchParams)
     useEffect(() => {
         async function fetchProperties() {
             try {

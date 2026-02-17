@@ -33,18 +33,18 @@ export function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Read initial values from URL
+  // Initial state from URL
   const [checkIn, setCheckIn] = useState(() => parseApiDateToInput(searchParams.get("checkIn")));
   const [checkOut, setCheckOut] = useState(() => parseApiDateToInput(searchParams.get("checkOut")));
   const [guests, setGuests] = useState(() => searchParams.get("occupants") || "");
   const [children, setChildren] = useState(() => searchParams.get("occupants_small") || "");
-  const [pets, setPets] = useState(() => searchParams.get("pets") || "");
+  const [pets, setPets] = useState(() => searchParams.get("pets") === "true"); // boolean
   const [activeFilters, setActiveFilters] = useState<string[]>(() => {
     const filtersParam = searchParams.get("filters");
     return filtersParam ? filtersParam.split(",") : [];
   });
 
-  // Build search params for API - only include params with valid values
+  // Prepare API-friendly search params
   const searchApiParams = useMemo(() => {
     const startdate = formatInputToApiDate(checkIn);
     const enddate = formatInputToApiDate(checkOut);
@@ -54,21 +54,21 @@ export function SearchPage() {
       ...(enddate && { enddate }),
       ...(guests && { occupants: parseInt(guests) }),
       ...(children && { occupants_small: parseInt(children) }),
-      ...(pets && { pets: parseInt(pets) }),
+      ...(pets && { pets: Boolean(pets) }), // backend expects number 1 for true
       ...(activeFilters.length > 0 && { filters: activeFilters }),
     };
   }, [checkIn, checkOut, guests, children, pets, activeFilters]);
 
   const { properties, loading, error } = useProperties(1, searchApiParams);
 
-  // Handle search button click - update URL with new params
+  // Update URL params on Search button click
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (checkIn) params.set("checkIn", formatInputToApiDate(checkIn));
     if (checkOut) params.set("checkOut", formatInputToApiDate(checkOut));
     if (guests) params.set("occupants", guests);
     if (children) params.set("occupants_small", children);
-    if (pets) params.set("pets", pets);
+    if (pets) params.set("pets", "true");
     if (activeFilters.length > 0) params.set("filters", activeFilters.join(","));
 
     router.push(`/search?${params.toString()}`);
@@ -78,19 +78,18 @@ export function SearchPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Search Filters */}
       <div className="bg-white border-b sticky top-16 z-10">
-        {/* ... existing filters code ... */}
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex flex-wrap gap-4 items-center">
+
+            {/* Location */}
             <div className="flex-1 min-w-48">
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Where in Big Bear?"
-                  className="pl-10"
-                />
+                <Input placeholder="Where in Big Bear?" className="pl-10" />
               </div>
             </div>
 
+            {/* Check-in */}
             <div className="flex-1 min-w-36">
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -104,6 +103,7 @@ export function SearchPage() {
               </div>
             </div>
 
+            {/* Check-out */}
             <div className="flex-1 min-w-36">
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -117,6 +117,7 @@ export function SearchPage() {
               </div>
             </div>
 
+            {/* Adults */}
             <div className="flex-1 min-w-32">
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -131,6 +132,7 @@ export function SearchPage() {
               </div>
             </div>
 
+            {/* Children */}
             <div className="flex-1 min-w-32">
               <div className="relative">
                 <Baby className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -145,23 +147,23 @@ export function SearchPage() {
               </div>
             </div>
 
-            <div className="flex-1 min-w-32">
-              <div className="relative">
-                <PawPrint className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="number"
-                  value={pets}
-                  onChange={(e) => setPets(e.target.value)}
-                  className="pl-10"
-                  placeholder="Pets"
-                  min="0"
-                />
-              </div>
+            {/* Pets */}
+            <div className="flex-1 min-w-32 flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
+              <input
+                type="checkbox"
+                id="pets"
+                checked={pets} // true/false
+                onChange={(e) => setPets(e.target.checked)} // toggle boolean
+                className="h-4 w-4 me-2 accent-black"
+              />
+              <label htmlFor="pets" className="text-gray-400 text-sm ms-3">Pets</label>
             </div>
 
+            {/* Search Button */}
             <Button className="bg-red-500 hover:bg-red-600 text-white px-8" onClick={handleSearch}>
               Search
             </Button>
+
           </div>
         </div>
       </div>
@@ -175,7 +177,6 @@ export function SearchPage() {
           )}
         </div>
 
-        {/* Error State */}
         {error && (
           <Alert variant="destructive" className="mb-8">
             <AlertCircle className="h-4 w-4" />
@@ -187,15 +188,10 @@ export function SearchPage() {
         )}
 
         <PropertyGrid>
-          {loading ? (
-            Array.from({ length: 8 }).map((_, i) => (
-              <PropertyCardSkeleton key={i} />
-            ))
-          ) : (
-            properties.map((property) => (
-              <SearchPropertyCard key={property.id} {...property} />
-            ))
-          )}
+          {loading
+            ? Array.from({ length: 8 }).map((_, i) => <PropertyCardSkeleton key={i} />)
+            : properties.map((property) => <SearchPropertyCard key={property.id} {...property} />)
+          }
         </PropertyGrid>
       </div>
     </div>

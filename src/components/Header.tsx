@@ -51,8 +51,7 @@ export function Header() {
   const [guestCounts, setGuestCounts] = useState({
     adults: 0,
     children: 0,
-    infants: 0,
-    pets: 0,
+    pets: false,
   });
 
   const [filters, setFilters] = useState({
@@ -68,7 +67,7 @@ export function Header() {
     setCheckOutDate(checkOut);
   };
 
-  const handleGuestCountChange = (counts: { adults: number; children: number; infants: number; pets: number }) => {
+  const handleGuestCountChange = (counts: { adults: number; children: number; pets: boolean }) => {
     setGuestCounts(counts);
   };
 
@@ -97,20 +96,20 @@ export function Header() {
       searchParams.set("checkOut", formatDateForApi(checkOutDate));
     }
 
-    // occupants = adults, occupants_small = children (API terminology)
-    const totalAdults = guestCounts.adults;
-    const totalChildren = guestCounts.children + guestCounts.infants;
-    const totalPets = guestCounts.pets;
+    // API friendly payload
+    if (guestCounts.adults > 0) {
+      searchParams.set("occupants", String(guestCounts.adults));
+    }
 
-    if (totalAdults > 0) {
-      searchParams.set("occupants", String(totalAdults));
+    if (guestCounts.children > 0) {
+      searchParams.set("occupants_small", String(guestCounts.children));
     }
-    if (totalChildren > 0) {
-      searchParams.set("occupants_small", String(totalChildren));
+
+    // pets boolean filter
+    if (guestCounts.pets) {
+      searchParams.set("pets", "true");
     }
-    if (totalPets > 0) {
-      searchParams.set("pets", String(totalPets));
-    }
+
 
     // Include active filters
     const activeFilters = Object.entries(filters)
@@ -156,7 +155,7 @@ export function Header() {
                 alt="Big Bear Cabins"
                 width={112}
                 height={56}
-                className="h-10 sm:h-14 w-auto hover:opacity-80 transition-opacity"
+                className="max-sm:h-14 sm:h-16 w-auto hover:opacity-80 transition-opacity"
               />
             </Link>
           </div>
@@ -164,7 +163,7 @@ export function Header() {
           {/* Navigation removed as requested */}
 
           {/* Search Bar - Center (show on home, other areas, and special offers pages) */}
-          {(pathname === "/" || pathname === "/other-areas" || pathname === "/special-offers" || pathname === "/cabins") && (
+          {(pathname === "/" || pathname === "/other-areas" || pathname === "/special-offers") && (
             <div className="hidden md:flex flex-1 justify-center mx-8">
               <div className="bg-white rounded-full shadow-sm border border-border p-1 w-full max-w-2xl">
                 <div className="flex">
@@ -190,7 +189,7 @@ export function Header() {
           )}
 
           {/* Category Page Search Bar */}
-          {isOnCategoryPage && (
+          {(isOnCategoryPage || pathname === "/cabins") && (
             <div className="hidden md:flex flex-1 justify-center mx-8">
               <div className="bg-white rounded-full shadow-sm border border-border p-1 w-full max-w-2xl">
                 <div className="flex items-center">
@@ -224,7 +223,7 @@ export function Header() {
                           <h3 className="font-medium text-gray-900">Filters</h3>
 
                           <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 gap-2">
                               <Checkbox
                                 id="mountain-view"
                                 checked={filters.mountainView}
@@ -235,7 +234,7 @@ export function Header() {
                               </Label>
                             </div>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 gap-2">
                               <Checkbox
                                 id="lakefront"
                                 checked={filters.lakefront}
@@ -246,7 +245,7 @@ export function Header() {
                               </Label>
                             </div>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 gap-2">
                               <Checkbox
                                 id="boat-dock"
                                 checked={filters.boatDock}
@@ -257,7 +256,7 @@ export function Header() {
                               </Label>
                             </div>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 gap-2">
                               <Checkbox
                                 id="ev-charger"
                                 checked={filters.evCharger}
@@ -268,7 +267,7 @@ export function Header() {
                               </Label>
                             </div>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 gap-2">
                               <Checkbox
                                 id="hot-tub"
                                 checked={filters.hotTub}
@@ -280,7 +279,7 @@ export function Header() {
                             </div>
                           </div>
 
-                          <div className="flex space-x-2 pt-4 border-t">
+                          <div className="flex space-x-2  gap-2 pt-4 border-t">
                             <Button
                               variant="outline"
                               size="sm"
@@ -297,7 +296,7 @@ export function Header() {
                             >
                               Clear all
                             </Button>
-                            <Button size="sm" className="flex-1">
+                            <Button size="sm" className="flex-1" onClick={handleSearch}>
                               Apply filters
                             </Button>
                           </div>

@@ -9,8 +9,7 @@ import { cn } from "./ui/utils";
 export interface GuestCounts {
   adults: number;
   children: number;
-  infants: number;
-  pets: number;
+  pets: boolean;
 }
 
 interface GuestSelectorProps {
@@ -25,44 +24,35 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts, co
   const [internalCounts, setInternalCounts] = useState<GuestCounts>(initialCounts || {
     adults: 0,
     children: 0,
-    infants: 0,
-    pets: 0
+    pets: false
   });
 
   const effectiveCounts = counts || internalCounts;
 
-  const updateGuestCount = (type: keyof GuestCounts, operation: 'add' | 'subtract') => {
+  const updateGuestCount = (type: keyof GuestCounts, operation?: 'add' | 'subtract') => {
     const newCounts = { ...effectiveCounts };
 
-    if (operation === 'add') {
-      newCounts[type] += 1;
-    } else if (operation === 'subtract' && newCounts[type] > 0) {
-      newCounts[type] -= 1;
+    if (type === "pets") {
+      newCounts.pets = !newCounts.pets;
+    } else {
+      if (operation === 'add') newCounts[type] += 1;
+      if (operation === 'subtract' && newCounts[type] > 0) newCounts[type] -= 1;
     }
 
-    if (!counts) {
-      setInternalCounts(newCounts);
-    }
-
+    if (!counts) setInternalCounts(newCounts);
     onGuestCountChange?.(newCounts);
   };
 
   const getTotalGuests = () => {
-    return effectiveCounts.adults + effectiveCounts.children + effectiveCounts.infants;
+    return effectiveCounts.adults + effectiveCounts.children;
   };
 
   const getDisplayText = () => {
     const total = getTotalGuests();
-    const petText = effectiveCounts.pets > 0 ? `, ${effectiveCounts.pets} pet${effectiveCounts.pets > 1 ? 's' : ''}` : '';
+    const petText = effectiveCounts.pets ? ", pets" : "";
 
-    if (total === 0 && effectiveCounts.pets === 0) {
-      return "Add guests";
-    }
-
-    if (total === 1) {
-      return `1 guest${petText}`;
-    }
-
+    if (total === 0 && !effectiveCounts.pets) return "Add guests";
+    if (total === 1) return `1 guest${petText}`;
     return `${total} guests${petText}`;
   };
 
@@ -156,71 +146,21 @@ export function GuestSelector({ className, onGuestCountChange, initialCounts, co
           {/* Separator */}
           <div className="border-t border-gray-200"></div>
 
-          {/* Infants */}
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="font-semibold text-lg">Infants</div>
-              <div className="text-gray-500 text-sm">Under 2</div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
-                onClick={() => updateGuestCount('infants', 'subtract')}
-                disabled={effectiveCounts.infants === 0}
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
-              <span className="font-medium text-lg min-w-[2rem] text-center">
-                {effectiveCounts.infants}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400"
-                onClick={() => updateGuestCount('infants', 'add')}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Separator */}
-          <div className="border-t border-gray-200"></div>
-
           {/* Pets */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="font-semibold text-lg">Pets</div>
-              <div className="text-gray-500 text-sm hover:text-gray-700 transition-colors">
-                <button className="underline hover:no-underline">
-                  Bringing a service animal?
-                </button>
+              <div className="text-gray-500 text-sm">
+                Traveling with pets?
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400 disabled:opacity-30"
-                onClick={() => updateGuestCount('pets', 'subtract')}
-                disabled={effectiveCounts.pets === 0}
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
-              <span className="font-medium text-lg min-w-[2rem] text-center">
-                {effectiveCounts.pets}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-full h-8 w-8 p-0 border-gray-300 hover:border-gray-400"
-                onClick={() => updateGuestCount('pets', 'add')}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
+
+            <input
+              type="checkbox"
+              checked={effectiveCounts.pets}
+              onChange={() => updateGuestCount("pets")}
+              className="size-4 rounded border-gray-300 text-black focus:ring-black cursor-pointer accent-black"
+            />
           </div>
         </div>
       </PopoverContent>
