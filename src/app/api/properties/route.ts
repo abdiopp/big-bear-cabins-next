@@ -1,6 +1,30 @@
 import { streamlineRequest } from '@/lib/streamline';
 import { NextResponse } from 'next/server';
 
+// Map frontend filter keys to Streamline Amenity IDs
+const AMENITY_IDS: Record<string, number> = {
+    boatDock: 97227,
+    evCharger: 834824,
+    hotTub: 93832,
+    // "pets" is handled separately via `pets` param usually, but "PETS OK" ID is 94376
+};
+
+// ... (existing code) ...
+
+
+
+// We assume backend filtering worked via amenity_ids. 
+
+// ... (existing code) ...
+
+
+
+// Helper to get amenity IDs from filters
+function getAmenityIds(filters: string[]) {
+    if (!filters || !Array.isArray(filters)) return [];
+    return filters.map(f => AMENITY_IDS[f]).filter(id => id && id > 0);
+}
+
 export async function POST(req: Request) {
     const body = await req.json();
 
@@ -22,6 +46,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ data: { property: [] } });
         }
 
+        const amenityIds = body.filters ? getAmenityIds(body.filters) : [];
+
         // 2. Handle Date-Based Search
         if (body.startdate && body.enddate) {
             console.log('🔍 Executing Date-Based Search:', { start: body.startdate, end: body.enddate, occupants: body.occupants });
@@ -35,11 +61,13 @@ export async function POST(req: Request) {
             if (body.occupants_small) availabilityParams.occupants_small = body.occupants_small;
             if (body.pets) availabilityParams.pets = body.pets;
 
+            // Pass amenity IDs for filtering
+            // Note: We do NOT pass amenities_filter to GetPropertyAvailabilityWithRates (Step A)
+            // because it is unreliable or undocumented. We filter client-side in Step F.
+
             const availabilityPromise = streamlineRequest('GetPropertyAvailabilityWithRates', availabilityParams);
 
             // Step B: Get All Properties (Static Details)
-            // Fetch a large number to ensure we cover available units.
-            // In a production app with thousands of units, we might cache this or use a different strategy.
             const propertyListParams: any = {
                 sort_by: 'price_daily_low',
                 return_gallery: 1,
@@ -47,12 +75,13 @@ export async function POST(req: Request) {
                 max_images_number: 10,
                 page_results_number: 500,
             };
-            const propertyListPromise = streamlineRequest('GetPropertyList', propertyListParams);
+
+            // Use WordPress method to ensure we get unit_amenities for client-side filtering
+            const propertyListPromise = streamlineRequest('GetPropertyListWordPress', propertyListParams);
 
             const [availabilityData, propertyListData] = await Promise.all([availabilityPromise, propertyListPromise]);
 
             // Step C: Process Availability Data
-            // GetPropertyAvailabilityWithRates returns a list of available units with pricing
             const availableDataRaw = (availabilityData as any).Response?.data || (availabilityData as any).data || availabilityData;
 
             let availableUnits: any[] = [];
@@ -93,12 +122,9 @@ export async function POST(req: Request) {
                 const unitId = String(prop.id || prop.unit_id);
                 const pricingInfo = availabilityMap.get(unitId);
 
-                // Merge pricing info into the main property object
-                // We prioritize the pricing from availability search as it's accurate for the dates
                 return {
                     ...prop,
                     ...pricingInfo,
-                    // Ensure we keep the static details if they are missing in pricing info
                     name: prop.name || pricingInfo.unit_name,
                     id: unitId
                 };
@@ -112,11 +138,44 @@ export async function POST(req: Request) {
                 mergedProperties = mergedProperties.filter(p => parseInt(p.max_occupants || p.occupants) >= required);
             }
             if (body.pets) {
-                // If pets required, filter for pet friendly (assuming pets > 0 means pets allowed)
-                // Streamline usually needs pets=1 param in availability, which we sent.
-                // But we can double check here.
                 mergedProperties = mergedProperties.filter(p => parseInt(p.pets) > 0 || String(p.pets).toLowerCase() === 'yes' || String(p.pets) === '1');
             }
+
+            // Client-side filtering for amenities
+            if (amenityIds.length > 0) {
+                mergedProperties = mergedProperties.filter(p => {
+                    let propertyAmenities = p.unit_amenities?.amenity;
+
+                    // Handle case where it's a single object or undefined
+                    if (!propertyAmenities) {
+                        return false;
+                    }
+
+                    if (!Array.isArray(propertyAmenities)) {
+                        propertyAmenities = [propertyAmenities];
+                    }
+
+                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
+                    // Check if property has ALL requested amenities
+                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
+                });
+            }
+
+            // Client-side filtering for properties that are not amenities
+            if (body.filters && Array.isArray(body.filters)) {
+                if (body.filters.includes('mountainView')) {
+                    mergedProperties = mergedProperties.filter(p => p.view_name && p.view_name.toLowerCase().includes('mountain'));
+                }
+                if (body.filters.includes('lakefront')) {
+                    mergedProperties = mergedProperties.filter(p =>
+                        (p.location_area_name && p.location_area_name.toLowerCase().includes('lakefront')) ||
+                        (p.location_name && p.location_name.toLowerCase().includes('lakefront'))
+                    );
+                }
+            }
+
+            // We assume backend filtering worked via amenity_ids. 
+            // If explicit text matching was needed, we can't do it because amenities are missing in response.
 
             return NextResponse.json({
                 data: {
@@ -138,15 +197,70 @@ export async function POST(req: Request) {
 
         if (body.page) params.page_number = body.page;
 
-        // Note: Filters for general search in Streamline GetPropertyList are limited.
-        // We fetch and then might need to filter client-side or assume partial backend filtering.
+        let method = 'GetPropertyList';
 
-        const data = await streamlineRequest('GetPropertyList', params);
+        // Pass amenity IDs for filtering
+        if (amenityIds.length > 0) {
+            params.amenities_filter = amenityIds;
+            // Use WordPress method which supports filtering
+            method = 'GetPropertyListWordPress';
+        }
+
+        const data = await streamlineRequest(method, params);
         const responseData = (data as any).Response?.data || (data as any).data || data;
 
         let properties: any[] = [];
-        if (responseData?.property) {
-            properties = Array.isArray(responseData.property) ? responseData.property : [responseData.property];
+        if (responseData && responseData.property && Array.isArray(responseData.property)) {
+            properties = responseData.property;
+
+            // Client-side filtering for amenities (double check, as API might ignore amenities_filter)
+            if (amenityIds.length > 0) {
+                properties = properties.filter((p: any) => {
+                    let propertyAmenities = p.unit_amenities?.amenity;
+
+                    // Handle case where it's a single object or undefined
+                    if (!propertyAmenities) {
+                        return false;
+                    }
+
+                    if (!Array.isArray(propertyAmenities)) {
+                        propertyAmenities = [propertyAmenities];
+                    }
+
+                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
+                    // Check if property has ALL requested amenities
+                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
+                });
+            }
+        } else if (responseData && responseData.available_properties && responseData.available_properties.property) {
+            // Handle WordPress API structure where properties might be nested
+            properties = Array.isArray(responseData.available_properties.property) ? responseData.available_properties.property : [responseData.available_properties.property];
+
+            // Client-side filtering for amenities (duplicates logic but necessary if structure differs)
+            if (amenityIds.length > 0) {
+                properties = properties.filter((p: any) => {
+                    let propertyAmenities = p.unit_amenities?.amenity;
+
+                    if (!propertyAmenities) return false;
+                    if (!Array.isArray(propertyAmenities)) propertyAmenities = [propertyAmenities];
+
+                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
+                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
+                });
+            }
+        }
+
+        // Filter by Mountain View or Lakefront if requested (using properties)
+        if (body.filters && Array.isArray(body.filters)) {
+            if (body.filters.includes('mountainView')) {
+                properties = properties.filter((p: any) => p.view_name && p.view_name.toLowerCase().includes('mountain'));
+            }
+            if (body.filters.includes('lakefront')) {
+                properties = properties.filter((p: any) =>
+                    (p.location_area_name && p.location_area_name.toLowerCase().includes('lakefront')) ||
+                    (p.location_name && p.location_name.toLowerCase().includes('lakefront'))
+                );
+            }
         }
 
         // Client-side filtering for General Search
@@ -166,3 +280,5 @@ export async function POST(req: Request) {
         return NextResponse.json({ data: { property: [] }, error: String(e) }, { status: 500 });
     }
 }
+
+
