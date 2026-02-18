@@ -40,6 +40,7 @@ export function CabinsPage() {
     const displayProperties = allProperties.length > 0 ? allProperties : properties;
     const showLoadMore = !loading && displayProperties.length >= page * ITEMS_PER_PAGE;
 
+    console.log("displayProperties =>", displayProperties)
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header Section */}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Calendar, Users, MapPin, AlertCircle, Baby, PawPrint } from "lucide-react";
+import { Calendar, Users, MapPin, AlertCircle, Baby, Filter } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
@@ -10,6 +10,9 @@ import { PropertyGrid } from "./PropertyGrid";
 import { useProperties } from "@/hooks/useProperties";
 import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
 
 // Parse MM/DD/YYYY format from URL to YYYY-MM-DD for input fields
 const parseApiDateToInput = (apiDate: string | null): string => {
@@ -39,11 +42,30 @@ export function SearchPage() {
   const [guests, setGuests] = useState(() => searchParams.get("occupants") || "");
   const [children, setChildren] = useState(() => searchParams.get("occupants_small") || "");
   const [pets, setPets] = useState(() => searchParams.get("pets") === "true"); // boolean
+
+  const [filters, setFilters] = useState({
+    mountainView: false,
+    lakefront: false,
+    boatDock: false,
+    evCharger: false,
+    hotTub: false,
+  });
+
   const [activeFilters, setActiveFilters] = useState<string[]>(() => {
     const filtersParam = searchParams.get("filters");
     return filtersParam ? filtersParam.split(",") : [];
   });
 
+  useEffect(() => {
+    setFilters({
+      mountainView: activeFilters.includes("mountainView"),
+      lakefront: activeFilters.includes("lakefront"),
+      boatDock: activeFilters.includes("boatDock"),
+      evCharger: activeFilters.includes("evCharger"),
+      hotTub: activeFilters.includes("hotTub"),
+    });
+  }, [activeFilters]);
+  console.log("activeFilters =>", activeFilters);
   // Prepare API-friendly search params
   const searchApiParams = useMemo(() => {
     const startdate = formatInputToApiDate(checkIn);
@@ -62,17 +84,65 @@ export function SearchPage() {
   const { properties, loading, error } = useProperties(1, searchApiParams);
 
   // Update URL params on Search button click
+  // const handleSearch = () => {
+  //   const params = new URLSearchParams();
+  //   if (checkIn) params.set("checkIn", formatInputToApiDate(checkIn));
+  //   if (checkOut) params.set("checkOut", formatInputToApiDate(checkOut));
+  //   if (guests) params.set("occupants", guests);
+  //   if (children) params.set("occupants_small", children);
+  //   if (pets) params.set("pets", "true");
+  //   if (activeFilters.length > 0) params.set("filters", activeFilters.join(","));
+
+  //   router.push(`/search?${params.toString()}`);
+  // };
   const handleSearch = () => {
     const params = new URLSearchParams();
+
     if (checkIn) params.set("checkIn", formatInputToApiDate(checkIn));
     if (checkOut) params.set("checkOut", formatInputToApiDate(checkOut));
     if (guests) params.set("occupants", guests);
     if (children) params.set("occupants_small", children);
     if (pets) params.set("pets", "true");
-    if (activeFilters.length > 0) params.set("filters", activeFilters.join(","));
+
+    if (activeFilters.length > 0) {
+      params.set("filters", activeFilters.join(","));
+    }
 
     router.push(`/search?${params.toString()}`);
   };
+
+  const getAllLocations = [...new Set(properties.map(item => item.location))];
+
+  console.log("unique locations =>", getAllLocations);
+
+  console.log("properties =>", properties);
+
+  // const handleFilterChange = (filterKey: keyof typeof filters) => {
+  //   setFilters((prev) => ({
+  //     ...prev,
+  //     [filterKey]: !prev[filterKey],
+  //   }));
+  // };
+
+  const handleFilterChange = (filterKey: keyof typeof filters) => {
+    console.log("working")
+    setFilters((prev) => {
+      const updated = {
+        ...prev,
+        [filterKey]: !prev[filterKey],
+      };
+
+      // Update activeFilters array
+      const newActiveFilters = Object.keys(updated).filter(
+        (key) => updated[key as keyof typeof updated]
+      );
+
+      setActiveFilters(newActiveFilters);
+
+      return updated;
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,7 +188,7 @@ export function SearchPage() {
             </div>
 
             {/* Adults */}
-            <div className="flex-1 min-w-32">
+            <div className="flex-1 min-w-30">
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -133,7 +203,7 @@ export function SearchPage() {
             </div>
 
             {/* Children */}
-            <div className="flex-1 min-w-32">
+            <div className="flex-1 min-w-30">
               <div className="relative">
                 <Baby className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -148,7 +218,7 @@ export function SearchPage() {
             </div>
 
             {/* Pets */}
-            <div className="flex-1 min-w-32 flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
+            <div className="min-w-16 flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
               <input
                 type="checkbox"
                 id="pets"
@@ -158,7 +228,105 @@ export function SearchPage() {
               />
               <label htmlFor="pets" className="text-gray-400 text-sm ms-3">Pets</label>
             </div>
+            {/* Filter Button */}
+            <div className="flex items-center px-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-full h-8 w-8 p-0 ml-2 border-gray-300">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="end">
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900">Filters</h3>
 
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 gap-2">
+                        <Checkbox
+                          id="mountain-view"
+                          checked={filters.mountainView}
+                          onCheckedChange={() => handleFilterChange("mountainView")}
+                        />
+                        <Label htmlFor="mountain-view" className="text-sm">
+                          Mountain view location
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 gap-2">
+                        <Checkbox
+                          id="lakefront"
+                          checked={filters.lakefront}
+                          onCheckedChange={() => handleFilterChange("lakefront")}
+                        />
+                        <Label htmlFor="lakefront" className="text-sm">
+                          Lakefront location
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 gap-2">
+                        <Checkbox
+                          id="boat-dock"
+                          checked={filters.boatDock}
+                          onCheckedChange={() => handleFilterChange("boatDock")}
+                        />
+                        <Label htmlFor="boat-dock" className="text-sm">
+                          Boat Dock
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 gap-2">
+                        <Checkbox
+                          id="ev-charger"
+                          checked={filters.evCharger}
+                          onCheckedChange={() => handleFilterChange("evCharger")}
+                        />
+                        <Label htmlFor="ev-charger" className="text-sm">
+                          EV charger
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 gap-2">
+                        <Checkbox
+                          id="hot-tub"
+                          checked={filters.hotTub}
+                          onCheckedChange={() => handleFilterChange("hotTub")}
+                        />
+                        <Label htmlFor="hot-tub" className="text-sm">
+                          Hot Tub
+                        </Label>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-2  gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setFilters({
+                            mountainView: false,
+                            lakefront: false,
+                            boatDock: false,
+                            evCharger: false,
+                            hotTub: false,
+                          });
+
+                          setActiveFilters([]);
+
+                          router.push("/search");
+                        }}
+
+                      >
+                        Clear all
+                      </Button>
+                      <Button size="sm" className="flex-1" onClick={handleSearch}>
+                        Apply filters
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             {/* Search Button */}
             <Button className="bg-red-500 hover:bg-red-600 text-white px-8" onClick={handleSearch}>
               Search
@@ -194,6 +362,6 @@ export function SearchPage() {
           }
         </PropertyGrid>
       </div>
-    </div>
+    </div >
   );
 }

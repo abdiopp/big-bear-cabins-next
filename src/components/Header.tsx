@@ -375,11 +375,9 @@ export function Header() {
                     <span className="relative z-10 font-semibold text-[#477023]">✨ Special Offers</span>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem onClick={() => router.push("/activities")}>Activities</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/cabins")}>All Cabins</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/about")}>About Big Bear</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push("/blog")}>Blog</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/activities")}>Activities</DropdownMenuItem>
+                  {/* <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem> */}
                   <DropdownMenuItem onClick={() => router.push("/attractions")}>Attractions</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/directions")}>Directions</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/events")}>Events</DropdownMenuItem>
@@ -388,6 +386,8 @@ export function Header() {
                   <DropdownMenuItem onClick={() => router.push("/journeys")}>Journeys</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/restaurants")}>Restaurants</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/ski-guide")}>Ski Guide</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/blog")}>Blog</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/about")}>About Big Bear</DropdownMenuItem>
 
                   {/* Logout - Show when logged in */}
                   {session?.user && (

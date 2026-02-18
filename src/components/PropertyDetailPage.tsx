@@ -298,15 +298,15 @@ export function PropertyDetailPage() {
         {/* Cabin Type and Location */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Entire cabin in {property.location.split(",")[0]}</h2>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span className="text-sm font-medium">{property.rating}</span>
               <span className="text-sm text-gray-600">({property.reviewCount} reviews)</span>
             </div>
             <span className="text-gray-400">·</span>
-            <span className="text-sm text-gray-600 underline">{property.location}</span>
-          </div>
+          </div> */}
+          <span className="text-sm text-gray-600 underline">{property.location}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

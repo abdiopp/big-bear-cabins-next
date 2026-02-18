@@ -176,9 +176,7 @@ function CheckoutContent() {
             toast.error('Missing reservation details');
             return;
         }
-
-        // Passing extended params directly since the hook supports it
-        const result = await createReservation({
+        const rawFormData = {
             unitId: parseInt(propertyId),
             startDate: checkIn,
             endDate: checkOut,
@@ -197,7 +195,9 @@ function CheckoutContent() {
             expiration: formData.expiration,
             paymentType: formData.paymentType,
             travelInsurance: formData.travelInsurance
-        });
+        }
+        // Passing extended params directly since the hook supports it
+        const result = await createReservation(rawFormData);
 
         if (result) {
             toast.success(`Booking Submitted! Confirmation ID: ${result.confirmation_id}`);
@@ -750,12 +750,12 @@ function CheckoutContent() {
                                                 </div>
 
                                                 {/* Detailed breakdown from API */}
-                                                {price.fees.map((fee, idx) => (
+                                                {/* {price.fees.map((fee, idx) => (
                                                     <div key={idx} className="flex justify-between">
                                                         <span className="text-gray-600">{fee.name}</span>
                                                         <span className="font-medium">${fee.amount.toFixed(2)}</span>
                                                     </div>
-                                                ))}
+                                                ))} */}
 
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Taxes</span>
@@ -766,7 +766,7 @@ function CheckoutContent() {
 
                                                 <div className="flex justify-between text-base font-semibold">
                                                     <span>Total</span>
-                                                    <span>${price.total.toFixed(2)}</span>
+                                                    <span>${(Number(price.subtotal) + Number(price.taxes)).toFixed(2)}</span>
                                                 </div>
                                             </>
                                         ) : (
@@ -780,7 +780,7 @@ function CheckoutContent() {
                                             <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-sm font-semibold text-gray-900">Required Payment</span>
-                                                    <span className="text-base font-bold text-green-700">${price.total.toFixed(2)}</span>
+                                                    <span className="text-base font-bold text-green-700">${/* price.total.toFixed(2) */(Number(price.subtotal) + Number(price.taxes)).toFixed(2)}</span>
                                                 </div>
                                                 <div className="text-xs text-gray-600">
                                                     Due by {checkIn}
