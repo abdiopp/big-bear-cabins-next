@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Calendar, Users, MapPin, AlertCircle, Baby, Filter } from "lucide-react";
+import { Calendar, Users, Baby, Filter, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
@@ -32,17 +32,68 @@ const formatInputToApiDate = (inputDate: string): string => {
   return `${month}/${day}/${year}`;
 };
 
+// ── Location areas from Streamline API ─────────────────────────────────────
+const LOCATIONS = [
+  { id: "", label: "Any Location" },
+  { id: "11226", label: "Big Bear Lake" },
+  { id: "17601", label: "Big Bear City East" },
+  { id: "23687", label: "Lakefront Location" },
+  { id: "13073", label: "North Shore / Fawnskin" },
+  { id: "17611", label: "Ski Resorts" },
+];
+
+// ── Bedroom options matching bigbearcabins.com ──────────────────────────────
+const BEDROOM_OPTIONS = [
+  { value: "", label: "Any Bedrooms" },
+  { value: "1", label: "1 Bedroom" },
+  { value: "2", label: "2 Bedrooms" },
+  { value: "3", label: "3 Bedrooms" },
+  { value: "4", label: "4 Bedrooms" },
+  { value: "5", label: "5 Bedrooms" },
+  { value: "6", label: "6 Bedrooms" },
+  { value: "7", label: "7 Bedrooms" },
+  { value: "9", label: "9 Bedrooms" },
+  { value: "10", label: "10 Bedrooms" },
+  { value: "13", label: "13 Bedrooms" },
+];
+
+// ── Sort options matching bigbearcabins.com ─────────────────────────────────
+const SORT_OPTIONS = [
+  { value: "price_daily_low", label: "Price: Low to High" },
+  { value: "price_daily_high", label: "Price: High to Low" },
+  { value: "bedrooms_number_desc", label: "Bedrooms: Most First" },
+  { value: "bedrooms_number_asc", label: "Bedrooms: Fewest First" },
+  { value: "max_occupants_desc", label: "Guests: Most First" },
+  { value: "max_occupants_asc", label: "Guests: Fewest First" },
+];
+
 export function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Initial state from URL
-  const [checkIn, setCheckIn] = useState(() => parseApiDateToInput(searchParams.get("checkIn")));
-  const [checkOut, setCheckOut] = useState(() => parseApiDateToInput(searchParams.get("checkOut")));
+  // ── Primary filters ──────────────────────────────────────────────────────
+  const [checkIn, setCheckIn] = useState(() =>
+    parseApiDateToInput(searchParams.get("checkIn"))
+  );
+  const [checkOut, setCheckOut] = useState(() =>
+    parseApiDateToInput(searchParams.get("checkOut"))
+  );
   const [guests, setGuests] = useState(() => searchParams.get("occupants") || "");
-  const [children, setChildren] = useState(() => searchParams.get("occupants_small") || "");
-  const [pets, setPets] = useState(() => searchParams.get("pets") === "true"); // boolean
+  const [children, setChildren] = useState(
+    () => searchParams.get("occupants_small") || ""
+  );
+  const [pets, setPets] = useState(() => searchParams.get("pets") === "true");
+  const [bedrooms, setBedrooms] = useState(
+    () => searchParams.get("bedrooms") || ""
+  );
+  const [location, setLocation] = useState(
+    () => searchParams.get("location") || ""
+  );
+  const [sortBy, setSortBy] = useState(
+    () => searchParams.get("sort_by") || "price_daily_low"
+  );
 
+  // ── Advanced amenity filters ──────────────────────────────────────────────
   const [filters, setFilters] = useState({
     mountainView: false,
     lakefront: false,
@@ -65,8 +116,8 @@ export function SearchPage() {
       hotTub: activeFilters.includes("hotTub"),
     });
   }, [activeFilters]);
-  console.log("activeFilters =>", activeFilters);
-  // Prepare API-friendly search params
+
+  // ── Build API params ──────────────────────────────────────────────────────
   const searchApiParams = useMemo(() => {
     const startdate = formatInputToApiDate(checkIn);
     const enddate = formatInputToApiDate(checkOut);
@@ -76,25 +127,17 @@ export function SearchPage() {
       ...(enddate && { enddate }),
       ...(guests && { occupants: parseInt(guests) }),
       ...(children && { occupants_small: parseInt(children) }),
-      ...(pets && { pets: Boolean(pets) }), // backend expects number 1 for true
+      ...(pets && { pets: Boolean(pets) }),
       ...(activeFilters.length > 0 && { filters: activeFilters }),
+      ...(bedrooms && { bedrooms_number: parseInt(bedrooms) }),
+      ...(location && { location_area_id: parseInt(location) }),
+      ...(sortBy && { sort_by: sortBy }),
     };
-  }, [checkIn, checkOut, guests, children, pets, activeFilters]);
+  }, [checkIn, checkOut, guests, children, pets, activeFilters, bedrooms, location, sortBy]);
 
   const { properties, loading, error } = useProperties(1, searchApiParams);
 
-  // Update URL params on Search button click
-  // const handleSearch = () => {
-  //   const params = new URLSearchParams();
-  //   if (checkIn) params.set("checkIn", formatInputToApiDate(checkIn));
-  //   if (checkOut) params.set("checkOut", formatInputToApiDate(checkOut));
-  //   if (guests) params.set("occupants", guests);
-  //   if (children) params.set("occupants_small", children);
-  //   if (pets) params.set("pets", "true");
-  //   if (activeFilters.length > 0) params.set("filters", activeFilters.join(","));
-
-  //   router.push(`/search?${params.toString()}`);
-  // };
+  // ── URL sync on Search ────────────────────────────────────────────────────
   const handleSearch = () => {
     const params = new URLSearchParams();
 
@@ -103,246 +146,249 @@ export function SearchPage() {
     if (guests) params.set("occupants", guests);
     if (children) params.set("occupants_small", children);
     if (pets) params.set("pets", "true");
-
-    if (activeFilters.length > 0) {
-      params.set("filters", activeFilters.join(","));
-    }
+    if (activeFilters.length > 0) params.set("filters", activeFilters.join(","));
+    if (bedrooms) params.set("bedrooms", bedrooms);
+    if (location) params.set("location", location);
+    if (sortBy && sortBy !== "price_daily_low") params.set("sort_by", sortBy);
 
     router.push(`/search?${params.toString()}`);
   };
 
-  const getAllLocations = [...new Set(properties.map(item => item.location))];
-
-  console.log("unique locations =>", getAllLocations);
-
-  console.log("properties =>", properties);
-
-  // const handleFilterChange = (filterKey: keyof typeof filters) => {
-  //   setFilters((prev) => ({
-  //     ...prev,
-  //     [filterKey]: !prev[filterKey],
-  //   }));
-  // };
-
   const handleFilterChange = (filterKey: keyof typeof filters) => {
-    console.log("working")
     setFilters((prev) => {
-      const updated = {
-        ...prev,
-        [filterKey]: !prev[filterKey],
-      };
-
-      // Update activeFilters array
+      const updated = { ...prev, [filterKey]: !prev[filterKey] };
       const newActiveFilters = Object.keys(updated).filter(
         (key) => updated[key as keyof typeof updated]
       );
-
       setActiveFilters(newActiveFilters);
-
       return updated;
     });
   };
 
+  const activeFilterCount = activeFilters.length;
+
+  // ── Shared select style ───────────────────────────────────────────────────
+  const selectClass =
+    "h-9 rounded-md border border-input bg-[#f3f3f5] px-3 py-1 text-sm text-gray-600 shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Search Filters */}
+      {/* ── Search Bar ──────────────────────────────────────────────────── */}
       <div className="bg-white border-b sticky top-16 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-3 items-center">
 
-            {/* Location */}
-            <div className="flex-1 min-w-48">
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Where in Big Bear?" className="pl-10" />
-              </div>
+            {/* Location dropdown */}
+            <div className="flex-1 min-w-[160px]">
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={selectClass + " w-full"}
+              >
+                {LOCATIONS.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Check-in */}
-            <div className="flex-1 min-w-36">
+            {/* Arrival */}
+            <div className="flex-1 min-w-[140px]">
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 <Input
                   type="date"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
-                  className="pl-10"
-                  placeholder="Check-in"
+                  className="pl-9"
+                  placeholder="Arrival"
                 />
               </div>
             </div>
 
-            {/* Check-out */}
-            <div className="flex-1 min-w-36">
+            {/* Departure */}
+            <div className="flex-1 min-w-[140px]">
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 <Input
                   type="date"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className="pl-10"
-                  placeholder="Check-out"
+                  className="pl-9"
+                  placeholder="Departure"
                 />
               </div>
             </div>
 
+            {/* Bedrooms dropdown */}
+            <div className="flex-1 min-w-[140px]">
+              <select
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                className={selectClass + " w-full"}
+              >
+                {BEDROOM_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Adults */}
-            <div className="flex-1 min-w-30">
+            <div className="flex-1 min-w-[110px]">
               <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 <Input
                   type="number"
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
-                  className="pl-10"
-                  placeholder="Adults"
+                  className="pl-9"
+                  placeholder="Guests"
                   min="0"
                 />
               </div>
             </div>
 
             {/* Children */}
-            <div className="flex-1 min-w-30">
+            <div className="flex-1 min-w-[110px]">
               <div className="relative">
-                <Baby className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Baby className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                 <Input
                   type="number"
                   value={children}
                   onChange={(e) => setChildren(e.target.value)}
-                  className="pl-10"
+                  className="pl-9"
                   placeholder="Children"
                   min="0"
                 />
               </div>
             </div>
 
+            {/* Sort By */}
+            <div className="flex-1 min-w-[170px]">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={selectClass + " w-full"}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Pets */}
-            <div className="min-w-16 flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
+            <div className="flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
               <input
                 type="checkbox"
                 id="pets"
-                checked={pets} // true/false
-                onChange={(e) => setPets(e.target.checked)} // toggle boolean
-                className="h-4 w-4 me-2 accent-black"
+                checked={pets}
+                onChange={(e) => setPets(e.target.checked)}
+                className="h-4 w-4 accent-black"
               />
-              <label htmlFor="pets" className="text-gray-400 text-sm ms-3">Pets</label>
+              <label htmlFor="pets" className="text-gray-500 text-sm cursor-pointer">
+                Pets OK
+              </label>
             </div>
-            {/* Filter Button */}
-            <div className="flex items-center px-1">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full h-8 w-8 p-0 ml-2 border-gray-300">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-4" align="end">
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-gray-900">Filters</h3>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2 gap-2">
+            {/* Advanced Filters button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="relative rounded-full h-9 px-3 border-gray-300 gap-1"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="text-sm">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-4" align="end">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                    Advanced Filters
+                  </h3>
+
+                  <div className="space-y-3">
+                    {[
+                      { key: "hotTub", label: "Hot Tub" },
+                      { key: "lakefront", label: "Lakefront Location" },
+                      { key: "boatDock", label: "Boat Dock" },
+                      { key: "evCharger", label: "EV Charger" },
+                      { key: "mountainView", label: "Mountain View" },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center gap-2">
                         <Checkbox
-                          id="mountain-view"
-                          checked={filters.mountainView}
-                          onCheckedChange={() => handleFilterChange("mountainView")}
+                          id={key}
+                          checked={filters[key as keyof typeof filters]}
+                          onCheckedChange={() =>
+                            handleFilterChange(key as keyof typeof filters)
+                          }
                         />
-                        <Label htmlFor="mountain-view" className="text-sm">
-                          Mountain view location
+                        <Label htmlFor={key} className="text-sm cursor-pointer">
+                          {label}
                         </Label>
                       </div>
-
-                      <div className="flex items-center space-x-2 gap-2">
-                        <Checkbox
-                          id="lakefront"
-                          checked={filters.lakefront}
-                          onCheckedChange={() => handleFilterChange("lakefront")}
-                        />
-                        <Label htmlFor="lakefront" className="text-sm">
-                          Lakefront location
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2 gap-2">
-                        <Checkbox
-                          id="boat-dock"
-                          checked={filters.boatDock}
-                          onCheckedChange={() => handleFilterChange("boatDock")}
-                        />
-                        <Label htmlFor="boat-dock" className="text-sm">
-                          Boat Dock
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2 gap-2">
-                        <Checkbox
-                          id="ev-charger"
-                          checked={filters.evCharger}
-                          onCheckedChange={() => handleFilterChange("evCharger")}
-                        />
-                        <Label htmlFor="ev-charger" className="text-sm">
-                          EV charger
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2 gap-2">
-                        <Checkbox
-                          id="hot-tub"
-                          checked={filters.hotTub}
-                          onCheckedChange={() => handleFilterChange("hotTub")}
-                        />
-                        <Label htmlFor="hot-tub" className="text-sm">
-                          Hot Tub
-                        </Label>
-                      </div>
-                    </div>
-
-                    <div className="flex space-x-2  gap-2 pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          setFilters({
-                            mountainView: false,
-                            lakefront: false,
-                            boatDock: false,
-                            evCharger: false,
-                            hotTub: false,
-                          });
-
-                          setActiveFilters([]);
-
-                          router.push("/search");
-                        }}
-
-                      >
-                        Clear all
-                      </Button>
-                      <Button size="sm" className="flex-1" onClick={handleSearch}>
-                        Apply filters
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            {/* Search Button */}
-            <Button className="bg-red-500 hover:bg-red-600 text-white px-8" onClick={handleSearch}>
-              Search
-            </Button>
 
+                  <div className="flex gap-2 pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setFilters({
+                          mountainView: false,
+                          lakefront: false,
+                          boatDock: false,
+                          evCharger: false,
+                          hotTub: false,
+                        });
+                        setActiveFilters([]);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button size="sm" className="flex-1" onClick={handleSearch}>
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Search button */}
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white px-6"
+              onClick={handleSearch}
+            >
+              Update Results
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Results */}
+      {/* ── Results ─────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="mb-2 text-2xl font-bold">Stay in Big Bear</h1>
-          {!loading && !error && (
-            <p className="text-gray-600">Over 300 homes · {properties.length} results for your search</p>
-          )}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="mb-1 text-2xl font-bold">Stay in Big Bear</h1>
+            {!loading && !error && (
+              <p className="text-gray-500 text-sm">
+                {properties.length} propert{properties.length === 1 ? "y" : "ies"} found
+              </p>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -350,18 +396,22 @@ export function SearchPage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              We couldn't load the properties at this moment. Please try again later.
+              We couldn&apos;t load the properties at this moment. Please try again
+              later.
             </AlertDescription>
           </Alert>
         )}
 
         <PropertyGrid>
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <PropertyCardSkeleton key={i} />)
-            : properties.map((property) => <SearchPropertyCard key={property.id} {...property} />)
-          }
+            ? Array.from({ length: 8 }).map((_, i) => (
+              <PropertyCardSkeleton key={i} />
+            ))
+            : properties.map((property) => (
+              <SearchPropertyCard key={property.id} {...property} />
+            ))}
         </PropertyGrid>
       </div>
-    </div >
+    </div>
   );
 }

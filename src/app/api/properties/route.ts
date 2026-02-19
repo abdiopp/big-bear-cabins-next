@@ -47,6 +47,9 @@ export async function POST(req: Request) {
         }
 
         const amenityIds = body.filters ? getAmenityIds(body.filters) : [];
+        if (body.pets) {
+            amenityIds.push(94376); // Map pets toggle directly to PETS OK amenity
+        }
 
         // 2. Handle Date-Based Search
         if (body.startdate && body.enddate) {
@@ -69,12 +72,14 @@ export async function POST(req: Request) {
 
             // Step B: Get All Properties (Static Details)
             const propertyListParams: any = {
-                sort_by: 'price_daily_low',
+                sort_by: body.sort_by || 'price_daily_low',
                 return_gallery: 1,
                 return_amenities: 1,
                 max_images_number: 10,
                 page_results_number: 500,
             };
+            if (body.bedrooms_number) propertyListParams.bedrooms_number = body.bedrooms_number;
+            if (body.location_area_id) propertyListParams.location_area_id = body.location_area_id;
 
             // Use WordPress method to ensure we get unit_amenities for client-side filtering
             const propertyListPromise = streamlineRequest('GetPropertyListWordPress', propertyListParams);
@@ -133,12 +138,19 @@ export async function POST(req: Request) {
             console.log(`✅ Merged ${mergedProperties.length} properties`);
 
             // Step F: Apply Additional Filters (if any)
-            if (body.occupants) {
-                const required = parseInt(body.occupants);
-                mergedProperties = mergedProperties.filter(p => parseInt(p.max_occupants || p.occupants) >= required);
+            if (body.bedrooms_number) {
+                const requiredBeds = parseInt(body.bedrooms_number);
+                mergedProperties = mergedProperties.filter(p => parseInt(p.bedrooms_number) === requiredBeds);
             }
-            if (body.pets) {
-                mergedProperties = mergedProperties.filter(p => parseInt(p.pets) > 0 || String(p.pets).toLowerCase() === 'yes' || String(p.pets) === '1');
+            if (body.location_area_id) {
+                const reqLocId = String(body.location_area_id);
+                mergedProperties = mergedProperties.filter(p => String(p.location_area_id) === reqLocId);
+            }
+            if (body.occupants || body.occupants_small) {
+                const adultReq = body.occupants ? parseInt(body.occupants) : 0;
+                const childReq = body.occupants_small ? parseInt(body.occupants_small) : 0;
+                const totalReq = adultReq + childReq;
+                mergedProperties = mergedProperties.filter(p => parseInt(p.max_occupants || p.occupants) >= totalReq);
             }
 
             // Client-side filtering for amenities
@@ -188,14 +200,17 @@ export async function POST(req: Request) {
         // 3. Handle General Search (No Dates)
         console.log('🔍 Executing General Search (No Dates)');
         const params: any = {
-            sort_by: 'price_daily_low',
+            sort_by: body.sort_by || 'price_daily_low',
             return_gallery: 1,
             return_amenities: 1,
             max_images_number: 10,
-            page_results_number: 12,
+            page_results_number: 200,
         };
 
         if (body.page) params.page_number = body.page;
+        // Not passing bedrooms_number and location_area_id to API since we filter client-side
+        // if (body.bedrooms_number) params.bedrooms_number = body.bedrooms_number;
+        // if (body.location_area_id) params.location_area_id = body.location_area_id;
 
         let method = 'GetPropertyList';
 
@@ -264,9 +279,19 @@ export async function POST(req: Request) {
         }
 
         // Client-side filtering for General Search
-        if (body.occupants) {
-            const required = parseInt(body.occupants);
-            properties = properties.filter(p => parseInt(p.max_occupants) >= required);
+        if (body.bedrooms_number) {
+            const requiredBeds = parseInt(body.bedrooms_number);
+            properties = properties.filter(p => parseInt(p.bedrooms_number) === requiredBeds);
+        }
+        if (body.location_area_id) {
+            const reqLocId = String(body.location_area_id);
+            properties = properties.filter(p => String(p.location_area_id) === reqLocId);
+        }
+        if (body.occupants || body.occupants_small) {
+            const adultReq = body.occupants ? parseInt(body.occupants) : 0;
+            const childReq = body.occupants_small ? parseInt(body.occupants_small) : 0;
+            const totalReq = adultReq + childReq;
+            properties = properties.filter(p => parseInt(p.max_occupants || p.occupants) >= totalReq);
         }
 
         return NextResponse.json({
