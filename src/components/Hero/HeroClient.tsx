@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Categories } from "../Categories";
 
 type HeroData = {
@@ -50,7 +50,9 @@ export function HeroClient({ data }: HeroProps) {
       </div>
 
       {/* Categories overlay */}
-      <Categories data={data.links} />
+      <Suspense fallback={null}>
+        <Categories data={data.links} />
+      </Suspense>
     </div>
   );
 }

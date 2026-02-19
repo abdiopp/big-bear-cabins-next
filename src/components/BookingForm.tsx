@@ -46,8 +46,7 @@ export function BookingForm({
     const [guestCounts, setGuestCounts] = useState<GuestCounts>({
         adults: 1,
         children: 0,
-        infants: 0,
-        pets: 0
+        pets: false
     });
 
     // Derived total for API calls that only take 'occupants'
@@ -75,7 +74,7 @@ export function BookingForm({
         occupants: totalOccupants,
         adults: guestCounts.adults,
         children: guestCounts.children,
-        pets: guestCounts.pets,
+        pets: guestCounts.pets ? 1 : 0,
         autoFetch: false
     });
     const { createReservation, loading: reservationLoading, error: reservationError, currentReservation } = useReservations();
@@ -89,7 +88,7 @@ export function BookingForm({
                 endDate: checkOut,
                 occupants: totalOccupants,
                 occupants_small: guestCounts.children,
-                pets: guestCounts.pets,
+                pets: guestCounts.pets ? 1 : 0,
                 couponCode: couponCode || undefined
             });
         }
