@@ -165,7 +165,14 @@ export function SearchPage() {
     });
   };
 
-  const activeFilterCount = activeFilters.length;
+  const activeFilterCount = useMemo(() => {
+    let count = activeFilters.length;
+    if (guests && parseInt(guests) > 0) count++;
+    if (children && parseInt(children) > 0) count++;
+    if (pets) count++;
+    if (sortBy && sortBy !== "price_daily_low") count++;
+    return count;
+  }, [activeFilters, guests, children, pets, sortBy]);
 
   // ── Shared select style ───────────────────────────────────────────────────
   const selectClass =
@@ -236,64 +243,7 @@ export function SearchPage() {
               </select>
             </div>
 
-            {/* Adults */}
-            <div className="flex-1 min-w-[110px]">
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                <Input
-                  type="number"
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
-                  className="pl-9"
-                  placeholder="Guests"
-                  min="0"
-                />
-              </div>
-            </div>
 
-            {/* Children */}
-            <div className="flex-1 min-w-[110px]">
-              <div className="relative">
-                <Baby className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                <Input
-                  type="number"
-                  value={children}
-                  onChange={(e) => setChildren(e.target.value)}
-                  className="pl-9"
-                  placeholder="Children"
-                  min="0"
-                />
-              </div>
-            </div>
-
-            {/* Sort By */}
-            <div className="flex-1 min-w-[170px]">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className={selectClass + " w-full"}
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Pets */}
-            <div className="flex items-center space-x-2 bg-[#f3f3f5] px-4 py-2 rounded-md">
-              <input
-                type="checkbox"
-                id="pets"
-                checked={pets}
-                onChange={(e) => setPets(e.target.checked)}
-                className="h-4 w-4 accent-black"
-              />
-              <label htmlFor="pets" className="text-gray-500 text-sm cursor-pointer">
-                Pets OK
-              </label>
-            </div>
 
             {/* Advanced Filters button */}
             <Popover>
@@ -312,33 +262,95 @@ export function SearchPage() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72 p-4" align="end">
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                    Advanced Filters
-                  </h3>
+              <PopoverContent className="w-80 p-4 max-h-[80vh] overflow-y-auto" align="end">
+                <div className="space-y-6">
 
+                  {/* Occupancy Section */}
                   <div className="space-y-3">
-                    {[
-                      { key: "hotTub", label: "Hot Tub" },
-                      { key: "lakefront", label: "Lakefront Location" },
-                      { key: "boatDock", label: "Boat Dock" },
-                      { key: "evCharger", label: "EV Charger" },
-                      { key: "mountainView", label: "Mountain View" },
-                    ].map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <Checkbox
-                          id={key}
-                          checked={filters[key as keyof typeof filters]}
-                          onCheckedChange={() =>
-                            handleFilterChange(key as keyof typeof filters)
-                          }
+                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                      Occupancy
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">Guests</Label>
+                        <Input
+                          type="number"
+                          value={guests}
+                          onChange={(e) => setGuests(e.target.value)}
+                          placeholder="Guests"
+                          min="0"
+                          className="h-9"
                         />
-                        <Label htmlFor={key} className="text-sm cursor-pointer">
-                          {label}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">Children</Label>
+                        <Input
+                          type="number"
+                          value={children}
+                          onChange={(e) => setChildren(e.target.value)}
+                          placeholder="Children"
+                          min="0"
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sort Section */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                      Sort By
+                    </h3>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className={selectClass + " w-full"}
+                    >
+                      {SORT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Preferences Section */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                      Preferences & Amenities
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="pets_popover"
+                          checked={pets}
+                          onCheckedChange={(checked) => setPets(checked === true)}
+                        />
+                        <Label htmlFor="pets_popover" className="text-sm cursor-pointer">
+                          Pets Allowed
                         </Label>
                       </div>
-                    ))}
+                      {[
+                        { key: "hotTub", label: "Hot Tub" },
+                        { key: "lakefront", label: "Lakefront Location" },
+                        { key: "boatDock", label: "Boat Dock" },
+                        { key: "evCharger", label: "EV Charger" },
+                        { key: "mountainView", label: "Mountain View" },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`popover_${key}`}
+                            checked={filters[key as keyof typeof filters]}
+                            onCheckedChange={() =>
+                              handleFilterChange(key as keyof typeof filters)
+                            }
+                          />
+                          <Label htmlFor={`popover_${key}`} className="text-sm cursor-pointer">
+                            {label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 pt-3 border-t">
@@ -355,9 +367,13 @@ export function SearchPage() {
                           hotTub: false,
                         });
                         setActiveFilters([]);
+                        setGuests("");
+                        setChildren("");
+                        setPets(false);
+                        setSortBy("price_daily_low");
                       }}
                     >
-                      Clear
+                      Clear All
                     </Button>
                     <Button size="sm" className="flex-1" onClick={handleSearch}>
                       Apply
