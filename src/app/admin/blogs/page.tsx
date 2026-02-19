@@ -41,7 +41,6 @@ export default function BlogsAdmin() {
             getAllBlogs(),
             getAllBlogCategories(),
         ]);
-        console.log("blogsData, categoriesData =>", blogsData, categoriesData)
         setBlogs(blogsData as Blog[]);
         setCategories(categoriesData as BlogCategory[]);
         setLoading(false);

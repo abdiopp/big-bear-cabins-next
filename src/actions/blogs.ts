@@ -3,6 +3,15 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+const SLUG_REGEX = /^[a-z0-9-]+$/;
+
+function validateSlug(slug: string): string | null {
+    if (!slug) return "Slug is required.";
+    if (!SLUG_REGEX.test(slug))
+        return "Slug can only contain lowercase letters, numbers, and hyphens.";
+    return null;
+}
+
 // ============== BLOG CATEGORIES ==============
 
 export async function getBlogCategories() {
@@ -111,11 +120,24 @@ export async function createBlog(data: {
     subtitle?: string;
     heroImage: string;
     content: string;
+    excerpt?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    ogImage?: string;
+    tags?: string[];
     published?: boolean;
-}) {
+}): Promise<{ success: true; data: Awaited<ReturnType<typeof prisma.blog.create>> } | { success: false; error: string }> {
+    // Slug validation
+    const slugError = validateSlug(data.slug);
+    if (slugError) return { success: false, error: slugError };
+
+    // Duplicate slug check
+    const existing = await prisma.blog.findUnique({ where: { slug: data.slug } });
+    if (existing) return { success: false, error: "A blog post with this slug already exists." };
+
     const blog = await prisma.blog.create({ data });
     revalidatePath("/admin/blogs");
-    return blog;
+    return { success: true, data: blog };
 }
 
 export async function updateBlog(
@@ -127,15 +149,31 @@ export async function updateBlog(
         subtitle?: string;
         heroImage?: string;
         content?: string;
+        excerpt?: string;
+        metaTitle?: string;
+        metaDescription?: string;
+        ogImage?: string;
+        tags?: string[];
         published?: boolean;
     }
-) {
+): Promise<{ success: true; data: Awaited<ReturnType<typeof prisma.blog.update>> } | { success: false; error: string }> {
+    if (data.slug) {
+        const slugError = validateSlug(data.slug);
+        if (slugError) return { success: false, error: slugError };
+
+        // Duplicate slug check (excluding current blog)
+        const existing = await prisma.blog.findFirst({
+            where: { slug: data.slug, NOT: { id } },
+        });
+        if (existing) return { success: false, error: "A blog post with this slug already exists." };
+    }
+
     const blog = await prisma.blog.update({
         where: { id },
         data,
     });
     revalidatePath("/admin/blogs");
-    return blog;
+    return { success: true, data: blog };
 }
 
 export async function deleteBlog(id: string) {
