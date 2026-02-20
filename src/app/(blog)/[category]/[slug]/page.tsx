@@ -131,7 +131,7 @@ export default async function BlogPage({
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
 
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen bg-white overflow-x-hidden">
                 {/* Hero */}
                 <div className="w-full h-[55vh] md:h-[65vh] relative overflow-hidden">
                     <ImageWithFallback

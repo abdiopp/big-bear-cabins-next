@@ -15,7 +15,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
     const blogs = await getBlogsByCategorySlug(category);
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white overflow-x-hidden">
             {/* Hero Section */}
             <div className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
                 <ImageWithFallback
