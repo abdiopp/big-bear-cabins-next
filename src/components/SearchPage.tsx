@@ -202,30 +202,22 @@ export function SearchPage() {
 
             {/* Arrival */}
             <div className="flex-1 min-w-[140px]">
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                <Input
-                  type="date"
-                  value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
-                  className="pl-9"
-                  placeholder="Arrival"
-                />
-              </div>
+              <Input
+                type="date"
+                value={checkIn}
+                onChange={(e) => setCheckIn(e.target.value)}
+                placeholder="Arrival"
+              />
             </div>
 
             {/* Departure */}
             <div className="flex-1 min-w-[140px]">
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-                <Input
-                  type="date"
-                  value={checkOut}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  className="pl-9"
-                  placeholder="Departure"
-                />
-              </div>
+              <Input
+                type="date"
+                value={checkOut}
+                onChange={(e) => setCheckOut(e.target.value)}
+                placeholder="Departure"
+              />
             </div>
 
             {/* Bedrooms dropdown */}
