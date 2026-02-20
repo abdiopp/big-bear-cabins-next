@@ -19,10 +19,13 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => {
     // Handle amenities in both formats:
     // - Raw API: { amenity: [{ amenity_name, group_name }] } (from unit_amenities)
     // - Typed:   [{ amenity_name, group_name }]
-    const amenitiesRaw = p.amenities as any;
+    const amenitiesRaw = p.amenities || (p as any).unit_amenities;
     let amenities: { group: string; name: string }[] = [];
     if (amenitiesRaw) {
-        const amenityArray = Array.isArray(amenitiesRaw) ? amenitiesRaw : amenitiesRaw.amenity;
+        let amenityArray = Array.isArray(amenitiesRaw) ? amenitiesRaw : amenitiesRaw.amenity;
+        if (amenityArray && !Array.isArray(amenityArray)) {
+            amenityArray = [amenityArray];
+        }
         if (Array.isArray(amenityArray)) {
             amenities = amenityArray.map((a: any) => ({
                 group: a.group_name || '',
