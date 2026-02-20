@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, Hash } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,21 @@ import ImagePicker from "@/components/admin/ImagePicker";
 import { Switch } from "@/components/ui/switch";
 import { createBlogCategory } from "@/actions/blogs";
 
+const SLUG_REGEX = /^[a-z0-9-]+$/;
+
+function sanitizeSlug(value: string): string {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+}
+
 export default function NewBlogCategory() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+    const [slugError, setSlugError] = useState<string>("");
     const [form, setForm] = useState({
         title: "",
         slug: "",
@@ -26,8 +38,42 @@ export default function NewBlogCategory() {
         published: false,
     });
 
+    const validateSlug = useCallback((slug: string) => {
+        if (!slug) {
+            setSlugError("Slug is required.");
+            return false;
+        }
+        if (!SLUG_REGEX.test(slug)) {
+            setSlugError("Only lowercase letters, numbers, and hyphens allowed.");
+            return false;
+        }
+        setSlugError("");
+        return true;
+    }, []);
+
+    function handleTitleChange(value: string) {
+        if (!slugManuallyEdited) {
+            const auto = generateSlug(value);
+            validateSlug(auto);
+            setForm((f) => ({ ...f, title: value, slug: auto }));
+        } else {
+            setForm((f) => ({ ...f, title: value }));
+        }
+    }
+
+    function handleSlugChange(value: string) {
+        const sanitized = sanitizeSlug(value);
+        validateSlug(sanitized);
+        setSlugManuallyEdited(true);
+        setForm((f) => ({ ...f, slug: sanitized }));
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (!validateSlug(form.slug)) {
+            toast.error("Please fix the slug before saving.");
+            return;
+        }
         setLoading(true);
         try {
             await createBlogCategory({
@@ -49,6 +95,7 @@ export default function NewBlogCategory() {
     function generateSlug(title: string) {
         return title
             .toLowerCase()
+            .trim()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "");
     }
@@ -75,26 +122,35 @@ export default function NewBlogCategory() {
                                     id="title"
                                     placeholder="e.g., Activities in Big Bear"
                                     value={form.title}
-                                    onChange={(e) => {
-                                        setForm({
-                                            ...form,
-                                            title: e.target.value,
-                                            slug: form.slug || generateSlug(e.target.value),
-                                        });
-                                    }}
+                                    onChange={(e) => handleTitleChange(e.target.value)}
                                     required
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="slug">URL Slug *</Label>
-                                <Input
-                                    id="slug"
-                                    placeholder="e.g., activities"
-                                    value={form.slug}
-                                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                                    required
-                                />
-                                <p className="text-xs text-muted-foreground">URL: /{form.slug || "slug"}</p>
+                            <div className="space-y-1">
+                                <Label htmlFor="slug" className="text-sm font-semibold flex items-center gap-1">
+                                    <Hash className="w-3.5 h-3.5" />
+                                    URL Slug *
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="slug"
+                                        placeholder="e.g., activities"
+                                        value={form.slug}
+                                        onChange={(e) => handleSlugChange(e.target.value)}
+                                        required
+                                        className={slugError ? "border-red-400 focus-visible:ring-red-400" : ""}
+                                    />
+                                </div>
+                                {slugError ? (
+                                    <p className="text-xs text-red-500 flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        {slugError}
+                                    </p>
+                                ) : form.slug ? (
+                                    <p className="text-xs text-muted-foreground font-mono">
+                                        URL preview: <span className="text-green-700">/{form.slug || "slug"}</span>
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
 
@@ -148,7 +204,7 @@ export default function NewBlogCategory() {
                         <div className="flex gap-4 pt-4 border-t">
                             <Button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !!slugError}
                                 className="bg-green-600 hover:bg-green-700 text-white"
                             >
                                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
