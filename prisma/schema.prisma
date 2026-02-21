@@ -154,3 +154,14 @@ type SocialLink {
   icon     String
   altText  String?
 }
+
+model Wishlist {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  propertyId String
+  imageUrl   String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+

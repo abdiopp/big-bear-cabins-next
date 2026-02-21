@@ -12,7 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 type CouponOffer = {
   offerImage: string;
   badgeLabel?: string | null;
@@ -21,6 +21,7 @@ type CouponOffer = {
   offerSubtitle?: string | null;
   offerDescription: string;
   promoCode?: string | null;
+  slug?: string | null;
 };
 
 type CouponsData = {
@@ -31,6 +32,7 @@ type CouponsData = {
 };
 
 function OfferCard({ offer }: { offer: CouponOffer }) {
+  const router = useRouter();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyCode = useCallback((code: string) => {
@@ -115,6 +117,7 @@ function OfferCard({ offer }: { offer: CouponOffer }) {
             <Button
               size="sm"
               className="flex-1 text-xs px-2 md:px-3 py-2 h-8 font-medium bg-black hover:bg-gray-800 text-white border-0 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+              onClick={() => router.push(`/special-offers/${offer.slug}`)}
             >
               <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
               <span className="truncate">Read More</span>

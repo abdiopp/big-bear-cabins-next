@@ -1,13 +1,44 @@
 "use client"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Star, User, Calendar, Heart, Sparkles } from 'lucide-react';
+import { useWishlist } from '@/context/WishlistContext';
+import { PropertyCard } from '@/components/PropertyCard';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState('about-me');
+  const { wishlist, wishlistItems } = useWishlist();
+  const [wishlistProperties, setWishlistProperties] = useState<any[]>([]);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+
+  useEffect(() => {
+    async function fetchWishlistProperties() {
+      if (activeTab === 'cabins-wishlist' && wishlist.length > 0) {
+        setIsLoadingWishlist(true);
+        try {
+          const res = await fetch('/api/properties/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: wishlist })
+          });
+          const json = await res.json();
+          if (json.data && json.data.property) {
+            setWishlistProperties(json.data.property);
+          }
+        } catch (error) {
+          console.error("Failed to fetch wishlist properties", error);
+        } finally {
+          setIsLoadingWishlist(false);
+        }
+      } else if (wishlist.length === 0) {
+        setWishlistProperties([]);
+      }
+    }
+    fetchWishlistProperties();
+  }, [activeTab, wishlist]);
 
   // Show loading state while session is being checked
   // Middleware handles redirect for unauthenticated users
@@ -88,40 +119,7 @@ export default function ProfilePage() {
     }
   ];
 
-  const wishlistCabins = [
-    {
-      id: 1,
-      name: "Rustic Mountain Lodge",
-      image: "https://images.unsplash.com/photo-1594993278284-6228c8ea7678?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydXN0aWMlMjBjYWJpbiUyMGludGVyaW9yfGVufDF8fHx8MTc2MTU5MDg5M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      location: "Big Bear Lake, CA",
-      rating: 4.9,
-      price: "$250/night"
-    },
-    {
-      id: 2,
-      name: "Cozy Forest Hideaway",
-      image: "https://images.unsplash.com/photo-1621771674545-849014cf91fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FiaW4lMjBmb3Jlc3R8ZW58MXx8fHwxNzYxNjMwNjYyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      location: "Big Bear Lake, CA",
-      rating: 4.8,
-      price: "$220/night"
-    },
-    {
-      id: 3,
-      name: "Snow Peak Retreat",
-      image: "https://images.unsplash.com/photo-1648841931372-676febc626aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aW50ZXIlMjBjYWJpbiUyMHNub3d8ZW58MXx8fHwxNzYxNjcyMDcwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      location: "Big Bear Lake, CA",
-      rating: 5.0,
-      price: "$300/night"
-    },
-    {
-      id: 4,
-      name: "Waterfront Cabin Paradise",
-      image: "https://images.unsplash.com/photo-1592448981188-8bf53a3d7810?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYWtlJTIwY2FiaW4lMjByZXRyZWF0fGVufDF8fHx8MTc2MTY3MjA3MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      location: "Big Bear Lake, CA",
-      rating: 4.9,
-      price: "$280/night"
-    }
-  ];
+  // The static wishlist data has been replaced by the dynamic 'wishlistProperties' state
 
   const favouriteActivities = [
     {
@@ -172,11 +170,10 @@ export default function ProfilePage() {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                        activeTab === item.id
-                          ? 'bg-gray-100 text-gray-900'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === item.id
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
                     >
                       <IconComponent className="h-5 w-5" />
                       <span className="font-medium">{item.label}</span>
@@ -269,11 +266,11 @@ export default function ProfilePage() {
                 {/* My Reviews Section */}
                 <div className="bg-white rounded-lg shadow-sm p-8 mt-6">
                   <h3 className="text-2xl font-semibold text-gray-900 mb-6">My reviews</h3>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {pastReviews.map((review) => (
-                      <div 
-                        key={review.id} 
+                      <div
+                        key={review.id}
                         className="flex items-start space-x-3 p-4 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         {/* Cabin Image */}
@@ -286,13 +283,13 @@ export default function ProfilePage() {
                             />
                           </div>
                         </div>
-                        
+
                         {/* Review Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-1 mb-1">
                             {[...Array(review.rating)].map((_, i) => (
-                              <Star 
-                                key={i} 
+                              <Star
+                                key={i}
                                 className="w-3 h-3 fill-current text-gray-900"
                               />
                             ))}
@@ -317,7 +314,7 @@ export default function ProfilePage() {
                 {/* Bookings Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {pastBookings.map((booking) => (
-                    <div 
+                    <div
                       key={booking.id}
                       className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                     >
@@ -363,38 +360,40 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Wishlist Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {wishlistCabins.map((cabin) => (
-                    <div 
-                      key={cabin.id}
-                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group relative"
-                    >
-                      {/* Heart Icon */}
-                      <button className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform">
-                        <Heart className="w-5 h-5 fill-pink-500 text-pink-500" />
-                      </button>
-                      
-                      <div className="aspect-square overflow-hidden">
-                        <ImageWithFallback
-                          src={cabin.image}
-                          alt={cabin.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-1">{cabin.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{cabin.location}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 fill-current text-gray-900" />
-                            <span className="text-sm font-medium text-gray-900">{cabin.rating}</span>
-                          </div>
-                          <span className="font-semibold text-gray-900">{cabin.price}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {isLoadingWishlist ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="text-gray-500">Loading your wishlist...</div>
+                  </div>
+                ) : wishlistProperties.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {wishlistProperties.map((cabin) => (
+                      <PropertyCard
+                        key={cabin.unit_id || cabin.id}
+                        property={{
+                          id: cabin.unit_id || cabin.id,
+                          imageUrl: wishlistItems?.find(i => i.propertyId === String(cabin.unit_id || cabin.id))?.imageUrl || cabin.default_image || cabin.images?.[0] || "",
+                          images: cabin.images || (cabin.default_image ? [cabin.default_image] : []),
+                          title: cabin.name || cabin.unit_name || "Unknown Property",
+                          location: cabin.location_area_name || cabin.location_name || "Big Bear Lake, CA",
+                          rating: cabin.rating || 5.0,
+                          reviewCount: cabin.reviews_count || 0,
+                          price: cabin.price_daily_low || 0,
+                          dates: "Available",
+                          isFavorite: true,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-12 text-center shadow-sm">
+                    <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
+                    <p className="text-gray-500 mb-6">Start exploring and save your favorite cabins for later.</p>
+                    <Button onClick={() => window.location.href = '/cabins'}>
+                      Explore Cabins
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -408,7 +407,7 @@ export default function ProfilePage() {
                 {/* Activities Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {favouriteActivities.map((activity) => (
-                    <div 
+                    <div
                       key={activity.id}
                       className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer group relative"
                     >
@@ -416,7 +415,7 @@ export default function ProfilePage() {
                       <button className="absolute top-3 right-3 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform">
                         <Heart className="w-5 h-5 fill-pink-500 text-pink-500" />
                       </button>
-                      
+
                       <div className="aspect-[16/9] overflow-hidden">
                         <ImageWithFallback
                           src={activity.image}

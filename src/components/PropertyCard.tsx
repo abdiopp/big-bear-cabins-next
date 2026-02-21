@@ -3,7 +3,10 @@
 import { Heart } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import Link from "next/link";;
+import Link from "next/link";
+import { useWishlist } from "@/context/WishlistContext";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface PropertyCardProps {
   property: {
@@ -33,8 +36,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
     isSuperhost = false,
   } = property;
 
+  const { wishlist, toggleWishlist } = useWishlist();
+  const { status } = useSession();
+
+  const isFavorited = isFavorite || wishlist.includes(String(property.id));
+
   const displayImage = imageUrl || (images && images[0]) || "";
   const hasMultipleImages = images && images.length > 1;
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (status === "unauthenticated") {
+      toast.error("Please log in to save properties to your wishlist.");
+      window.dispatchEvent(new Event("open-login-modal"));
+      return;
+    }
+
+    await toggleWishlist(String(property.id), displayImage);
+  };
 
   return (
     <Link href={`/property/${property.id}`} className="group cursor-pointer block">
@@ -51,14 +72,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
           variant="ghost"
           size="sm"
           className="absolute top-3 right-3 rounded-full p-2 h-auto w-auto bg-background/80 hover:bg-background/90 backdrop-blur-sm"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Handle favorite toggle here
-          }}
+          onClick={handleFavoriteClick}
         >
           <Heart
-            className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
+            className={`h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : "text-foreground"
               }`}
           />
         </Button>

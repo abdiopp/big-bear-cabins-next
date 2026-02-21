@@ -276,11 +276,10 @@ export function PropertyListingPage() {
                 <button
                   key={index}
                   onClick={() => setCurrentServiceIndex(index)}
-                  className={`transition-all duration-300 ${
-                    index === currentServiceIndex 
-                      ? 'w-8 h-4 bg-blue-600 rounded-full' 
+                  className={`transition-all duration-300 ${index === currentServiceIndex
+                      ? 'w-8 h-4 bg-blue-600 rounded-full'
                       : 'w-4 h-4 bg-gray-300 rounded-full hover:bg-gray-400'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -300,24 +299,24 @@ export function PropertyListingPage() {
           {/* Enhanced overlay for better text readability */}
           <div className="absolute inset-0 bg-black/60" />
         </div>
-        
+
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className={`space-y-10 scroll-slide-in-left ${formSection.isVisible ? 'animate' : ''}`}>
               <div className="space-y-6">
 
-                
+
                 <h1 className="text-5xl lg:text-6xl text-white leading-tight drop-shadow-lg font-bold font-normal">
                   Discover Your Property's True Potential
                 </h1>
-                
+
                 <h2 className="text-3xl lg:text-4xl text-white leading-tight font-light drop-shadow-lg">
                   Get Your <span className="font-semibold">FREE</span> Property Evaluation
                 </h2>
-                
+
                 <p className="text-xl text-white drop-shadow-md">
-                  Discover how much your Big Bear property could earn as a vacation rental. 
+                  Discover how much your Big Bear property could earn as a vacation rental.
                   Our expert team will provide a comprehensive evaluation at no cost.
                 </p>
               </div>
@@ -359,7 +358,7 @@ export function PropertyListingPage() {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="phone" className="text-base font-medium text-gray-700 mb-3 block">
                       Phone Number *
@@ -389,7 +388,7 @@ export function PropertyListingPage() {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="propertyAddress" className="text-base font-medium text-gray-700 mb-3 block">
                       Property Address *
@@ -413,14 +412,14 @@ export function PropertyListingPage() {
                       className="mt-1 h-5 w-5"
                     />
                     <Label htmlFor="terms" className="text-gray-600 text-sm leading-relaxed">
-                      I agree to be contacted by Big Bear Cabins regarding my property evaluation and potential management services. 
+                      I agree to be contacted by Big Bear Cabins regarding my property evaluation and potential management services.
                       I understand this is a free consultation with no obligation.
                     </Label>
                   </div>
 
                   <div className="pt-4">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
                       disabled={!formData.agreeToTerms}
                     >
@@ -438,61 +437,7 @@ export function PropertyListingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section - NOW SECOND TO LAST */}
-      <section ref={testimonialsSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto">
-          <div className={`text-center mb-16 scroll-fade-in-up ${testimonialsSection.isVisible ? 'animate' : ''}`}>
-            <h2 className="text-4xl md:text-5xl text-black mb-6">
-              What Our Property Owners Say
-            </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto">
-              Hear from property owners who have transformed their investments with Big Bear Cabins
-            </p>
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className={`bg-white shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden scroll-stagger ${testimonialsSection.isVisible ? 'animate' : ''}`}>
-                <Quote className="absolute top-4 right-4 h-8 w-8 text-blue-200 z-10" />
-                
-                {/* Cabin Image */}
-                <div className="h-48 relative">
-                  <ImageWithFallback
-                    src={testimonial.cabinImage}
-                    alt={`${testimonial.property} exterior`}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-                
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-6">
-                    <ImageWithFallback
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="w-16 h-16 rounded-full object-cover mr-4 border-4 border-white shadow-lg"
-                    />
-                    <div>
-                      <h4 className="text-gray-900">{testimonial.name}</h4>
-                      <p className="text-gray-600 font-medium">{testimonial.property}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex mb-4">
-                    {Array.from({ length: testimonial.rating }, (_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  
-                  <p className="text-gray-700 italic leading-relaxed">
-                    "{testimonial.content}"
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Information Cards Section - NOW LAST */}
       <section ref={cardsSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">

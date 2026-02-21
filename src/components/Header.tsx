@@ -33,7 +33,7 @@ import { DateRangePicker } from "./DateRangePicker";
 import { GuestSelector } from "./GuestSelector";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
@@ -61,6 +61,12 @@ export function Header() {
     evCharger: false,
     hotTub: false,
   });
+
+  useEffect(() => {
+    const handleOpenLogin = () => setIsLoginOpen(true);
+    window.addEventListener("open-login-modal", handleOpenLogin);
+    return () => window.removeEventListener("open-login-modal", handleOpenLogin);
+  }, []);
 
   const handleDateRangeSelect = (checkIn: Date | undefined, checkOut: Date | undefined) => {
     setCheckInDate(checkIn);

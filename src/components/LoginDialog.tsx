@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogHeader } from "./ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "./ui/select";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-type LoginMode = "phone" | "email" | "signup";
+type LoginMode = "email" | "signup";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -20,9 +19,7 @@ interface LoginDialogProps {
 
 export function LoginDialog({ isOpen, onOpenChange, trigger }: LoginDialogProps) {
   const router = useRouter();
-  const [mode, setMode] = useState<LoginMode>("phone");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [countryCode, setCountryCode] = useState("US");
+  const [mode, setMode] = useState<LoginMode>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,43 +30,6 @@ export function LoginDialog({ isOpen, onOpenChange, trigger }: LoginDialogProps)
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
-
-  const getCountryData = (code: string) => {
-    const countries = {
-      US: { name: "United States", code: "+1", flag: "🇺🇸" },
-      CA: { name: "Canada", code: "+1", flag: "🇨🇦" },
-      GB: { name: "United Kingdom", code: "+44", flag: "🇬🇧" },
-      AU: { name: "Australia", code: "+61", flag: "🇦🇺" },
-      DE: { name: "Germany", code: "+49", flag: "🇩🇪" },
-      FR: { name: "France", code: "+33", flag: "🇫🇷" },
-      ES: { name: "Spain", code: "+34", flag: "🇪🇸" },
-      IT: { name: "Italy", code: "+39", flag: "🇮🇹" },
-      JP: { name: "Japan", code: "+81", flag: "🇯🇵" },
-      KR: { name: "South Korea", code: "+82", flag: "🇰🇷" },
-    };
-    return countries[code as keyof typeof countries] || countries.US;
-  };
-
-  const handlePhoneLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      // TODO: Implement phone login logic
-      const fullPhoneNumber = `${getCountryData(countryCode).code}${phoneNumber}`;
-      console.log("Phone login attempted with:", fullPhoneNumber);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Handle successful login
-      onOpenChange(false);
-      setPhoneNumber("");
-    } catch (error) {
-      console.error("Phone login error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,10 +132,9 @@ export function LoginDialog({ isOpen, onOpenChange, trigger }: LoginDialogProps)
     setConfirmPassword("");
     setFirstName("");
     setLastName("");
-    setPhoneNumber("");
     setError("");
     setSuccessMessage("");
-    setMode("phone");
+    setMode("email");
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -206,144 +165,6 @@ export function LoginDialog({ isOpen, onOpenChange, trigger }: LoginDialogProps)
         {/* Content */}
         <div className="p-6">
           <h3 className="text-2xl font-semibold mb-6 text-gray-900">Welcome to Big Bear Cabins</h3>
-
-          {/* Phone Login Mode */}
-          {mode === "phone" && (
-            <form onSubmit={handlePhoneLogin} className="space-y-4">
-              {/* Country Code and Phone Number */}
-              <div className="space-y-3">
-                <div className="relative">
-                  <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-full h-14 px-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">{getCountryData(countryCode).flag}</span>
-                          <span className="text-gray-900 font-medium">
-                            {getCountryData(countryCode).name} ({getCountryData(countryCode).code})
-                          </span>
-                        </div>
-                        <ChevronDown className="h-4 w-4 text-gray-500" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="US">
-                        <div className="flex items-center space-x-2">
-                          <span>🇺🇸</span>
-                          <span>United States (+1)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="CA">
-                        <div className="flex items-center space-x-2">
-                          <span>🇨🇦</span>
-                          <span>Canada (+1)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="GB">
-                        <div className="flex items-center space-x-2">
-                          <span>🇬🇧</span>
-                          <span>United Kingdom (+44)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="AU">
-                        <div className="flex items-center space-x-2">
-                          <span>🇦🇺</span>
-                          <span>Australia (+61)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="DE">
-                        <div className="flex items-center space-x-2">
-                          <span>🇩🇪</span>
-                          <span>Germany (+49)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="FR">
-                        <div className="flex items-center space-x-2">
-                          <span>🇫🇷</span>
-                          <span>France (+33)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ES">
-                        <div className="flex items-center space-x-2">
-                          <span>🇪🇸</span>
-                          <span>Spain (+34)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="IT">
-                        <div className="flex items-center space-x-2">
-                          <span>🇮🇹</span>
-                          <span>Italy (+39)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="JP">
-                        <div className="flex items-center space-x-2">
-                          <span>🇯🇵</span>
-                          <span>Japan (+81)</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="KR">
-                        <div className="flex items-center space-x-2">
-                          <span>🇰🇷</span>
-                          <span>South Korea (+82)</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="relative">
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Phone number"
-                    className="w-full h-14 px-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Privacy Notice */}
-              <div className="text-sm text-gray-600 leading-relaxed">
-                We'll call or text you to confirm your number. Standard message and data rates apply.{" "}
-                <button type="button" className="underline hover:no-underline font-medium">
-                  Privacy Policy
-                </button>
-              </div>
-
-              {/* Continue Button */}
-              <Button
-                type="submit"
-                className="w-full h-12 text-white bg-black hover:bg-gray-800 rounded-lg text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoading}
-              >
-                {isLoading ? "Processing..." : "Continue"}
-              </Button>
-
-              {/* Alternative Login Option */}
-              <div className="pt-4">
-                <div className="flex items-center justify-center space-x-4 text-gray-400 mb-4">
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                  <span className="text-sm font-medium">or</span>
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 border border-gray-300 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors"
-                  onClick={() => setMode("email")}
-                  disabled={isLoading}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl">✉️</span>
-                    <span>Continue with email</span>
-                  </div>
-                </Button>
-              </div>
-            </form>
-          )}
 
           {/* Email Login Mode */}
           {mode === "email" && (
@@ -432,27 +253,6 @@ export function LoginDialog({ isOpen, onOpenChange, trigger }: LoginDialogProps)
                 </button>
               </div>
 
-              {/* Alternative Login Option */}
-              <div className="pt-4">
-                <div className="flex items-center justify-center space-x-4 text-gray-400 mb-4">
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                  <span className="text-sm font-medium">or</span>
-                  <div className="flex-1 h-px bg-gray-300"></div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 border border-gray-300 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors"
-                  onClick={() => setMode("phone")}
-                  disabled={isLoading}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xl">📱</span>
-                    <span>Continue with phone</span>
-                  </div>
-                </Button>
-              </div>
             </form>
           )}
 
