@@ -124,3 +124,33 @@ model Media {
   filename  String?
   createdAt DateTime @default(now())
 }
+
+model Footer {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  sections    FooterSection[]
+  socialLinks SocialLink[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+type FooterSection {
+  id    String
+  title String
+  links FooterLink[]
+}
+
+type FooterLink {
+  id         String
+  label      String
+  url        String
+  isExternal Boolean @default(false)
+  newTab     Boolean @default(false)
+}
+
+type SocialLink {
+  id       String
+  platform String?
+  url      String
+  icon     String
+  altText  String?
+}

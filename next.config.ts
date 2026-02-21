@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      // allow all hostnames
+      {
+        protocol: "https",
+        hostname: "*",
+      },
     ],
   },
 };
