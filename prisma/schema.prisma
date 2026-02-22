@@ -165,3 +165,60 @@ model Wishlist {
   @@unique([userId, propertyId])
 }
 
+model ExperiencesPage {
+  id              String                 @id @default(auto()) @map("_id") @db.ObjectId
+  heroTitle       String
+  heroSubtitle    String?
+  heroTagline     String?
+  heroDescription String?
+  heroImage       String
+  heroCtaText     String?
+  heroCtaLink     String?
+  heroIsActive    Boolean                @default(true)
+  formCards       ExperienceFormCard[]
+  isPublished     Boolean                @default(false)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+type ExperienceFormCard {
+  id          String
+  title       String
+  image       String
+  subtitle    String?
+  cost        String?
+  date        String?
+  time        String?
+  includes    String[]
+  description String?
+  isPopular   Boolean
+  isActive    Boolean
+  order       Int
+  fields      ExperienceFormField[]
+}
+
+type ExperienceFormField {
+  id          String
+  label       String
+  name        String
+  type        String
+  placeholder String?
+  required    Boolean
+  options     String[]
+  order       Int
+}
+
+model ExperienceFormResponse {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  formCardId  String
+  responses   Json
+  submittedAt DateTime @default(now())
+  status      String   @default("new")
+  userAgent   String?
+  ip          String?
+  honeypot    String?
+
+  @@index([userId, submittedAt])
+}
+

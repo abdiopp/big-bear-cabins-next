@@ -46,6 +46,16 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </Link>
+                <Link href="/admin/experiences-page">
+                    <Card className="hover:shadow-lg transition cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Experiences Page</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            Manage hero, experience cards, and form responses.
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );
