@@ -83,8 +83,9 @@ export default function RichTextEditor({
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <style jsx global>{`
         .rich-text-editor {
+          position: relative;
+          z-index: 40;
           border-radius: 0.5rem;
-          overflow: hidden;
           border: 1px solid hsl(var(--border, 214.3 31.8% 91.4%));
         }
         .rich-text-editor .ql-toolbar {
@@ -94,11 +95,18 @@ export default function RichTextEditor({
           padding: 8px 12px;
           flex-wrap: wrap;
           gap: 2px;
+          border-top-left-radius: 0.5rem;
+          border-top-right-radius: 0.5rem;
         }
         .rich-text-editor .ql-container {
           border: none;
           font-size: 16px;
           font-family: inherit;
+          border-bottom-left-radius: 0.5rem;
+          border-bottom-right-radius: 0.5rem;
+        }
+        .rich-text-editor .ql-tooltip {
+          z-index: 50 !important;
         }
         .rich-text-editor .ql-editor {
           min-height: ${minHeight};
