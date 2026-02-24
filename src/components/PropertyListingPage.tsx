@@ -277,8 +277,8 @@ export function PropertyListingPage() {
                   key={index}
                   onClick={() => setCurrentServiceIndex(index)}
                   className={`transition-all duration-300 ${index === currentServiceIndex
-                      ? 'w-8 h-4 bg-blue-600 rounded-full'
-                      : 'w-4 h-4 bg-gray-300 rounded-full hover:bg-gray-400'
+                    ? 'w-8 h-4 bg-blue-600 rounded-full'
+                    : 'w-4 h-4 bg-gray-300 rounded-full hover:bg-gray-400'
                     }`}
                 />
               ))}
@@ -288,7 +288,7 @@ export function PropertyListingPage() {
       </section>
 
       {/* Evaluation Form Section - Background Image with Overlay Form */}
-      <section ref={formSection.elementRef} className="relative py-24 overflow-hidden min-h-screen flex items-center">
+      <section ref={formSection.elementRef} id="form" className="relative py-24 overflow-hidden min-h-screen flex items-center">
         {/* Background Image */}
         <div className="absolute inset-0">
           <ImageWithFallback

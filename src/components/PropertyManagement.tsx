@@ -1,6 +1,8 @@
+"use client"
 import { Shield, TrendingUp, Users, Calendar, Star, Award } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
 
 const services = [
   {
@@ -33,6 +35,7 @@ const stats = [
 ];
 
 export function PropertyManagement() {
+  const router = useRouter();
   return (
     <section className="relative py-16 overflow-hidden">
       {/* Background Image */}
@@ -45,7 +48,7 @@ export function PropertyManagement() {
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-black/40" />
       </div>
-      
+
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
@@ -55,13 +58,13 @@ export function PropertyManagement() {
                 <Award className="h-6 w-6 text-primary" />
                 <span className="text-sm font-medium text-primary">PROFESSIONAL PROPERTY MANAGEMENT</span>
               </div>
-              
+
               <h2 className="text-4xl text-white leading-tight">
                 Maximize Your Rental Income with Expert Management
               </h2>
-              
+
               <p className="text-lg text-white/80">
-                Let our experienced team handle every aspect of your Big Bear rental property. 
+                Let our experienced team handle every aspect of your Big Bear rental property.
                 From guest relations to maintenance, we ensure your investment thrives while you relax.
               </p>
             </div>
@@ -78,10 +81,16 @@ export function PropertyManagement() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <Button size="lg" className="flex-1 sm:flex-none">
+              <Button
+                // route to cabins page
+                onClick={() => router.push('/cabins')}
+                size="lg" className="flex-1 sm:flex-none">
                 Get Started Today
               </Button>
-              <Button variant="outline" size="lg" className="flex-1 sm:flex-none">
+              <Button
+                // route to contact page
+                onClick={() => router.push('/list-property#form')}
+                variant="outline" size="lg" className="flex-1 sm:flex-none">
                 Free Property Evaluation
               </Button>
             </div>

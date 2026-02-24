@@ -29,7 +29,9 @@ export async function ThingsToDo() {
     return cat?.slug || "";
   };
 
-  const displayBlogs = (blogs as Blog[]).slice(0, 6);
+  const displayBlogs = (blogs as Blog[])
+    .filter((blog) => getCategorySlug(blog.categoryId) === "activities")
+    .slice(0, 6);
 
   return (
     <section className="py-16 bg-background">

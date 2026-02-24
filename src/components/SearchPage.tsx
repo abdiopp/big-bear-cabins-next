@@ -181,7 +181,7 @@ export function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Search Bar ──────────────────────────────────────────────────── */}
-      <div className="bg-white border-b sticky top-16 z-10">
+      <div className="bg-white border-b sticky top-24 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex flex-wrap gap-3 items-center">
 
