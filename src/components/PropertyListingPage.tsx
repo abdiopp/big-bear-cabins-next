@@ -19,7 +19,7 @@ interface Service {
 const services: Service[] = [
   {
     title: "Extensive Cleaning Services",
-    description: "Professional deep cleaning between guests and regular maintenance cleaning to keep your property pristine and guest-ready at all times.",
+    description: "Making sure your property is held to the highest standards for guests is our number one priority. No guest would ever want to stay in a rental cabin that is not cleaned after each and every visit. Our highly-trained staff make sure your property looks great inside and out. From washing linens to cleaning all surfaces, your property will be looking 100% for the next guest visit.",
     image: "https://images.unsplash.com/photo-1742483359033-13315b247c74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBjbGVhbmluZyUyMHNlcnZpY2V8ZW58MXx8fHwxNzU4NTYyNDQzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
   },
   {
@@ -29,17 +29,17 @@ const services: Service[] = [
   },
   {
     title: "Repair Services",
-    description: "Quick and professional repair services to address any issues that may arise, ensuring minimal downtime and maximum guest satisfaction.",
+    description: "If you are a homeowner, you know full well how repairs to your home may be needed out of nowhere. Here at Big Bear Cabins, we understand that California property maintenance is needed every year and make sure to take care of any issues as quickly as possible. If your property needs any repair work during the year, you will be notified before we get to work. From broken sinks to electrical problems, we can take care of any repair work your property might be in need of. Your property will be in immaculate condition like you have never seen before.",
     image: "https://images.unsplash.com/photo-1607400201515-c2c41c07d307?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob21lJTIwbWFpbnRlbmFuY2UlMjByZXBhaXJ8ZW58MXx8fHwxNzU4NTY1Nzc1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
   },
   {
     title: "Interior Decorating",
-    description: "Professional interior design services to enhance your property's appeal and create memorable experiences that guests will cherish.",
+    description: "Sometimes a property might need a little extra work to attract as many guests as possible throughout the year. Not everyone is a gifted interior decorator, and at Big Bear Cabins, we can help you with the design work! Let us spice up the interior of your home to help it to attract more guests than you can imagine. You can trust in us and the quality interior decorating services we have provided to our clients for the past several years. You will not find a more knowledgeable team of interior decorators than us here at Big Bear Cabins.",
     image: "https://images.unsplash.com/photo-1758448755856-01d3add0177b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbnRlcmlvciUyMGRlY29yYXRpbmclMjBsdXh1cnl8ZW58MXx8fHwxNzU4NjM2MjY0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
   },
   {
     title: "Protecting Your Interests",
-    description: "Comprehensive property protection services including security monitoring, insurance coordination, and legal compliance management.",
+    description: "By protecting your interests with our cleaning, repair, and interior decorating services, you can expect a higher return on investment for your property. By letting Big Bear Cabins take care of the California property maintenance, you are basically having the cabin pay for itself. Let us help you make the most of your desirable property.",
     image: "https://images.unsplash.com/photo-1723186508830-ef518623fa6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9wZXJ0eSUyMHByb3RlY3Rpb24lMjBzZWN1cml0eXxlbnwxfHx8fDE3NTg2MzYyNzF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
   },
   {
@@ -98,6 +98,7 @@ export function PropertyListingPage() {
   const formSection = useScrollAnimation({ threshold: 0.1 });
   const cardsSection = useScrollAnimation({ threshold: 0.1 });
   const testimonialsSection = useScrollAnimation({ threshold: 0.1 });
+  const additionalInfoSection = useScrollAnimation({ threshold: 0.1 });
 
   // Auto-advance slideshow
   useEffect(() => {
@@ -217,7 +218,7 @@ export function PropertyListingPage() {
               Big Bear Cabins Property Management Services
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
-              Trust your property to our caring and experienced team. We handle every detail so you can enjoy the rewards without the hassle.
+              Finding the perfect Big Bear property management company is all about finding someone who provides thorough and comprehensive services to make sure your property is in the best of shape before guests arrive. Not only do we do that at Big Bear Cabins, but we go the extra mile to make sure everything is held to your standards. Here is what you can find with our Big Bear property management services:
             </p>
           </div>
 
@@ -442,6 +443,14 @@ export function PropertyListingPage() {
       {/* Information Cards Section - NOW LAST */}
       <section ref={cardsSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="container mx-auto">
+          <div className={`text-center mb-16 scroll-fade-in-up ${servicesSection.isVisible ? 'animate' : ''}`}>
+            <h2 className="text-4xl md:text-5xl text-black mb-6">
+              Our Big Bear Property Management <br /> Team Can Help You Get Started
+            </h2>
+            <p className="text-gray-600 max-w-3xl mx-auto">
+              Our experienced team members, can guide you through the process of transitioning to property management, whether it’s your first time renting out your property or you’re coming from another property management company. We’re also more than happy to answer any questions you might have, from a more detailed description of the services we offer to how you can benefit from our property management, to other topics that might spring to mind. Contact our office today to learn more about how we can help you turn your vacation cabin or home into a profitable source of income that will make others happy for years to come. Be sure to also check out our terms and conditions.
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-10 max-w-7xl mx-auto">
             <Card className={`hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 scroll-stagger ${cardsSection.isVisible ? 'animate' : ''}`}>
               <CardHeader className="text-center pb-4">
@@ -502,6 +511,43 @@ export function PropertyListingPage() {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Additional Information Section */}
+      <section ref={additionalInfoSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-gray-100">
+        <div className="container mx-auto">
+          <div className="max-w-4xl mx-auto space-y-16">
+
+            <div className={`scroll-fade-in-up ${additionalInfoSection.isVisible ? 'animate' : ''}`}>
+              <h2 className="text-3xl md:text-4xl text-black mb-6 font-medium text-center">
+                Make Your Vacation Home or Cabin Pay for Itself
+              </h2>
+              <div className="space-y-6 text-gray-600 text-lg leading-relaxed text-center md:text-left">
+                <p>
+                  Do you ever find yourself in a position where it is hard to find the time or resources to fully enjoy your vacation cabin or home in the way that you wish you could? Do you want the freedom of being able to avoid the hassle of putting your property up as a vacation rental on your own? If so, you should consider employing the our Big Bear CA Property Management Services!
+                </p>
+                <p>
+                  We supply all types of Big Bear vacation rental management services that are designed to promote the maintenance and profitability of the cabins under our care. We offer a team of qualified, trained, and experienced personnel to attend to each property, and provide extensive cleaning, repair and maintenance, and interior decorating services. By providing these services, we are able to ensure that our properties remain in the immaculate condition that characterizes the cabins and homes that we offer, and that have also helped us earn our reputation for taking care to protect the interests of our property owners.
+                </p>
+              </div>
+            </div>
+
+            <div className={`mt-10 scroll-fade-in-up delay-200 ${additionalInfoSection.isVisible ? 'animate' : ''}`}>
+              <h2 className="text-3xl md:text-4xl text-black mb-6 font-medium text-center">
+                Free Yourself From The Hassle & Stress
+              </h2>
+              <div className="space-y-6 text-gray-600 text-lg leading-relaxed text-center md:text-left">
+                <p>
+                  We are experts in attracting reasonable and trustworthy renters, who will return year after year to experience those once-in-a-lifetime-vacations that your property was, and will continue to be able to provide for them. Having repeat guests helps generate a steady source of income for you. We also have inside knowledge of the Big Bear Lake area, which enables us to showcase the benefits of staying at your property, to include providing information on nearby activities and attractions, regardless of what time of year it is.
+                </p>
+                <p>
+                  The great thing about our Big Bear CA Property Management Service is that it frees you from the hassle, stress, and worry that you would normally face as a property owner dealing directly with vacation renters. We can take care of the advertising, listing, supply stocking, and payment dealings for you, leaving you with more time to focus on what’s most important in your life while you reap the monetary benefits of allowing others to enjoy Big Bear Lake and San Bernardino National Forest as much as you do.
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
