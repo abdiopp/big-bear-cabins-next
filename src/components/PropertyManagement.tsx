@@ -83,7 +83,7 @@ export function PropertyManagement() {
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
               <Button
                 // route to cabins page
-                onClick={() => router.push('/cabins')}
+                onClick={() => router.push('/list-property')}
                 size="lg" className="flex-1 sm:flex-none">
                 Get Started Today
               </Button>
