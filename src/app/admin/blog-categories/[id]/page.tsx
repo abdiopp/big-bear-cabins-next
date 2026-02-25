@@ -32,6 +32,7 @@ type BlogCategory = {
     heroImage: string;
     description: string | null;
     published: boolean;
+    designType?: string;
 };
 
 export default function EditBlogCategory({ params }: { params: Promise<{ id: string }> }) {
@@ -47,6 +48,7 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
         heroImage: "",
         description: "",
         published: false,
+        designType: "classic" as string,
     });
 
     useEffect(() => {
@@ -61,6 +63,7 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
                     heroImage: cat.heroImage,
                     description: cat.description || "",
                     published: cat.published,
+                    designType: (cat as any).designType || "classic",
                 });
             }
             setInitialLoading(false);
@@ -102,6 +105,7 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
                 heroImage: form.heroImage,
                 description: form.description || undefined,
                 published: form.published,
+                designType: form.designType,
             });
             router.push("/admin/blog-categories");
         } catch (error) {
@@ -214,6 +218,42 @@ export default function EditBlogCategory({ params }: { params: Promise<{ id: str
                                 <p className="text-xs text-muted-foreground">
                                     {form.published ? "Visible to visitors" : "Only visible in admin"}
                                 </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="font-medium">Page Design</Label>
+                            <div className="flex gap-4">
+                                <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer flex-1 transition-colors ${form.designType === "classic" ? "border-green-600 bg-green-50" : "border-gray-200 bg-white hover:bg-gray-50"
+                                    }`}>
+                                    <input
+                                        type="radio"
+                                        name="designType"
+                                        value="classic"
+                                        checked={form.designType === "classic"}
+                                        onChange={() => setForm({ ...form, designType: "classic" })}
+                                        className="accent-green-600"
+                                    />
+                                    <div>
+                                        <span className="font-medium text-sm">Classic</span>
+                                        <p className="text-xs text-muted-foreground">Standard blog list layout</p>
+                                    </div>
+                                </label>
+                                <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer flex-1 transition-colors ${form.designType === "new" ? "border-green-600 bg-green-50" : "border-gray-200 bg-white hover:bg-gray-50"
+                                    }`}>
+                                    <input
+                                        type="radio"
+                                        name="designType"
+                                        value="new"
+                                        checked={form.designType === "new"}
+                                        onChange={() => setForm({ ...form, designType: "new" })}
+                                        className="accent-green-600"
+                                    />
+                                    <div>
+                                        <span className="font-medium text-sm">New (Experience-Style)</span>
+                                        <p className="text-xs text-muted-foreground">Card grid with experience page design</p>
+                                    </div>
+                                </label>
                             </div>
                         </div>
 

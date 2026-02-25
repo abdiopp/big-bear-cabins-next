@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 import { getBlogCategoryBySlug, getBlogsByCategorySlug } from "@/actions/blogs";
 import BlogCard from "@/components/BlogCard";
+import { BlogCategoryNewDesign } from "@/components/BlogCategoryNewDesign";
 
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
     const { category } = await params;
@@ -14,6 +15,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
 
     const blogs = await getBlogsByCategorySlug(category);
 
+    // Check design type — render new experience-style layout if selected
+    if ((categoryData as any).designType === "new") {
+        return (
+            <BlogCategoryNewDesign
+                categoryData={categoryData}
+                blogs={blogs}
+                categorySlug={category}
+            />
+        );
+    }
+
+    // Classic layout (default)
     return (
         <div className="min-h-screen bg-white overflow-x-hidden">
             {/* Hero Section */}

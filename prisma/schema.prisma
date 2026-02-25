@@ -91,6 +91,7 @@ model BlogCategory {
   heroImage   String
   description String?
   published   Boolean  @default(false)
+  designType  String   @default("classic")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

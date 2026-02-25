@@ -40,6 +40,7 @@ export async function createBlogCategory(data: {
     heroImage: string;
     description?: string;
     published?: boolean;
+    designType?: string;
 }) {
     const category = await prisma.blogCategory.create({ data });
     revalidatePath("/admin/blog-categories");
@@ -55,6 +56,7 @@ export async function updateBlogCategory(
         heroImage?: string;
         description?: string;
         published?: boolean;
+        designType?: string;
     }
 ) {
     const category = await prisma.blogCategory.update({
