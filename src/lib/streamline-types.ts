@@ -9,14 +9,16 @@ export interface StreamlineApiResponse<T = any> {
 
 // Token Management
 export interface TokenExpirationResponse {
-    expiration_date: string;
-    is_expired: boolean;
+    expiration_date?: string;
+    expiration?: string;
+    is_expired?: boolean;
 }
 
 export interface RenewTokenResponse {
     token_key: string;
     token_secret: string;
-    expiration_date: string;
+    expiration_date?: string;
+    enddate?: string;
 }
 
 // Property Information

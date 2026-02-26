@@ -106,7 +106,7 @@ async function checkTokenExpiration(tokenKey: string, tokenSecret: string): Prom
 
     const data = await res.json();
     console.log('📋 Token expiration API response:', JSON.stringify(data, null, 2));
-    return data.data;
+    return data.Response?.data || data.data;
 }
 
 /**
@@ -133,12 +133,12 @@ async function renewToken(tokenKey: string, tokenSecret: string): Promise<RenewT
 
     const data = await res.json();
 
-    if (data.status !== 1) {
+    if (data.status === 0 || data.status === -1) {
         throw new Error(`Token renewal failed: ${data.status_text || 'Unknown error'}`);
     }
 
     console.log('✅ Token renewed successfully');
-    return data.data;
+    return data.Response?.data || data.data;
 }
 
 /**
@@ -174,7 +174,7 @@ export async function getValidToken(): Promise<{ tokenKey: string; tokenSecret: 
             // Check expiration of env token
             const expiration = await checkTokenExpiration(envTokenKey, envTokenSecret);
 
-            const expiresAt = parseExpirationDate(expiration.expiration_date);
+            const expiresAt = parseExpirationDate(expiration.expiration || expiration.expiration_date);
 
             // Save initial token
             await saveToken({
@@ -204,7 +204,7 @@ export async function getValidToken(): Promise<{ tokenKey: string; tokenSecret: 
         try {
             const renewed = await renewToken(storedToken.tokenKey, storedToken.tokenSecret);
 
-            const newExpiresAt = parseExpirationDate(renewed.expiration_date);
+            const newExpiresAt = parseExpirationDate(renewed.enddate || renewed.expiration_date);
 
             // Update stored token with new credentials
             await saveToken({
@@ -248,7 +248,7 @@ export async function forceRefreshToken(): Promise<{ tokenKey: string; tokenSecr
 
     const renewed = await renewToken(tokenKey, tokenSecret);
 
-    const newExpiresAt = parseExpirationDate(renewed.expiration_date);
+    const newExpiresAt = parseExpirationDate(renewed.enddate || renewed.expiration_date);
 
     await saveToken({
         tokenKey: renewed.token_key,
