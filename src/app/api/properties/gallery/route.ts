@@ -13,13 +13,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Use streamlineRequest directly to allow passing extra params from body
+        // Use streamlineRequest which auto-injects fresh tokens via getValidToken()
         const params = {
             unit_id: body.id,
             max_images_number: 100, // Fetch more images as requested
-            token_key: "4f1aaf609ee539efd325373bc62b6698",
-            token_secret: "79961e54d86d032b0f67aa6ed6deef5e230f50c4",
-            ...body // Allow overriding/adding params
         };
 
         const data = await streamlineRequest('GetPropertyGalleryImages', params);

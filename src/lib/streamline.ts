@@ -28,15 +28,18 @@ export async function streamlineRequest<T = any>(
             // Get valid token (will auto-refresh if needed)
             const { tokenKey, tokenSecret } = await getValidToken();
 
+            // Strip any token credentials from caller params to prevent stale overrides
+            const { token_key: _tk, token_secret: _ts, ...cleanParams } = params;
+
             const res = await fetch(STREAMLINE_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     methodName,
                     params: {
+                        ...cleanParams,
                         token_key: tokenKey,
-                        token_secret: tokenSecret,
-                        ...params
+                        token_secret: tokenSecret
                     }
                 })
             });
