@@ -227,6 +227,9 @@ export async function getPreReservationPrice(params: {
     show_due_today?: number;
     optional_default_enabled?: number;
     return_payments?: string;
+    payment_type_id?: number;
+    // Allow dynamic optional_fee_XXXX params
+    [key: string]: any;
 }) {
     return streamlineRequest('GetPreReservationPrice', {
         pricing_model: 1,
@@ -236,6 +239,7 @@ export async function getPreReservationPrice(params: {
         show_due_today: 1,
         optional_default_enabled: 1,
         return_payments: 'true',
+        payment_type_id: 1,
         ...params
     });
 }
@@ -248,14 +252,19 @@ export async function makeReservation(params: {
     occupants: number;
     first_name: string;
     last_name: string;
-    zip: string | number;
-    address: string;
-    city: string;
-    state: string;
-    cellphone: string;
-    phone?: string;
+    zip?: string | number;
+    address?: string;
+    city?: string;
+    state_name?: string;       // API field: state_name (not 'state')
+    country_name?: string;     // API field: country_name, 2-char ISO, defaults to 'US'
+    mobile_phone?: string;     // API field: mobile_phone (not 'cellphone')
+    phone?: string;            // API field: phone (home phone)
     coupon_code?: string;
-    // Payment fields - set to minimal for testing
+    occupants_small?: number;
+    pets?: number;
+    extra_notes?: string;
+    client_comments?: string;
+    // Payment fields
     madetype_id?: number;
     type_id?: number;
     payment_type_id?: number;
@@ -269,40 +278,25 @@ export async function makeReservation(params: {
     credit_card_charge_required?: number;
     referrer_url?: string;
     payment_comments?: string;
+    // Allow dynamic optional_fee_XXXX params
+    [key: string]: any;
 }) {
-    // Default values for testing (no real payment)
-    const reservationParams = {
-        madetype_id: 9,
-        type_id: 2,
-        payment_type_id: 1,
-        status_id: 9,
-        credit_card_amount: 0, // No charge for testing
-        credit_card_charge_required: 0, // Don't require charge
-        ...params,
-        // Send multiple variations to ensures API picks one up
-        state: params.state,
-        client_state: params.state,
-        State: params.state,
-        ClientState: params.state,
-        guest_state: params.state,
-        GuestState: params.state,
-        // Correct parameter names found via GetPropertyInfo
-        state_name: params.state,
-        country_name: 'US',
-        region: params.state,
-        province: params.state,
-        state_id: params.state,
-        StateID: params.state,
-        state_province: params.state,
-        state_code: params.state,
-        country: 'US',
-        client_country: 'US',
+    // Ensure phone is set for both fields as recommended by API docs
+    const phoneValue = params.mobile_phone || params.phone || '';
 
-        cell_phone: params.cellphone,
-        cellphone: params.cellphone,
-        client_cell_phone: params.cellphone,
-        mobile_phone: params.cellphone,
-        CellPhone: params.cellphone
+    const reservationParams = {
+        madetype_id: 9,       // Internet Reservation (NET)
+        type_id: 2,           // Standard
+        payment_type_id: 1,   // Credit Card
+        status_id: 9,         // Non Blocked Request
+        credit_card_charge_required: 1,
+        referrer_url: 'https://bigbearcabins.com',
+        ...params,
+        // Always ensure phone fields are set (API docs recommend sending both)
+        mobile_phone: phoneValue,
+        phone: phoneValue,
+        // Default country to US if not provided
+        country_name: params.country_name || 'US',
     };
 
     console.log('🔍 MakeReservation params being sent:', JSON.stringify(reservationParams, null, 2));

@@ -1,0 +1,902 @@
+<div class="card-body">
+
+    <section id="document_contents_section">
+
+
+
+        <!-- ----------------------------------------------------------------------- -->
+
+
+        <h2 id="GetPreReservationPrice" class="api-method-name"> GetPreReservationPrice </h2>
+        <p> Used to return the price of a prospective reservations rates, taxes and fees. The response will always
+            include the Company's currency format as "distribution_channel_currency" field. </p>
+        <table class="table apidoc-reqparams-table" width="100%" border="0" cellspacing="0" cellpadding="0">
+            <thead>
+                <tr>
+                    <th scope="col" class="name-col"> Name </th>
+                    <th scope="col" class="type-col"> Data Type </th>
+                    <th scope="col" class="desc-col"> Description </th>
+                    <th scope="col" class="reqd-col"> Required? </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="required-parameter">
+                    <td> token_key </td>
+                    <td> String (255) </td>
+                    <td> The expiring token key credential provided to you by Streamline </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> token_secret </td>
+                    <td> String (255) </td>
+                    <td> The expiring token secret credential provided to you by Streamline </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> unit_id </td>
+                    <td> Number </td>
+                    <td> The unique ID for the property you are making a reservation or getting information from. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> startdate </td>
+                    <td> String (255) </td>
+                    <td> The checkin date for the reservation you are getting pricing for. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> enddate </td>
+                    <td> String (255) </td>
+                    <td> The checkout date for the reservation you are getting pricing for. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> occupants </td>
+                    <td> Number </td>
+                    <td> The number of adult guests staying at the property. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr>
+                    <td> occupants_small </td>
+                    <td> Number </td>
+                    <td> The number of child guests staying at the property. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> pets </td>
+                    <td> Number </td>
+                    <td> Specifies the number of pets that belong to a reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> apply_reward_points </td>
+                    <td> Number </td>
+                    <td> Decides whether or not reward points will be applied toward the price of the reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> coupon_code </td>
+                    <td> String (120) </td>
+                    <td> The coupon_code is factored into reservation pricing and rates. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> madetype_id </td>
+                    <td> Number </td>
+                    <td> The madetype ID for the reservation. This is handled naturally by the API and assumes that a
+                        reservation coming from this API will be an NET (internet) (9) reservation. If you need to use a
+                        different parameter, the values are: 1 = INET (Internet, deprecated, use NET instead) 2 = POST
+                        (Post-Deduct TA Reservation) 3 = FDR (Frontdesk Reservation) 4 = ADM (Admin Reservation) 5 = OWN
+                        (Owner Reservation) 6 = PRE (Pre-Deduct Reservation) 7 = WSR (Wholesale Reservation) 8 = BCR
+                        (Business Card Reservation, deprecated) 9 = NET (XML API Reservation) 10 = OSC (OSCARS
+                        Reservation, deprecated) 11 = PDWTA (Post-Deduct Wholesale TA Reservation) 12 = INNLINK (InnLink
+                        Reservation, deprecated) 13 = LAPI (Lead from API Reservation, deprecated) 14 = £MCW$
+                        (Multi-currency WP Plugin Booking, deprecated) 15 = REP (Repeat, deprecated). </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> type_id </td>
+                    <td> Number </td>
+                    <td> The type (reservation type, like Standard, Owner, Airbnb-NI, etc) to return pricing and room
+                        rate for.
+                        Default is 2 if not passed (2 = Standard).
+                        You can get the type_id's for a company by using the API GetReservationTypes. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> distributor_code </td>
+                    <td> String (255) </td>
+                    <td> The code tied to a particular distribution channel. Distribution channels are tied to a
+                        reservation type. If you are passing distributor_code, you do not need to pass made_type or
+                        make_type. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> pricing_model </td>
+                    <td> String </td>
+                    <td> Defines the pricing model to be used for the reservation. 1 is daily, 2 is weekly, 3 is
+                        monthly. Sometimes users will have all three and will want to use a specific rate. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> optional_fee_XXXX </td>
+                    <td> Boolean </td>
+                    <td> Activates an optional fee when {{XXXX}} is replaced with the fee ID, and the parameter is
+                        passed with a value of 1. For example, if the optional fee ID was 123, you would pass
+                        'optional_fee_123: 1,' to activate the fee and have it impact pricing for a reservation. Used in
+                        websites to allow a guest to opt in or out of a fee using GetPreReservationPrice and allows an
+                        existing reservation to add or take away these fees by using GetReservationPrice. Use it with
+                        MakeReservation to actually add the fee onto the reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> show_package_addons </td>
+                    <td> Null or Empty </td>
+                    <td> Outputs amenity packages if they are selected for the property and breaks them down by every
+                        amenity inside the package. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> optional_default_enabled </td>
+                    <td> Null or Empty </td>
+                    <td> Sets all Optional, Enabled By Default fees to active in response and also adds their amounts to
+                        the grand total of the reservation. Use this if you will be giving guests the ability to
+                        unselect optional fees and addons they don't want. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> return_payments </td>
+                    <td> Boolean </td>
+                    <td> Must be passed to return expected charges. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> payment_type_id </td>
+                    <td> Number </td>
+                    <td> The payment type that will be used to pay for the reservation. Important for users using charge
+                        type logic on fees, most commonly for a credit card surcharge. The list of payment types for a
+                        company can be gotten by using the GetPaymentTypes API method. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> include_coupon_information </td>
+                    <td> Boolean </td>
+                    <td> This includes the name and id of the autoapply coupon that impacts the total value of the
+                        reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> separate_taxes </td>
+                    <td> Boolean </td>
+                    <td> Optional parameter, returns taxes_details_value and required_fees_value, allowing to see the
+                        totaled values for each type. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> guest_country_insurance_validation </td>
+                    <td> String (255) </td>
+                    <td> The shortcode for the country that the guest is from. Certain insurance is only applicable to
+                        guests from certain locations. If you pass this and the country is not in the list, then
+                        insurance won't be returned as one of your optional fees. If you don't pass the param, no
+                        validation will be used. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> guest_state_insurance_validation </td>
+                    <td> String (255) </td>
+                    <td> The shortcode for the state that the guest is from. Certain insurance is only applicable to
+                        guests from certain locations. If you pass this and the state is not in the list, then insurance
+                        won't be returned as one of your optional fees. If you don't pass the param, no validation will
+                        be used. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> return_new_pricing_model_and_rate_type </td>
+                    <td> Boolean </td>
+                    <td> If true (values: yes, 1), returns in response information about: New Pricing Model Id and New
+                        Rate Type Id assigned to recent calculations. Fields: new_pricing_model, new_rate_type_id. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> rate_type_id </td>
+                    <td> Number </td>
+                    <td> Applies the desired Rate Type ID that exists in PM's Streamline system </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-parent">
+                    <td> adjust_rate </td>
+                    <td> Object </td>
+                    <td> Includes information about date and new price to change
+                        date string format: "mm/dd/yyyy"
+                        rate numeric
+
+                        JSON Example:
+                        {
+                        "0": { "date": "02/22/2022", "rate": 70 },
+                        "1": { "date": "02/23/2022", "rate": 75 }
+                        }
+                        XML Example:
+                        <adjust_rate>
+                            <date>02/22/2022</date>
+                            <rate>70</rate>
+                        </adjust_rate>
+                        <adjust_rate>
+                            <date>02/23/2022</date>
+                            <rate>75</rate>
+                        </adjust_rate>
+                    </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> guest_deposits_show_all </td>
+                    <td> Boolean </td>
+                    <td> Will force guest deposits object to show even if it's not required today. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> show_due_today </td>
+                    <td> Boolean </td>
+                    <td> If PM has all Required CC Charge variables disabled, this parameter can be passed to allow to
+                        show amount for "due_today" response field. </td>
+                    <td> No </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3> Request Example </h3>
+        <br>
+
+        <!--Start the code tabs panel-->
+
+        <div class="code-block">
+
+            <ul id="code-tabs-req-getprereservationprice" class="nav nav-tabs" role="tablist">
+
+                <li class="nav-item">
+                    <a class="nav-link active" href="#code-tab-req-xml-getprereservationprice" role="tab"
+                        data-toggle="tab" aria-controls="tab1" aria-expanded="true">
+
+                        XML
+
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#code-tab-req-json-getprereservationprice" role="tab" data-toggle="tab"
+                        aria-controls="tab2">
+
+                        JSON
+
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- Content Panel -->
+
+            <div id="code-request-info-getprereservationprice" class="tab-content">
+
+                <div role="tabpanel" class="tab-pane fade show active" id="code-tab-req-xml-getprereservationprice"
+                    aria-labelledby="code-tab-xml-getprereservationprice">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="xml">            <code>
+              
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;methodCall&gt;
+ &lt;methodName&gt;GetPreReservationPrice&lt;/methodName&gt;
+ &lt;params&gt;
+  &lt;token_key&gt;d5f834dbfb09d743b601e2ae534cc2a4&lt;/token_key&gt;
+  &lt;token_secret&gt;d9d72cddfc270e112f7cf208f142af982bcc7317&lt;/token_secret&gt;
+  &lt;unit_id&gt;387743&lt;/unit_id&gt;
+  &lt;startdate&gt;01/10/2020&lt;/startdate&gt;
+  &lt;enddate&gt;01/17/2020&lt;/enddate&gt;
+  &lt;occupants&gt;2&lt;/occupants&gt;
+  &lt;occupants_small&gt;2&lt;/occupants_small&gt;
+  &lt;pets&gt;1&lt;/pets&gt;
+  &lt;apply_reward_points&gt;1&lt;/apply_reward_points&gt;
+  &lt;coupon_code&gt;DISCOUNT&lt;/coupon_code&gt;
+  &lt;madetype_id&gt;1&lt;/madetype_id&gt;
+  &lt;type_id&gt;2&lt;/type_id&gt;
+  &lt;pricing_model&gt;1&lt;/pricing_model&gt;
+  &lt;optional_fee_XXXX&gt;1&lt;/optional_fee_XXXX&gt;
+  &lt;show_package_addons&gt;1&lt;/show_package_addons&gt;
+  &lt;optional_default_enabled&gt;1&lt;/optional_default_enabled&gt;
+  &lt;return_payments&gt;true&lt;/return_payments&gt;
+  &lt;payment_type_id&gt;1&lt;/payment_type_id&gt;
+  &lt;include_coupon_information&gt;1&lt;/include_coupon_information&gt;
+  &lt;separate_taxes&gt;1&lt;/separate_taxes&gt;
+  &lt;guest_country_insurance_validation&gt;US&lt;/guest_country_insurance_validation&gt;
+  &lt;guest_state_insurance_validation&gt;AZ&lt;/guest_state_insurance_validation&gt;
+  &lt;return_new_pricing_model_and_rate_type&gt;1&lt;/return_new_pricing_model_and_rate_type&gt;
+  &lt;guest_deposits_show_all&gt;1&lt;/guest_deposits_show_all&gt;
+  &lt;show_due_today&gt;1&lt;/show_due_today&gt;
+ &lt;/params&gt;
+&lt;/methodCall&gt;
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane fade show" id="code-tab-req-json-getprereservationprice"
+                    aria-labelledby="code-tab-req-json-getprereservationprice">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="json">            <code>
+              
+{
+    "methodName": "GetPreReservationPrice",
+    "params": {
+        "token_key": "d5f834dbfb09d743b601e2ae534cc2a4",
+        "token_secret": "d9d72cddfc270e112f7cf208f142af982bcc7317",
+        "unit_id": 387743,
+        "startdate": "01/10/2020",
+        "enddate": "01/17/2020",
+        "occupants": 2,
+        "occupants_small": 2,
+        "pets": 1,
+        "apply_reward_points": 1,
+        "coupon_code": "DISCOUNT",
+        "madetype_id": 1,
+        "type_id": 2,
+        "pricing_model": 1,
+        "optional_fee_XXXX": 1,
+        "show_package_addons": 1,
+        "optional_default_enabled": 1,
+        "return_payments": "true",
+        "payment_type_id": 1,
+        "include_coupon_information": 1,
+        "separate_taxes": 1,
+        "guest_country_insurance_validation": "US",
+        "guest_state_insurance_validation": "AZ",
+        "return_new_pricing_model_and_rate_type": 1,
+        "guest_deposits_show_all": 1,
+        "show_due_today": 1
+    }
+}
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+            </div> <!-- /Content Panel -->
+
+        </div> <!-- /Code Block -->
+
+
+        <h3> Response Example </h3>
+        <br>
+
+        <!--Start the code tabs panel-->
+
+        <div class="code-block">
+
+            <ul id="code-tabs-resp-getprereservationprice" class="nav nav-tabs" role="tablist">
+
+                <li class="nav-item">
+                    <a class="nav-link active" href="#code-tab-resp-xml-getprereservationprice" role="tab"
+                        data-toggle="tab" aria-controls="tab1" aria-expanded="true">
+
+                        XML
+
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#code-tab-resp-json-getprereservationprice" role="tab" data-toggle="tab"
+                        aria-controls="tab2">
+
+                        JSON
+
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- Content Panel -->
+
+            <div id="code-response-info-getprereservationprice" class="tab-content">
+
+                <div role="tabpanel" class="tab-pane fade show active" id="code-tab-resp-xml-getprereservationprice"
+                    aria-labelledby="code-tab-xml-getprereservationprice">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="xml">            <code>
+              
+&lt;?xml version="1.0" ?&gt;
+&lt;Response&gt;
+    &lt;data&gt;
+        &lt;unit_id&gt;28254&lt;/unit_id&gt;
+        &lt;price&gt;4200&lt;/price&gt;
+        &lt;taxes&gt;2831.88&lt;/taxes&gt;
+        &lt;coupon_discount&gt;0.00&lt;/coupon_discount&gt;
+        &lt;total&gt;7031.88&lt;/total&gt;
+        &lt;first_day_price&gt;940.80&lt;/first_day_price&gt;
+        &lt;unit_name&gt;Home&lt;/unit_name&gt;
+        &lt;location_name&gt;Blue Creek Cabin&lt;/location_name&gt;
+        &lt;unit_rewards&gt;1&lt;/unit_rewards&gt;
+        &lt;company_rewards&gt;1&lt;/company_rewards&gt;
+        &lt;reward_points_discount&gt;&lt;/reward_points_discount&gt;
+        &lt;guest_deposits&gt;
+            &lt;id&gt;26124&lt;/id&gt;
+            &lt;value&gt;500.00&lt;/value&gt;
+            &lt;name&gt;Guest Security Deposit&lt;/name&gt;
+            &lt;due_today&gt;1&lt;/due_today&gt;
+            &lt;deposit_required&gt;500.00&lt;/deposit_required&gt;
+        &lt;/guest_deposits&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;28453&lt;/id&gt;
+            &lt;name&gt;Pet Fee&lt;/name&gt;
+            &lt;value&gt;500.00&lt;/value&gt;
+            &lt;description&gt;&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;80113&lt;/id&gt;
+            &lt;name&gt;Test Cleaning Fee&lt;/name&gt;
+            &lt;value&gt;200.00&lt;/value&gt;
+            &lt;description&gt;Owner Upcharge&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;112996&lt;/id&gt;
+            &lt;name&gt;&lt;/name&gt;
+            &lt;value&gt;35.00&lt;/value&gt;
+            &lt;description&gt;&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;15116&lt;/id&gt;
+            &lt;name&gt;State Tax&lt;/name&gt;
+            &lt;value&gt;463.50&lt;/value&gt;
+            &lt;description&gt;State Tax&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;80114&lt;/id&gt;
+            &lt;name&gt;Test Processing Fee&lt;/name&gt;
+            &lt;value&gt;36.00&lt;/value&gt;
+            &lt;description&gt;&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;80132,80287&lt;/id&gt;
+            &lt;name&gt;HAXML&lt;/name&gt;
+            &lt;value&gt;250&lt;/value&gt;
+            &lt;description&gt;HAXML&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;group_by_name&gt;1&lt;/group_by_name&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;87317&lt;/id&gt;
+            &lt;name&gt;Scott Fee&lt;/name&gt;
+            &lt;value&gt;510.00&lt;/value&gt;
+            &lt;description&gt;Scott Fee&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;group_by_name&gt;1&lt;/group_by_name&gt;
+        &lt;/required_fees&gt;
+        &lt;required_fees&gt;
+            &lt;id&gt;50012&lt;/id&gt;
+            &lt;name&gt;IHF&lt;/name&gt;
+            &lt;value&gt;219.38&lt;/value&gt;
+            &lt;description&gt;IHF&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;group_by_name&gt;1&lt;/group_by_name&gt;
+        &lt;/required_fees&gt;
+        &lt;optional_fees&gt;
+            &lt;id&gt;15114&lt;/id&gt;
+            &lt;name&gt;Travel Insurance&lt;/name&gt;
+            &lt;value&gt;360.50&lt;/value&gt;
+            &lt;description&gt;Rental Guardian Trip Insurance (optional)&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;1&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;active&gt;0&lt;/active&gt;
+        &lt;/optional_fees&gt;
+        &lt;optional_fees&gt;
+            &lt;id&gt;27140&lt;/id&gt;
+            &lt;name&gt;Kayak&lt;/name&gt;
+            &lt;value&gt;70.00&lt;/value&gt;
+            &lt;description&gt;Kayak&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;active&gt;0&lt;/active&gt;
+        &lt;/optional_fees&gt;
+        &lt;optional_fees&gt;
+            &lt;id&gt;45095&lt;/id&gt;
+            &lt;name&gt;Wireless Internet&lt;/name&gt;
+            &lt;value&gt;5.00&lt;/value&gt;
+            &lt;description&gt;Wireless Internet&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;active&gt;0&lt;/active&gt;
+        &lt;/optional_fees&gt;
+        &lt;optional_fees&gt;
+            &lt;id&gt;41727&lt;/id&gt;
+            &lt;name&gt;Cancel For Any Reason Insurance&lt;/name&gt;
+            &lt;value&gt;613.13&lt;/value&gt;
+            &lt;description&gt;TripHedge Cancel For Any Reason (optional)&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;1&lt;/cfar&gt;
+            &lt;active&gt;0&lt;/active&gt;
+        &lt;/optional_fees&gt;
+        &lt;optional_fees&gt;
+            &lt;id&gt;15983&lt;/id&gt;
+            &lt;name&gt;CSA Trip Insurance&lt;/name&gt;
+            &lt;value&gt;508.22&lt;/value&gt;
+            &lt;description&gt;CSA Trip Insurance (optional)&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+            &lt;active&gt;0&lt;/active&gt;
+        &lt;/optional_fees&gt;
+        &lt;taxes_details&gt;
+            &lt;id&gt;80108&lt;/id&gt;
+            &lt;name&gt;Test State Tax&lt;/name&gt;
+            &lt;value&gt;360.50&lt;/value&gt;
+            &lt;description&gt;&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/taxes_details&gt;
+        &lt;taxes_details&gt;
+            &lt;id&gt;80109&lt;/id&gt;
+            &lt;name&gt;Test City Tax . !!!&lt;/name&gt;
+            &lt;value&gt;257.50&lt;/value&gt;
+            &lt;description&gt;Test City Tax&lt;/description&gt;
+            &lt;damage_waiver&gt;0&lt;/damage_waiver&gt;
+            &lt;travel_insurance&gt;0&lt;/travel_insurance&gt;
+            &lt;cfar&gt;0&lt;/cfar&gt;
+        &lt;/taxes_details&gt;
+        &lt;reservation_days&gt;
+            &lt;date&gt;03/03/2018&lt;/date&gt;
+            &lt;season_id&gt;13940293&lt;/season_id&gt;
+            &lt;season&gt;Holiday Season&lt;/season&gt;
+            &lt;price&gt;840.00&lt;/price&gt;
+            &lt;extra&gt;0.00&lt;/extra&gt;
+            &lt;discount&gt;0&lt;/discount&gt;
+        &lt;/reservation_days&gt;
+        &lt;reservation_days&gt;
+            &lt;date&gt;03/04/2018&lt;/date&gt;
+            &lt;season_id&gt;13940293&lt;/season_id&gt;
+            &lt;season&gt;Holiday Season&lt;/season&gt;
+            &lt;price&gt;840.00&lt;/price&gt;
+            &lt;extra&gt;0.00&lt;/extra&gt;
+            &lt;discount&gt;0&lt;/discount&gt;
+        &lt;/reservation_days&gt;
+        &lt;reservation_days&gt;
+            &lt;date&gt;03/05/2018&lt;/date&gt;
+            &lt;season_id&gt;13940293&lt;/season_id&gt;
+            &lt;season&gt;Holiday Season&lt;/season&gt;
+            &lt;price&gt;840.00&lt;/price&gt;
+            &lt;extra&gt;0.00&lt;/extra&gt;
+            &lt;discount&gt;0&lt;/discount&gt;
+        &lt;/reservation_days&gt;
+        &lt;reservation_days&gt;
+            &lt;date&gt;03/06/2018&lt;/date&gt;
+            &lt;season_id&gt;13940293&lt;/season_id&gt;
+            &lt;season&gt;Holiday Season&lt;/season&gt;
+            &lt;price&gt;840.00&lt;/price&gt;
+            &lt;extra&gt;0.00&lt;/extra&gt;
+            &lt;discount&gt;0&lt;/discount&gt;
+        &lt;/reservation_days&gt;
+        &lt;reservation_days&gt;
+            &lt;date&gt;03/07/2018&lt;/date&gt;
+            &lt;season_id&gt;13940293&lt;/season_id&gt;
+            &lt;season&gt;Holiday Season&lt;/season&gt;
+            &lt;price&gt;840.00&lt;/price&gt;
+            &lt;extra&gt;0.00&lt;/extra&gt;
+            &lt;discount&gt;0&lt;/discount&gt;
+        &lt;/reservation_days&gt;
+        &lt;security_deposits&gt;
+            &lt;security_deposit&gt;
+                &lt;ledger_id&gt;2901&lt;/ledger_id&gt;
+                &lt;description&gt;Guest Security Deposit&lt;/description&gt;
+                &lt;deposit_required&gt;500.00&lt;/deposit_required&gt;
+            &lt;/security_deposit&gt;
+            &lt;security_deposit&gt;
+                &lt;ledger_id&gt;2905&lt;/ledger_id&gt;
+                &lt;description&gt;Guest Deposit&lt;/description&gt;
+                &lt;deposit_required&gt;0.00&lt;/deposit_required&gt;
+            &lt;/security_deposit&gt;
+            &lt;security_deposit&gt;
+                &lt;ledger_id&gt;2934&lt;/ledger_id&gt;
+                &lt;description&gt;Pet Fee Deposit #2&lt;/description&gt;
+                &lt;deposit_required&gt;0.00&lt;/deposit_required&gt;
+            &lt;/security_deposit&gt;
+        &lt;/security_deposits&gt;
+        &lt;security_deposit_text&gt;Security Deposit Required:&lt;/security_deposit_text&gt;
+        &lt;due_today&gt;0&lt;/due_today&gt;
+    &lt;/data&gt;
+&lt;/Response&gt;
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane fade show" id="code-tab-resp-json-getprereservationprice"
+                    aria-labelledby="code-tab-resp-json-getprereservationprice">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="json">            <code>
+              
+{
+  "Response": {
+    "data": {
+      "unit_id": "28254",
+      "price": "4200",
+      "taxes": "2831.88",
+      "coupon_discount": "0.00",
+      "total": "7031.88",
+      "first_day_price": "940.80",
+      "unit_name": "Home",
+      "location_name": "Blue Creek Cabin",
+      "unit_rewards": "1",
+      "company_rewards": "1",
+      "reward_points_discount": null,
+      "guest_deposits": {
+        "id": "26124",
+        "value": "500.00",
+        "name": "Guest Security Deposit",
+        "due_today": "1",
+        "deposit_required": "500.00"
+      },
+      "required_fees": [
+        {
+          "id": "28453",
+          "name": "Pet Fee",
+          "value": "500.00",
+          "description": null,
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "80113",
+          "name": "Test Cleaning Fee",
+          "value": "200.00",
+          "description": "Owner Upcharge",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "112996",
+          "name": null,
+          "value": "35.00",
+          "description": null,
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "15116",
+          "name": "State Tax",
+          "value": "463.50",
+          "description": "State Tax",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "80114",
+          "name": "Test Processing Fee",
+          "value": "36.00",
+          "description": null,
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "80132,80287",
+          "name": "HAXML",
+          "value": "250",
+          "description": "HAXML",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "group_by_name": "1"
+        },
+        {
+          "id": "87317",
+          "name": "Scott Fee",
+          "value": "510.00",
+          "description": "Scott Fee",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "group_by_name": "1"
+        },
+        {
+          "id": "50012",
+          "name": "IHF",
+          "value": "219.38",
+          "description": "IHF",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "group_by_name": "1"
+        }
+      ],
+      "optional_fees": [
+        {
+          "id": "15114",
+          "name": "Travel Insurance",
+          "value": "360.50",
+          "description": "Rental Guardian Trip Insurance (optional)",
+          "damage_waiver": "0",
+          "travel_insurance": "1",
+          "cfar": "0",
+          "active": "0"
+        },
+        {
+          "id": "27140",
+          "name": "Kayak",
+          "value": "70.00",
+          "description": "Kayak",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "active": "0"
+        },
+        {
+          "id": "45095",
+          "name": "Wireless Internet",
+          "value": "5.00",
+          "description": "Wireless Internet",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "active": "0"
+        },
+        {
+          "id": "41727",
+          "name": "Cancel For Any Reason Insurance",
+          "value": "613.13",
+          "description": "TripHedge Cancel For Any Reason (optional)",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "1",
+          "active": "0"
+        },
+        {
+          "id": "15983",
+          "name": "CSA Trip Insurance",
+          "value": "508.22",
+          "description": "CSA Trip Insurance (optional)",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0",
+          "active": "0"
+        }
+      ],
+      "taxes_details": [
+        {
+          "id": "80108",
+          "name": "Test State Tax",
+          "value": "360.50",
+          "description": null,
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        },
+        {
+          "id": "80109",
+          "name": "Test City Tax . !!!",
+          "value": "257.50",
+          "description": "Test City Tax",
+          "damage_waiver": "0",
+          "travel_insurance": "0",
+          "cfar": "0"
+        }
+      ],
+      "reservation_days": [
+        {
+          "date": "03/03/2018",
+          "season_id": "13940293",
+          "season": "Holiday Season",
+          "price": "840.00",
+          "extra": "0.00",
+          "discount": "0"
+        },
+        {
+          "date": "03/04/2018",
+          "season_id": "13940293",
+          "season": "Holiday Season",
+          "price": "840.00",
+          "extra": "0.00",
+          "discount": "0"
+        },
+        {
+          "date": "03/05/2018",
+          "season_id": "13940293",
+          "season": "Holiday Season",
+          "price": "840.00",
+          "extra": "0.00",
+          "discount": "0"
+        },
+        {
+          "date": "03/06/2018",
+          "season_id": "13940293",
+          "season": "Holiday Season",
+          "price": "840.00",
+          "extra": "0.00",
+          "discount": "0"
+        },
+        {
+          "date": "03/07/2018",
+          "season_id": "13940293",
+          "season": "Holiday Season",
+          "price": "840.00",
+          "extra": "0.00",
+          "discount": "0"
+        }
+      ],
+      "security_deposits": {
+        "security_deposit": [
+          {
+            "ledger_id": "2901",
+            "description": "Guest Security Deposit",
+            "deposit_required": "500.00"
+          },
+          {
+            "ledger_id": "2905",
+            "description": "Guest Deposit",
+            "deposit_required": "0.00"
+          },
+          {
+            "ledger_id": "2934",
+            "description": "Pet Fee Deposit #2",
+            "deposit_required": "0.00"
+          }
+        ]
+      },
+      "security_deposit_text": "Security Deposit Required:",
+      "due_today": "0"
+    }
+  }
+}
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+            </div> <!-- /Content Panel -->
+
+        </div> <!-- /Code Block -->
+
+
+        <hr class="apidoc-breaker">
+
+
+
+    </section>
+
+
+</div>

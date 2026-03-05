@@ -1,0 +1,727 @@
+<div class="card-body">
+
+    <section id="document_contents_section">
+
+
+
+        <!-- ----------------------------------------------------------------------- -->
+
+
+        <h2 id="MakeReservation" class="api-method-name"> MakeReservation </h2>
+        <p> Used to make a reservation (General). Although several fields are marked as 'not required', a Streamline
+            user has the ability to make website reservations require many optional parameters including email,
+            cellphone, full address, etc. It's best practice to speak to the company you are working with to decide what
+            all required fields will be before you begin testing. </p>
+        <table class="table apidoc-reqparams-table" width="100%" border="0" cellspacing="0" cellpadding="0">
+            <thead>
+                <tr>
+                    <th scope="col" class="name-col"> Name </th>
+                    <th scope="col" class="type-col"> Data Type </th>
+                    <th scope="col" class="desc-col"> Description </th>
+                    <th scope="col" class="reqd-col"> Required? </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="required-parameter">
+                    <td> token_key </td>
+                    <td> String (255) </td>
+                    <td> The expiring token key credential provided to you by Streamline </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> token_secret </td>
+                    <td> String (255) </td>
+                    <td> The expiring token secret credential provided to you by Streamline </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> unit_id </td>
+                    <td> Number </td>
+                    <td> The unique ID for the home you are making a reservation or getting information from. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> startdate </td>
+                    <td> String </td>
+                    <td> start date </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> enddate </td>
+                    <td> String </td>
+                    <td> end date </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> email </td>
+                    <td> String </td>
+                    <td> email </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> occupants </td>
+                    <td> Number </td>
+                    <td> The number of adult guests staying at the property. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> first_name </td>
+                    <td> String </td>
+                    <td> The first name of the traveler or lead in the Streamline system. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr class="required-parameter">
+                    <td> last_name </td>
+                    <td> String </td>
+                    <td> The last name of the traveler or lead in the Streamline system. </td>
+                    <td> Yes </td>
+                </tr>
+                <tr>
+                    <td> city </td>
+                    <td> String </td>
+                    <td> The city for guest address information. Most users will require this. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> state_name </td>
+                    <td> String </td>
+                    <td> Specifies the state_name of a traveler or lead in the Streamline system. Most users will
+                        require this. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> country_name </td>
+                    <td> String </td>
+                    <td> country name (2 Characters ISO format). If no country name is passed, system defaults to
+                        passing "US" </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> zip </td>
+                    <td> Number </td>
+                    <td> 5 Digit Postal Code </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> extra_notes </td>
+                    <td> String </td>
+                    <td> extra notes </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> client_comments </td>
+                    <td> String </td>
+                    <td> client comments </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> emails </td>
+                    <td> String </td>
+                    <td> emails (for new client) </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> mobile_phone </td>
+                    <td> String </td>
+                    <td> The cellphone associated with the reservation. Most users will use mobile_phone and home_phone
+                        interchangebely. If you only receive one phone number, we recommend to use this field as well as
+                        home_phone and pass in both. We recommend you pass correct country code as well. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> assigned_agent_id </td>
+                    <td> Number </td>
+                    <td> assigned agent id </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> lead_agent_id </td>
+                    <td> Number </td>
+                    <td> lead agent id </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> occupants_small </td>
+                    <td> Number </td>
+                    <td> The number of child guests staying at the property. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> pets </td>
+                    <td> Number </td>
+                    <td> Specifies the number of pets that belong to a reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> madetype_id </td>
+                    <td> Number </td>
+                    <td> The madetype ID for the reservation. This is handled naturally by the API and assumes that a
+                        reservation coming from this API will be an NET (internet) (9) reservation. If you need to use a
+                        different parameter, the values are: 1 = INET (Internet, deprecated, use NET instead) 2 = POST
+                        (Post-Deduct TA Reservation) 3 = FDR (Frontdesk Reservation) 4 = ADM (Admin Reservation) 5 = OWN
+                        (Owner Reservation) 6 = PRE (Pre-Deduct Reservation) 7 = WSR (Wholesale Reservation) 8 = BCR
+                        (Business Card Reservation, deprecated) 9 = NET (XML API Reservation) 10 = OSC (OSCARS
+                        Reservation, deprecated) 11 = PDWTA (Post-Deduct Wholesale TA Reservation) 12 = INNLINK (InnLink
+                        Reservation, deprecated) 13 = LAPI (Lead from API Reservation, deprecated) 14 = £MCW$
+                        (Multi-currency WP Plugin Booking, deprecated) 15 = REP (Repeat, deprecated). </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> type_id </td>
+                    <td> Number </td>
+                    <td> The type (reservation type, like Standard, Owner, Airbnb-NI, etc) to return pricing and room
+                        rates. Default is 0 if not passed (Standard). You can get the type_id's for a company by using
+                        the API GetReservationTypes. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> not_blocked_request </td>
+                    <td> String </td>
+                    <td> If passed with any value, this makes the reservation as a Not Blocked Reservation Request. This
+                        is used most frequently with quotes and inquiries. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> payment_type_id </td>
+                    <td> Number </td>
+                    <td> ID for a payment type being posted with MakeReservation or AddReservationPayment. Currently
+                        there is no API to return payment types for a specific company. Global payment types are 1 =
+                        Charge CC, 4 = Charge CASH, 7 = Charge Owner, 11 = Wholesale Payment, 33 = E-Check/ACH. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> use_room_type_logic </td>
+                    <td> Boolean </td>
+                    <td> Use room type logic with this method. Changes depending on method, but used for Resort clients
+                        that have multiple rooms inside of one resort as a 'room type'. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> ask_special_occasion </td>
+                    <td> Boolean </td>
+                    <td> ask_special_occasion </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> disable_payments </td>
+                    <td> Boolean </td>
+                    <td> disable payments </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> status_id </td>
+                    <td> Number </td>
+                    <td> status id
+
+                        Status-ID Fields:
+
+                        Accepted Values:
+
+                        4 = Booked
+                        9 = Non Blocked Request (Pending Booking reservations)
+                        10 = Blocked Request </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> confirmation_id </td>
+                    <td> Number </td>
+                    <td> The confirmation_id is used to lookup a reservation. It is unique per company. Two companies
+                        can have the same confirmation_id </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> hash </td>
+                    <td> String </td>
+                    <td> The unique hash per reservation. Can be used instead of confirmation_id or reservation_id.
+                        Unique to Streamline system. Passed in URLs for website and Streamline system email quotes </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-parent">
+                    <td> amenity_addon </td>
+                    <td> Object </td>
+                    <td> Amenity object that contains information about the amenity add-on being added to the
+                        reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-subfield">
+                    <td> --- &nbsp; amenity_id </td>
+                    <td> Number </td>
+                    <td> The ID for the amenity addon you're adding to the reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-subfield">
+                    <td> --- &nbsp; amenity_quantity </td>
+                    <td> Number </td>
+                    <td> Some amenity add-ons in Streamline allow a user to set a quantity to sell. This allows you to
+                        set the quantity when you are making a reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> optional_fee_XXXX </td>
+                    <td> String </td>
+                    <td> Activates an optional fee when {{XXXX}} is replaced with the fee ID, and the parameter is
+                        passed with a value of 1. For example, if the optional fee ID was 123, you would pass
+                        'optional_fee_123: 1,' to activate the fee and have it impact pricing for a reservation. Used in
+                        websites to allow a guest to opt in or out of a fee using GetPreReservationPrice and allows an
+                        existing reservation to add or take away these fees by using GetReservationPrice. Use it with
+                        MakeReservation to actually add the fee onto the reservation. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> verify_client_data </td>
+                    <td> String </td>
+                    <td> verify client data (any value = true) </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-parent">
+                    <td> flags </td>
+                    <td> Object </td>
+                    <td> Object containing flag objects. Flags are used to mark reservations for a particular reason.
+                        Common uses are disbaleing a credit card, or flagging a return guest. </td>
+                    <td> No </td>
+                </tr>
+                <tr class="object-subfield">
+                    <td> --- &nbsp; flag_id </td>
+                    <td> Number </td>
+                    <td> ID's of the flags you will be adding to the reservation you are making. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> streamsign_thankyou_url </td>
+                    <td> String </td>
+                    <td> streamsign thankyou url </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> streamsign_redirect </td>
+                    <td> Boolean </td>
+                    <td> streamsign redirect </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> address </td>
+                    <td> String (50) </td>
+                    <td> Postal Address - If passing CC details - must match CC address </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> get_reservation_info </td>
+                    <td> String </td>
+                    <td> get reservation info (any value = true) </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> language_country_id </td>
+                    <td> Number </td>
+                    <td> language country id (f.e.: 139 - spanish, 227 - english) </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> corporation_id </td>
+                    <td> Number </td>
+                    <td> Is used for Corporate Reservations </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_amount </td>
+                    <td> Null or Empty </td>
+                    <td> Amount to charge credit card when reservation is made. Recommended to not use this parameter,
+                        as the reservation will attempt to charge grand total if passed without this. If the company has
+                        autocharging or scheduled payments on, then reservations will charge the outstanding amount
+                        after this time has passed. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_type_id </td>
+                    <td> Number </td>
+                    <td> 1 = Visa
+                        2 = MasterCard
+                        3 = AmericanExpress
+                        4 = Discover </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_number </td>
+                    <td> Number </td>
+                    <td> 16 digit CC number </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_expiration_year </td>
+                    <td> Number </td>
+                    <td> Credit Card Expiration Year </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_expiration_month </td>
+                    <td> Number </td>
+                    <td> Credit Card Expiration Month </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_cid </td>
+                    <td> Number </td>
+                    <td> Credit Card CID </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> bank_account_number </td>
+                    <td> Number </td>
+                    <td> Bank account number for e-check/ACH payments.
+
+                        Used with payment_type_id = 33 </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> bank_routing_number </td>
+                    <td> Number </td>
+                    <td> Bank routing number for e-check/ACH payments.
+
+                        Used with payment_type_id = 33 </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> bank_account_holder_name </td>
+                    <td> String (50) </td>
+                    <td> Bank account holders name.
+
+                        Used with payment_type_id = 33 </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> work_phone </td>
+                    <td> String </td>
+                    <td> Optional Work Phone Number </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> hear_about_new </td>
+                    <td> String </td>
+                    <td> Optional parameter sets the source of the reservation. Important for property managers to know
+                        where reservations are coming from. Heard About source record will be created if one does not
+                        exist. (Main Menu -&gt; Tools: Hear About Manager) </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> hear_about_id </td>
+                    <td> Number </td>
+                    <td> Can be used over "hear_about_new". Accepts the ID for the existing Heard About source found in
+                        the PM system. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> phone </td>
+                    <td> String </td>
+                    <td> Phone Number </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> credit_card_charge_required </td>
+                    <td> Boolean </td>
+                    <td> This forces the reservation to charge the credit card. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> travelagent_id </td>
+                    <td> Number </td>
+                    <td> The processor ID for the Travel Agent you are attaching to the reservation. You can get the
+                        processor ID's by using GetProcessors. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> rate_type_id </td>
+                    <td> Number </td>
+                    <td> Applies the desired Rate Type ID when creating a Reservation. Rate Type IDs can be found in
+                        Streamline Admin (Main Menu -&gt; Tools -&gt; Manage Rate Types) </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> pricing_model </td>
+                    <td> String </td>
+                    <td> Defines the pricing model to be used for the reservation. 1 is daily, 2 is weekly, 3 is
+                        monthly. Sometimes users will have all three and will want to use a specific rate. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> coupon_code </td>
+                    <td> String (255) </td>
+                    <td> The coupon code for the coupon you want to apply to the reservation.
+
+                        If coupon_code is passed as empty string, no coupon will be applied. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> coupon_id </td>
+                    <td> Number </td>
+                    <td> coupon_id can be used in place of coupon_code </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> referrer_url </td>
+                    <td> String </td>
+                    <td> The value set in parameter referrer_url will populate field Referrer field in Reservation
+                        Folio. </td>
+                    <td> No </td>
+                </tr>
+                <tr>
+                    <td> payment_comments </td>
+                    <td> String (25550) </td>
+                    <td> Information about how the reservation was or will be paid for, if relevant. </td>
+                    <td> No </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3> Request Example </h3>
+        <br>
+
+        <!--Start the code tabs panel-->
+
+        <div class="code-block">
+
+            <ul id="code-tabs-req-makereservation" class="nav nav-tabs" role="tablist">
+
+                <li class="nav-item">
+                    <a class="nav-link active" href="#code-tab-req-xml-makereservation" role="tab" data-toggle="tab"
+                        aria-controls="tab1" aria-expanded="true">
+
+                        XML
+
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#code-tab-req-json-makereservation" role="tab" data-toggle="tab"
+                        aria-controls="tab2">
+
+                        JSON
+
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- Content Panel -->
+
+            <div id="code-request-info-makereservation" class="tab-content">
+
+                <div role="tabpanel" class="tab-pane fade show active" id="code-tab-req-xml-makereservation"
+                    aria-labelledby="code-tab-xml-makereservation">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="xml">            <code>
+              
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;methodCall&gt;
+ &lt;methodName&gt;MakeReservation&lt;/methodName&gt;
+ &lt;params&gt;
+  &lt;token_key&gt;d5f834dbfb09d743b601e2ae534cc2a4&lt;/token_key&gt;
+  &lt;token_secret&gt;d9d72cddfc270e112f7cf208f142af982bcc7317&lt;/token_secret&gt;
+  &lt;unit_id&gt;&lt;/unit_id&gt;
+  &lt;startdate&gt;&lt;/startdate&gt;
+  &lt;enddate&gt;&lt;/enddate&gt;
+  &lt;email&gt;&lt;/email&gt;
+  &lt;occupants&gt;&lt;/occupants&gt;
+  &lt;first_name&gt;&lt;/first_name&gt;
+  &lt;last_name&gt;&lt;/last_name&gt;
+  &lt;zip&gt;90210&lt;/zip&gt;
+  &lt;madetype_id&gt;9&lt;/madetype_id&gt;
+  &lt;type_id&gt;2&lt;/type_id&gt;
+  &lt;payment_type_id&gt;1&lt;/payment_type_id&gt;
+  &lt;status_id&gt;9&lt;/status_id&gt;
+  &lt;amenity_addon&gt;
+   &lt;amenity_id&gt;458769&lt;/amenity_id&gt;
+   &lt;amenity_quantity&gt;2&lt;/amenity_quantity&gt;
+  &lt;/amenity_addon&gt;
+  &lt;flags&gt;
+   &lt;flag_id&gt;2&lt;/flag_id&gt;
+  &lt;/flags&gt;
+  &lt;credit_card_amount&gt;.99&lt;/credit_card_amount&gt;
+  &lt;credit_card_type_id&gt;2&lt;/credit_card_type_id&gt;
+  &lt;credit_card_number&gt;4111111111111111&lt;/credit_card_number&gt;
+  &lt;credit_card_expiration_year&gt;2025&lt;/credit_card_expiration_year&gt;
+  &lt;credit_card_expiration_month&gt;06&lt;/credit_card_expiration_month&gt;
+  &lt;credit_card_cid&gt;123&lt;/credit_card_cid&gt;
+  &lt;bank_account_number&gt;1&lt;/bank_account_number&gt;
+  &lt;bank_routing_number&gt;1&lt;/bank_routing_number&gt;
+  &lt;credit_card_charge_required&gt;1&lt;/credit_card_charge_required&gt;
+  &lt;travelagent_id&gt;456789&lt;/travelagent_id&gt;
+  &lt;coupon_code&gt;couponCode&lt;/coupon_code&gt;
+  &lt;referrer_url&gt;https://www.url.com&lt;/referrer_url&gt;
+  &lt;payment_comments&gt;Paid via check&lt;/payment_comments&gt;
+ &lt;/params&gt;
+&lt;/methodCall&gt;
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane fade show" id="code-tab-req-json-makereservation"
+                    aria-labelledby="code-tab-req-json-makereservation">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="json">            <code>
+              
+{
+    "methodName": "MakeReservation",
+    "params": {
+        "token_key": "d5f834dbfb09d743b601e2ae534cc2a4",
+        "token_secret": "d9d72cddfc270e112f7cf208f142af982bcc7317",
+        "unit_id": "",
+        "startdate": "",
+        "enddate": "",
+        "email": "",
+        "occupants": "",
+        "first_name": "",
+        "last_name": "",
+        "zip": 90210,
+        "madetype_id": 9,
+        "type_id": 2,
+        "payment_type_id": 1,
+        "status_id": 9,
+        "amenity_addon": {
+            "amenity_id": 458769,
+            "amenity_quantity": 2
+        },
+        "flags": {
+            "flag_id": 2
+        },
+        "credit_card_amount": 0.99,
+        "credit_card_type_id": 2,
+        "credit_card_number": 4111111111111111,
+        "credit_card_expiration_year": 2025,
+        "credit_card_expiration_month": 6,
+        "credit_card_cid": 123,
+        "bank_account_number": 1,
+        "bank_routing_number": 1,
+        "credit_card_charge_required": 1,
+        "travelagent_id": 456789,
+        "coupon_code": "couponCode",
+        "referrer_url": "https://www.url.com",
+        "payment_comments": "Paid via check"
+    }
+}
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+            </div> <!-- /Content Panel -->
+
+        </div> <!-- /Code Block -->
+
+
+        <h3> Response Example </h3>
+        <br>
+
+        <!--Start the code tabs panel-->
+
+        <div class="code-block">
+
+            <ul id="code-tabs-resp-makereservation" class="nav nav-tabs" role="tablist">
+
+                <li class="nav-item">
+                    <a class="nav-link active" href="#code-tab-resp-xml-makereservation" role="tab" data-toggle="tab"
+                        aria-controls="tab1" aria-expanded="true">
+
+                        XML
+
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#code-tab-resp-json-makereservation" role="tab" data-toggle="tab"
+                        aria-controls="tab2">
+
+                        JSON
+
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- Content Panel -->
+
+            <div id="code-response-info-makereservation" class="tab-content">
+
+                <div role="tabpanel" class="tab-pane fade show active" id="code-tab-resp-xml-makereservation"
+                    aria-labelledby="code-tab-xml-makereservation">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="xml">            <code>
+              
+&lt;?xml version="1.0" ?&gt;
+&lt;Response&gt;
+    &lt;data&gt;
+        &lt;reservation&gt;
+            &lt;confirmation_id&gt;8787&lt;/confirmation_id&gt;
+            &lt;location_name&gt;Blue Creek Cabin&lt;/location_name&gt;
+            &lt;condo_type_name&gt;5 bedroom Blue Creek Cabin&lt;/condo_type_name&gt;
+            &lt;unit_name&gt;Blue Creek Cabin&lt;/unit_name&gt;
+            &lt;startdate&gt;10/05/2018&lt;/startdate&gt;
+            &lt;enddate&gt;10/08/2018&lt;/enddate&gt;
+            &lt;occupants&gt;2&lt;/occupants&gt;
+            &lt;occupants_small&gt;0&lt;/occupants_small&gt;
+            &lt;pets&gt;0&lt;/pets&gt;
+            &lt;price_common&gt;7356.33&lt;/price_common&gt;
+            &lt;price_balance&gt;7356.33&lt;/price_balance&gt;
+            &lt;travelagent_name&gt;&lt;/travelagent_name&gt;
+        &lt;/reservation&gt;
+    &lt;/data&gt;
+&lt;/Response&gt;
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane fade show" id="code-tab-resp-json-makereservation"
+                    aria-labelledby="code-tab-resp-json-makereservation">
+
+                    <button class="copy-code-button" type="button">Copy</button>
+                    <div class="highlight">
+                        <pre class="api-code" lang="json">            <code>
+              
+{
+  "Response": {
+    "data": {
+      "reservation": {
+        "confirmation_id": "8787",
+        "location_name": "Blue Creek Cabin",
+        "condo_type_name": "5 bedroom Blue Creek Cabin",
+        "unit_name": "Blue Creek Cabin",
+        "startdate": "10/05/2018",
+        "enddate": "10/08/2018",
+        "occupants": "2",
+        "occupants_small": "0",
+        "pets": "0",
+        "price_common": "7356.33",
+        "price_balance": "7356.33",
+        "travelagent_name": null
+      }
+    }
+  }
+}
+            </code>
+          </pre>
+                    </div>
+
+                </div>
+
+            </div> <!-- /Content Panel -->
+
+        </div> <!-- /Code Block -->
+
+
+        <hr class="apidoc-breaker">
+
+
+
+    </section>
+
+
+</div>

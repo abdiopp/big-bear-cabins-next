@@ -40,6 +40,8 @@ interface CreateReservationParams {
     cellPhone: string;
     phone?: string;
     couponCode?: string;
+    occupantsSmall?: number;
+    pets?: number;
     // Payment and Add-ons
     paymentType?: string;
     creditCard?: string;
@@ -48,6 +50,8 @@ interface CreateReservationParams {
     travelInsurance?: string;
     petFee?: boolean;
     notes?: string;
+    // Optional fee IDs to include
+    optionalFeeIds?: string[];
 }
 
 export function useReservations() {
@@ -125,6 +129,14 @@ export function useReservations() {
         setError(null);
 
         try {
+            // Build optional fee params
+            const optionalFeeParams: Record<string, number> = {};
+            if (params.optionalFeeIds) {
+                params.optionalFeeIds.forEach(id => {
+                    optionalFeeParams[`optional_fee_${id}`] = 1;
+                });
+            }
+
             const response = await fetch('/api/reservations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -134,6 +146,8 @@ export function useReservations() {
                     enddate: params.endDate,
                     email: params.email,
                     occupants: params.occupants,
+                    occupants_small: params.occupantsSmall || 0,
+                    pets: params.pets || 0,
                     first_name: params.firstName,
                     last_name: params.lastName,
                     zip: params.zip,
@@ -143,14 +157,14 @@ export function useReservations() {
                     cell_phone: params.cellPhone,
                     phone: params.phone,
                     coupon_code: params.couponCode,
-                    // Payment and Add-on fields
-                    payment_type: params.paymentType,
+                    // Payment fields
                     credit_card_number: params.creditCard,
                     credit_card_cvv: params.cvv,
                     credit_card_expiration: params.expiration,
-                    travel_insurance: params.travelInsurance,
-                    pet_fee: params.petFee,
-                    notes: params.notes
+                    // Notes
+                    notes: params.notes,
+                    // Optional fee selections
+                    ...optionalFeeParams
                 })
             });
 

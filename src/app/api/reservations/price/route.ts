@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'prereservation':
             case 'price':
+                // Collect any optional_fee_XXXX params from the request
+                const optionalFeeParams: Record<string, any> = {};
+                Object.keys(params).forEach(key => {
+                    if (key.startsWith('optional_fee_')) {
+                        optionalFeeParams[key] = params[key];
+                    }
+                });
+
                 // Use GetPreReservationPrice for detailed pricing
                 const rawData: any = await getPreReservationPrice({
                     unit_id: params.unit_id,
@@ -36,7 +44,8 @@ export async function POST(req: NextRequest) {
                     occupants: params.occupants,
                     occupants_small: params.occupants_small || 0,
                     pets: params.pets || 0,
-                    coupon_code: params.coupon_code
+                    coupon_code: params.coupon_code,
+                    ...optionalFeeParams
                 });
 
                 if (rawData && rawData.data) {

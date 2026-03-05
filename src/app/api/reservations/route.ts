@@ -3,7 +3,7 @@ import {
     getReservations,
     makeReservation,
     getReservationInfo,
-    getReservationPrice
+    getPreReservationPrice
 } from '@/lib/streamline';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -48,64 +48,102 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Determine payment type ID (Default to Credit Card = 1 or 2 depending on system)
-        // This mapping might need adjustment based on specific system configuration
-        const paymentTypeId = body.payment_type === 'credit-card' ? 1 : 1;
+        // Collect any optional_fee_XXXX params
+        const optionalFeeParams: Record<string, any> = {};
+        Object.keys(body).forEach(key => {
+            if (key.startsWith('optional_fee_')) {
+                optionalFeeParams[key] = body[key];
+            }
+        });
 
-        // Calculate Total Price server-side to ensure security
+        // Calculate total price using GetPreReservationPrice (consistent with checkout display)
         let totalAmount = 0;
         try {
-            const priceData = await getReservationPrice({
+            const priceData: any = await getPreReservationPrice({
                 unit_id: body.unit_id,
                 startdate: body.startdate,
                 enddate: body.enddate,
-                occupants: body.occupants
+                occupants: body.occupants,
+                occupants_small: body.occupants_small || 0,
+                pets: body.pets || 0,
+                coupon_code: body.coupon_code,
+                ...optionalFeeParams
             });
-            totalAmount = priceData.data.total;
+            totalAmount = parseFloat(priceData?.data?.total) || 0;
         } catch (priceError) {
             console.error('Error fetching price for reservation:', priceError);
-            // Fallback or fail? defaulting to 0 might verify availability but not charge correctly
-            // Proceeding with 0 will rely on Streamline's internal logic or manual collection
         }
 
-        // Create reservation
+        // Parse expiration date (MM/YY format)
+        let expirationMonth: number | undefined;
+        let expirationYear: number | undefined;
+        if (body.credit_card_expiration) {
+            const parts = body.credit_card_expiration.split('/');
+            expirationMonth = parseInt(parts[0]);
+            expirationYear = parts[1] ? parseInt('20' + parts[1]) : undefined;
+        }
+
+        // Determine credit card type from number
+        const cardNumber = body.credit_card_number?.toString().replace(/\s/g, '') || '';
+        let creditCardTypeId = 1; // Default: Visa
+        if (cardNumber.startsWith('4')) creditCardTypeId = 1;       // Visa
+        else if (cardNumber.startsWith('5')) creditCardTypeId = 2;  // MasterCard
+        else if (cardNumber.startsWith('3')) creditCardTypeId = 3;  // Amex
+        else if (cardNumber.startsWith('6')) creditCardTypeId = 4;  // Discover
+
+        // Strip phone formatting characters - API expects digits only
+        const cleanPhone = (body.cell_phone || body.phone || '').replace(/[\s\(\)\-\+]/g, '');
+
+        // Create reservation using correct Streamline API parameter names
         const data = await makeReservation({
             unit_id: body.unit_id,
             startdate: body.startdate,
             enddate: body.enddate,
             email: body.email,
             occupants: body.occupants,
+            occupants_small: body.occupants_small || 0,
+            pets: body.pets || 0,
             first_name: body.first_name,
             last_name: body.last_name,
             zip: body.zip,
             address: body.address,
             city: body.city,
-            state: body.state,
-            cellphone: body.cell_phone,
-            phone: body.phone,
+            state_name: body.state,        // API expects 'state_name'
+            mobile_phone: cleanPhone,       // API expects 'mobile_phone'
+            phone: cleanPhone,              // Also send as 'phone' (recommended by docs)
             coupon_code: body.coupon_code,
 
             // Payment fields
-            payment_type_id: paymentTypeId,
-            credit_card_number: body.credit_card_number,
+            payment_type_id: 1, // Credit Card
+            credit_card_number: cardNumber,
+            credit_card_type_id: creditCardTypeId,
             credit_card_cid: body.credit_card_cvv,
-            credit_card_expiration_month: body.credit_card_expiration ? parseInt(body.credit_card_expiration.split('/')[0]) : undefined,
-            credit_card_expiration_year: body.credit_card_expiration ? parseInt('20' + body.credit_card_expiration.split('/')[1]) : undefined,
+            credit_card_expiration_month: expirationMonth,
+            credit_card_expiration_year: expirationYear,
             credit_card_amount: totalAmount,
             credit_card_charge_required: totalAmount > 0 ? 1 : 0,
 
-            // Notes
+            // Notes / comments
+            client_comments: body.notes || undefined,
             payment_comments: body.notes || 'Website Booking',
 
-            // Pass through any optional fees if they were provided in a generic way
-            // (Assumes body might have optional_fee_X)
-            ...Object.keys(body).reduce((acc, key) => {
-                if (key.startsWith('optional_fee_')) {
-                    acc[key] = body[key];
-                }
-                return acc;
-            }, {} as Record<string, any>)
+            // Optional fee selections
+            ...optionalFeeParams
         });
+
+        // Check for Streamline API-level errors (they return 200 with error in body)
+        // Handle both direct format {status:{code}} and wrapped {Response:{...}}
+        const responseData = data as any;
+        const apiStatus = responseData?.status || responseData?.Response?.status;
+        if (apiStatus?.code && !apiStatus.code.startsWith('S')) {
+            console.error('Streamline API error:', apiStatus);
+            // Strip HTML tags from description
+            const cleanDescription = (apiStatus.description || 'Reservation failed').replace(/<[^>]*>/g, ' ').trim();
+            return NextResponse.json(
+                { error: cleanDescription, code: apiStatus.code },
+                { status: 400 }
+            );
+        }
 
         return NextResponse.json(data);
     } catch (error: any) {
@@ -116,3 +154,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +69,8 @@ function CheckoutContent() {
     const checkOut = searchParams.get('checkOut');
     const adults = parseInt(searchParams.get('adults') || '1');
     const children = parseInt(searchParams.get('children') || '0');
-    const pets = parseInt(searchParams.get('pets') || '0');
+    const petsParam = searchParams.get('pets') || '0';
+    const pets = petsParam === 'true' ? 1 : petsParam === 'false' ? 0 : parseInt(petsParam) || 0;
 
     const { property, loading: propertyLoading } = useProperty(propertyId || '');
     const { price, calculatePrice, loading: priceLoading } = useReservationPrice();
@@ -97,7 +98,46 @@ function CheckoutContent() {
         acceptTerms: false,
     });
 
-    // Calculate initial price
+    // Get selected optional fee IDs based on insurance choice
+    const getSelectedOptionalFeeIds = useCallback((): string[] => {
+        if (!price?.optional_fees) return [];
+        const ids: string[] = [];
+        if (formData.travelInsurance === 'basic') {
+            const travelIns = price.optional_fees.find((f: any) => f.type === 'travel_insurance');
+            if (travelIns) ids.push(travelIns.id);
+        } else if (formData.travelInsurance === 'premium') {
+            const cfarIns = price.optional_fees.find((f: any) => f.type === 'cancel_any_reason');
+            if (cfarIns) ids.push(cfarIns.id);
+        }
+        return ids;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.travelInsurance, price?.optional_fees]);
+
+    // Compute the additional amount from selected optional fees (client-side, instant update)
+    const selectedOptionalFeeTotal = React.useMemo(() => {
+        if (!price?.optional_fees || price.optional_fees.length === 0) return 0;
+        if (!formData.travelInsurance || formData.travelInsurance === 'declined') return 0;
+        if (formData.travelInsurance === 'basic') {
+            const fee = price.optional_fees.find((f: any) => f.type === 'travel_insurance');
+            return fee ? fee.amount : 0;
+        }
+        if (formData.travelInsurance === 'premium') {
+            const fee = price.optional_fees.find((f: any) => f.type === 'cancel_any_reason');
+            return fee ? fee.amount : 0;
+        }
+        return 0;
+    }, [formData.travelInsurance, price?.optional_fees]);
+
+    // Display total: API total + any selected optional fees (updates instantly on insurance toggle)
+    const displayTotal = React.useMemo(() => {
+        if (!price) return 0;
+        return price.total + selectedOptionalFeeTotal;
+    }, [price, selectedOptionalFeeTotal]);
+
+    // Effective pets count: from URL param OR petFee checkbox
+    const effectivePets = formData.petFee ? Math.max(pets, 1) : pets;
+
+    // Calculate price — when core booking params OR pet fee checkbox changes
     useEffect(() => {
         if (propertyId && checkIn && checkOut) {
             calculatePrice({
@@ -106,11 +146,12 @@ function CheckoutContent() {
                 endDate: checkOut,
                 occupants: adults + children,
                 occupants_small: children,
-                pets: pets,
+                pets: effectivePets,
                 couponCode: formData.promoCode || undefined
             });
         }
-    }, [propertyId, checkIn, checkOut, adults, children, pets, formData.promoCode, calculatePrice]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [propertyId, checkIn, checkOut, adults, children, effectivePets, formData.promoCode]);
 
     const updateFormData = (field: keyof CheckoutFormData, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -176,12 +217,17 @@ function CheckoutContent() {
             toast.error('Missing reservation details');
             return;
         }
-        const rawFormData = {
+
+        const selectedFeeIds = getSelectedOptionalFeeIds();
+
+        const result = await createReservation({
             unitId: parseInt(propertyId),
             startDate: checkIn,
             endDate: checkOut,
             email: formData.email,
             occupants: adults + children,
+            occupantsSmall: children,
+            pets: pets,
             firstName: formData.firstName,
             lastName: formData.lastName,
             zip: formData.zip,
@@ -189,15 +235,13 @@ function CheckoutContent() {
             city: formData.city,
             state: formData.state,
             cellPhone: formData.phone,
-            couponCode: formData.promoCode,
+            couponCode: formData.promoCode || undefined,
             creditCard: formData.creditCard,
             cvv: formData.cvv,
             expiration: formData.expiration,
-            paymentType: formData.paymentType,
-            travelInsurance: formData.travelInsurance
-        }
-        // Passing extended params directly since the hook supports it
-        const result = await createReservation(rawFormData);
+            notes: formData.notes || undefined,
+            optionalFeeIds: selectedFeeIds
+        });
 
         if (result) {
             toast.success(`Booking Submitted! Confirmation ID: ${result.confirmation_id}`);
@@ -380,6 +424,11 @@ function CheckoutContent() {
                                                                 className="text-base font-medium cursor-pointer"
                                                             >
                                                                 Travel Insurance
+                                                                {price?.optional_fees?.find((f: any) => f.type === 'travel_insurance') && (
+                                                                    <span className="text-green-700 ml-2">
+                                                                        — ${price.optional_fees.find((f: any) => f.type === 'travel_insurance')?.amount.toFixed(2)}
+                                                                    </span>
+                                                                )}
                                                             </Label>
                                                             <p className="text-sm text-gray-600 mt-2 leading-relaxed">
                                                                 PROTECT my travel investment with Travel Insurance. Coverage protects
@@ -404,6 +453,11 @@ function CheckoutContent() {
                                                                 className="text-base font-medium cursor-pointer"
                                                             >
                                                                 Cancel For Any Reason Travel Protection
+                                                                {price?.optional_fees?.find((f: any) => f.type === 'cancel_any_reason') && (
+                                                                    <span className="text-green-700 ml-2">
+                                                                        — ${price.optional_fees.find((f: any) => f.type === 'cancel_any_reason')?.amount.toFixed(2)}
+                                                                    </span>
+                                                                )}
                                                             </Label>
                                                             <p className="text-sm text-gray-600 mt-2 leading-relaxed">
                                                                 PROTECT my travel investment with Cancel For Any Reason Travel
@@ -740,6 +794,7 @@ function CheckoutContent() {
 
                                         {price ? (
                                             <>
+                                                {/* Nightly Rate */}
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">
                                                         ${(price.subtotal / nights).toFixed(2)} × {nights} nights
@@ -749,25 +804,83 @@ function CheckoutContent() {
                                                     </span>
                                                 </div>
 
-                                                {/* Detailed breakdown from API */}
-                                                {/* {price.fees.map((fee, idx) => (
-                                                    <div key={idx} className="flex justify-between">
-                                                        <span className="text-gray-600">{fee.name}</span>
-                                                        <span className="font-medium">${fee.amount.toFixed(2)}</span>
-                                                    </div>
-                                                ))} */}
+                                                {/* Required Fees */}
+                                                {price.required_fees && price.required_fees.length > 0 && (
+                                                    <>
+                                                        {price.required_fees.map((fee: any, idx: number) => (
+                                                            <div key={`req-${idx}`} className="flex justify-between">
+                                                                <span className="text-gray-600">{fee.name || 'Fee'}</span>
+                                                                <span className="font-medium">${fee.amount.toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </>
+                                                )}
 
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">Taxes</span>
-                                                    <span className="font-medium">${price.taxes.toFixed(2)}</span>
-                                                </div>
+                                                {/* Selected Optional Fees (Insurance) */}
+                                                {price.optional_fees && price.optional_fees.length > 0 && (
+                                                    <>
+                                                        {price.optional_fees
+                                                            .filter((fee: any) => {
+                                                                // Show the fee if it matches the user's insurance selection
+                                                                if (formData.travelInsurance === 'basic' && fee.type === 'travel_insurance') return true;
+                                                                if (formData.travelInsurance === 'premium' && fee.type === 'cancel_any_reason') return true;
+                                                                return false;
+                                                            })
+                                                            .map((fee: any, idx: number) => (
+                                                                <div key={`opt-${idx}`} className="flex justify-between">
+                                                                    <span className="text-gray-600">{fee.name}</span>
+                                                                    <span className="font-medium">${fee.amount.toFixed(2)}</span>
+                                                                </div>
+                                                            ))}
+                                                    </>
+                                                )}
+
+                                                {/* Coupon Discount */}
+                                                {price.coupon_discount && price.coupon_discount > 0 && (
+                                                    <div className="flex justify-between text-green-600">
+                                                        <span>Coupon Discount</span>
+                                                        <span className="font-medium">-${price.coupon_discount.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Taxes */}
+                                                {price.taxes_details && price.taxes_details.length > 0 ? (
+                                                    <>
+                                                        {price.taxes_details.map((tax: any, idx: number) => (
+                                                            <div key={`tax-${idx}`} className="flex justify-between">
+                                                                <span className="text-gray-600">{tax.name}</span>
+                                                                <span className="font-medium">${tax.amount.toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </>
+                                                ) : (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">Taxes</span>
+                                                        <span className="font-medium">${price.taxes.toFixed(2)}</span>
+                                                    </div>
+                                                )}
 
                                                 <Separator />
 
+                                                {/* Total (includes selected optional fees) */}
                                                 <div className="flex justify-between text-base font-semibold">
                                                     <span>Total</span>
-                                                    <span>${(Number(price.subtotal) + Number(price.taxes)).toFixed(2)}</span>
+                                                    <span>${displayTotal.toFixed(2)}</span>
                                                 </div>
+
+                                                {/* Guest Deposits */}
+                                                {price.guest_deposits && price.guest_deposits.length > 0 && (
+                                                    <>
+                                                        <Separator />
+                                                        <div className="text-xs text-gray-500 font-medium uppercase">Deposits</div>
+                                                        {price.guest_deposits.map((dep: any, idx: number) => (
+                                                            <div key={`dep-${idx}`} className="flex justify-between text-sm">
+                                                                <span className="text-gray-600">{dep.name}</span>
+                                                                <span className="font-medium">${dep.amount.toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </>
                                         ) : (
                                             <div className="text-center py-4 text-gray-500">Calculating price...</div>
@@ -780,7 +893,7 @@ function CheckoutContent() {
                                             <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-sm font-semibold text-gray-900">Required Payment</span>
-                                                    <span className="text-base font-bold text-green-700">${/* price.total.toFixed(2) */(Number(price.subtotal) + Number(price.taxes)).toFixed(2)}</span>
+                                                    <span className="text-base font-bold text-green-700">${displayTotal.toFixed(2)}</span>
                                                 </div>
                                                 <div className="text-xs text-gray-600">
                                                     Due by {checkIn}

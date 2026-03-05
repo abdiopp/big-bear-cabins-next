@@ -62,6 +62,7 @@ interface UseReservationPriceOptions {
     occupants_small?: number;
     pets?: number;
     couponCode?: string;
+    optionalFeeIds?: string[]; // IDs of optional fees to include (e.g., travel insurance)
 }
 
 export function useReservationPrice() {
@@ -70,7 +71,7 @@ export function useReservationPrice() {
     const [error, setError] = useState<string | null>(null);
 
     const calculatePrice = useCallback(async (options: UseReservationPriceOptions) => {
-        const { unitId, startDate, endDate, occupants, occupants_small, pets, couponCode } = options;
+        const { unitId, startDate, endDate, occupants, occupants_small, pets, couponCode, optionalFeeIds } = options;
 
         if (!unitId || !startDate || !endDate || !occupants) {
             setError('Missing required parameters');
@@ -81,6 +82,14 @@ export function useReservationPrice() {
         setError(null);
 
         try {
+            // Build optional fee params
+            const optionalFeeParams: Record<string, number> = {};
+            if (optionalFeeIds) {
+                optionalFeeIds.forEach(id => {
+                    optionalFeeParams[`optional_fee_${id}`] = 1;
+                });
+            }
+
             const response = await fetch('/api/reservations/price', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -92,7 +101,8 @@ export function useReservationPrice() {
                     occupants,
                     occupants_small: occupants_small || 0,
                     pets: pets || 0,
-                    coupon_code: couponCode
+                    coupon_code: couponCode,
+                    ...optionalFeeParams
                 })
             });
 
