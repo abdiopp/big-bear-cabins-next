@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
 import { FooterNavigationLinks } from "./FooterNavigationLinks";
+import { Suspense } from "react";
 
 // Fallback hardcoded sections if database is empty
 const fallbackSections = [
@@ -35,7 +36,9 @@ export async function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main footer content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          <FooterNavigationLinks sections={sections} />
+          <Suspense fallback={null}>
+            <FooterNavigationLinks sections={sections} />
+          </Suspense>
 
           {/* Social Links column if they exist */}
           {socialLinks.length > 0 && (
