@@ -9,6 +9,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import Link from "next/link";
 
 interface Service {
   title: string;
@@ -211,7 +212,7 @@ export function PropertyListingPage() {
       </section>
 
       {/* Services Slideshow Section with Auto-advance */}
-      <section ref={servicesSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50">
+      <section ref={servicesSection.elementRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-b from-white to-blue-50">
         <div className="container mx-auto">
           <div className={`text-center mb-16 scroll-fade-in-up ${servicesSection.isVisible ? 'animate' : ''}`}>
             <h2 className="text-4xl md:text-5xl text-black mb-6">
@@ -308,7 +309,7 @@ export function PropertyListingPage() {
               <div className="space-y-6">
 
 
-                <h1 className="text-5xl lg:text-6xl text-white leading-tight drop-shadow-lg font-bold font-normal">
+                <h1 className="text-5xl lg:text-6xl text-white leading-tight drop-shadow-lg font-normal">
                   Discover Your Property's True Potential
                 </h1>
 
@@ -324,20 +325,20 @@ export function PropertyListingPage() {
 
               {/* Contact Information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="flex items-center space-x-4 p-6 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                  <Phone className="h-8 w-8 text-white flex-shrink-0" />
+                <a href="tel:909-328-1526" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
+                  <Phone className="h-8 w-8 text-white shrink-0" />
                   <div>
                     <p className="text-white/90 text-sm font-medium">Quick Call</p>
-                    <p className="text-white font-bold text-lg">+1 (234) 457-6</p>
+                    <p className="text-white font-bold text-lg">909-328-1526</p>
                   </div>
-                </div>
-                <div className="flex items-center space-x-4 p-6 bg-white/20 backdrop-blur-sm rounded-xl border border-white/30">
-                  <PhoneCall className="h-8 w-8 text-white flex-shrink-0" />
+                </a>
+                <a href="tel:877-473-5360" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
+                  <PhoneCall className="h-8 w-8 text-white shrink-0" />
                   <div>
                     <p className="text-white/90 text-sm font-medium">Specialist</p>
-                    <p className="text-white font-bold text-lg">+1 (234) 567-8900</p>
+                    <p className="text-white font-bold text-lg">(877) 473-5360</p>
                   </div>
-                </div>
+                </a>
               </div>
             </div>
 
@@ -424,7 +425,6 @@ export function PropertyListingPage() {
                       className="w-full bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
                       disabled={!formData.agreeToTerms}
                     >
-                      <PhoneCall className="mr-3 h-5 w-5" />
                       Get My FREE Evaluation
                     </Button>
                     <p className="text-gray-500 mt-3 text-sm text-center">
@@ -466,9 +466,11 @@ export function PropertyListingPage() {
                 <p className="text-gray-600 mb-6">
                   Making the right choice in property management can significantly impact your investment returns and peace of mind...
                 </p>
-                <Button variant="outline" className="w-full bg-black text-white hover:bg-gray-800 border-black py-3">
-                  Read More
-                </Button>
+                <Link href="/list-property/choosing-your-property">
+                  <Button variant="outline" className="w-full bg-black text-white hover:text-gray-100! cursor-pointer hover:bg-gray-800 border-black py-3">
+                    Read More
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -486,9 +488,11 @@ export function PropertyListingPage() {
                 <p className="text-gray-600 mb-6">
                   From communication excellence to maintenance responsiveness, discover what truly matters...
                 </p>
-                <Button variant="outline" className="w-full bg-black text-white hover:bg-gray-800 border-black py-3 text-lg">
-                  Read More
-                </Button>
+                <Link href="/list-property/5-things-to-look">
+                  <Button variant="outline" className="w-full bg-black text-white hover:text-gray-100! cursor-pointer hover:bg-gray-800 border-black py-3 text-lg">
+                    Read More
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
@@ -506,9 +510,11 @@ export function PropertyListingPage() {
                 <p className="text-gray-600 mb-6">
                   Our local expertise, advanced technology, and commitment to excellence create unmatched results...
                 </p>
-                <Button variant="outline" className="w-full bg-black text-white hover:bg-gray-800 border-black py-3 text-lg">
-                  Read More
-                </Button>
+                <Link href="/list-property/the-best-property-management">
+                  <Button variant="outline" className="w-full bg-black text-white hover:text-gray-100! cursor-pointer hover:bg-gray-800 border-black py-3 text-lg">
+                    Read More
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

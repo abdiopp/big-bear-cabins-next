@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { Copy, BookOpen, Calendar, Gift, Percent, Mountain, Waves, Dumbbell, Beer, Star, Tag, Check, MapPin, Phone, Mail, ArrowLeft, Users, Clock } from "lucide-react";
+import Link from "next/link";
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
@@ -255,12 +256,16 @@ export function SpecialOffersPage({ offers }: { offers: any[] }) {
                 Our team is here to help you find the perfect cabin and the best deals for your Big Bear adventure.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="outline" className="bg-white text-black hover:bg-gray-100 border-white">
-                  Contact Us
-                </Button>
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
-                  Browse All Cabins
-                </Button>
+                <Link href="/contact-us">
+                  <Button size="lg" variant="outline" className="bg-white text-black hover:bg-gray-100 border-white cursor-pointer">
+                    Contact Us
+                  </Button>
+                </Link>
+                <Link href="/cabins">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white border-0 cursor-pointer">
+                    Browse All Cabins
+                  </Button>
+                </Link>
               </div>
             </div>
           </Card>

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
+import starIcon from "@/assets/star.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import {
   Copy,
@@ -40,7 +41,7 @@ function OfferCard({ offer }: { offer: CouponOffer }) {
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   }, []);
-
+  console.log("Offer:", offer);
   return (
     <div className={`book-page p-3 md:p-6`}>
       <Card className="h-full border-0 shadow-none bg-white">
@@ -62,7 +63,12 @@ function OfferCard({ offer }: { offer: CouponOffer }) {
           {offer.icon && (
             <div className="absolute top-2 left-2">
               <div className="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
-                <img src={offer.icon} alt="" className="h-4 w-4" />
+                <img src={offer.icon} alt="" className="h-4 w-4"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = starIcon.src;
+                  }}
+                />
               </div>
             </div>
           )}

@@ -4,6 +4,7 @@ import { Separator } from "./ui/separator";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
+import { FooterNavigationLinks } from "./FooterNavigationLinks";
 
 // Fallback hardcoded sections if database is empty
 const fallbackSections = [
@@ -34,25 +35,7 @@ export async function Footer() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main footer content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          {sections.map((section) => (
-            <div key={section.title}>
-              <h3 className="font-medium mb-4">{section.title}</h3>
-              <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.id}>
-                    <Link
-                      href={link.url}
-                      target={link.newTab ? "_blank" : "_self"}
-                      rel={link.isExternal ? "noopener noreferrer" : undefined}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <FooterNavigationLinks sections={sections} />
 
           {/* Social Links column if they exist */}
           {socialLinks.length > 0 && (
@@ -73,7 +56,7 @@ export async function Footer() {
                         src={social.icon}
                         alt={social.altText || social.platform || "Social Icon"}
                         fill
-                        className="object-contain"
+                        className="object-cover size-12"
                       />
                     </div>
                   </Link>
@@ -89,10 +72,10 @@ export async function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span>© {new Date().getFullYear()} BigBear Cabins</span>
-            <Link href="#" className="hover:text-foreground">Terms</Link>
+            <Link href="/terms" className="hover:text-foreground">Terms</Link>
             <Link href="#" className="hover:text-foreground">Sitemap</Link>
-            <Link href="#" className="hover:text-foreground">Privacy</Link>
-            <Link href="#" className="hover:text-foreground">Your Privacy Choices</Link>
+            <Link href="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
+            <Link href="/contact-us" className="hover:text-foreground">Contact Us</Link>
           </div>
 
           <div className="flex items-center space-x-4">

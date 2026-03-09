@@ -62,6 +62,7 @@ export function PropertyDetailPage() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
+  console.log("property =>", property);
   // Helper to format date as MM/DD/YYYY for Streamline API
   const formatDateForAPI = (date: Date): string => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -156,7 +157,8 @@ export function PropertyDetailPage() {
   const propertyAmenities = property.amenities && property.amenities.length > 0 ? property.amenities : defaultAmenities;
   const propertyDescription = property.description || "No description available for this property.";
   const propertyBadge = property.isSuperhost ? "platinum" : "gold";
-
+  const cleanedTitle = property.title.replace(/^\d+-/, "");
+  console.log("Property Data:", property, propertyImages);
   if (showAllPhotos) {
     return (
       <div className="fixed inset-0 bg-white z-50 overflow-auto">
@@ -234,7 +236,7 @@ export function PropertyDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{property.title}</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{cleanedTitle}</h1>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="sm" className="flex items-center space-x-2">
@@ -257,7 +259,7 @@ export function PropertyDetailPage() {
             <div className="w-3/5">
               <ImageWithFallback
                 src={propertyImages[0]}
-                alt={property.title}
+                alt={cleanedTitle}
                 className="w-full h-full object-cover rounded-l-xl"
               />
             </div>
@@ -268,7 +270,7 @@ export function PropertyDetailPage() {
                 <div key={index} className="relative">
                   <ImageWithFallback
                     src={image}
-                    alt={`${property.title} ${index + 2}`}
+                    alt={`${cleanedTitle} ${index + 2}`}
                     className={`w-full h-full object-cover ${index === 1 ? "rounded-tr-xl" : index === 3 ? "rounded-br-xl" : ""
                       }`}
                   />
@@ -296,7 +298,7 @@ export function PropertyDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Cabin Type and Location */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Entire cabin in {property.location.split(",")[0]}</h2>
+          <h2 className="text-xl font-semibold mb-2">Entire cabin in {property.location.split(",")[0].replace(/^\d+-/, "")}</h2>
           {/* <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
