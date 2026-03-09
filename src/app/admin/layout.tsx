@@ -28,6 +28,7 @@ export default async function AdminLayout({
                     <Link href="/admin/blog-categories" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blog Categories</Link>
                     <Link href="/admin/footer" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Footer</Link>
                     <Link href="/admin/experiences-page" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Experiences Page</Link>
+                    <Link href="/admin/contact-messages" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Contact Messages</Link>
                 </nav>
             </aside>
             <main className="flex-1 p-8 overflow-auto">

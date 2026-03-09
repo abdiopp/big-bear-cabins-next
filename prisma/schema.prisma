@@ -42,13 +42,13 @@ type HomeHeroImage {
 }
 
 type HomeHeroLink {
-  url   String
-  text  String?
-  icon  String?
+  url  String
+  text String?
+  icon String?
 }
 
 model CouponSection {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
   carouselTitle   String
   offers          CouponOffer[]
   viewAllBtnLabel String?
@@ -167,7 +167,7 @@ model Wishlist {
 }
 
 model ExperiencesPage {
-  id              String                 @id @default(auto()) @map("_id") @db.ObjectId
+  id              String               @id @default(auto()) @map("_id") @db.ObjectId
   heroTitle       String
   heroSubtitle    String?
   heroTagline     String?
@@ -175,11 +175,11 @@ model ExperiencesPage {
   heroImage       String
   heroCtaText     String?
   heroCtaLink     String?
-  heroIsActive    Boolean                @default(true)
+  heroIsActive    Boolean              @default(true)
   formCards       ExperienceFormCard[]
-  isPublished     Boolean                @default(false)
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  isPublished     Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 }
 
 type ExperienceFormCard {
@@ -223,3 +223,15 @@ model ExperienceFormResponse {
   @@index([userId, submittedAt])
 }
 
+model ContactMessage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String
+  subject   String?
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}

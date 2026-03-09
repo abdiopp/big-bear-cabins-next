@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 export default function Page() {
@@ -11,6 +11,14 @@ export default function Page() {
         subject: "",
         message: ""
     });
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<{
+        type: "success" | "error" | null;
+        message: string;
+    }>({
+        type: null,
+        message: ""
+    });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({
@@ -19,10 +27,61 @@ export default function Page() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: any) => {
         e.preventDefault();
-        console.log(formData);
+
+        setLoading(true);
+        setStatus({ type: null, message: "" });
+
+        try {
+
+            const res = await fetch("/api/contact-us", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Something went wrong");
+            }
+
+            setStatus({
+                type: "success",
+                message: "Your message has been sent successfully!"
+            });
+
+            setFormData({
+                name: "",
+                email: "",
+                subject: "",
+                message: "",
+            });
+
+        } catch (error: any) {
+
+            setStatus({
+                type: "error",
+                message: error.message || "Failed to send message"
+            });
+
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => {
+        if (status.type) {
+            const timer = setTimeout(() => {
+                setStatus({ type: null, message: "" });
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [status]);
 
     return (
         <main className="min-h-screen bg-white overflow-x-hidden">
@@ -193,14 +252,23 @@ export default function Page() {
                                     className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
-
+                            {status.type && (
+                                <div
+                                    className={`p-3 rounded-md text-sm font-medium ${status.type === "success"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-red-100 text-red-700"
+                                        }`}
+                                >
+                                    {status.message}
+                                </div>
+                            )}
                             <button
                                 type="submit"
-                                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:bg-gray-400"
+                                disabled={loading}
+                                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400"
                             >
-                                Send Message
+                                {loading ? "Sending..." : "Send Message"}
                             </button>
-
                         </form>
 
                     </div>
