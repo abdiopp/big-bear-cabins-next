@@ -76,7 +76,6 @@ export async function Footer() {
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span>© {new Date().getFullYear()} BigBear Cabins</span>
             <Link href="/terms" className="hover:text-foreground">Terms</Link>
-            <Link href="#" className="hover:text-foreground">Sitemap</Link>
             <Link href="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
             <Link href="/contact-us" className="hover:text-foreground">Contact Us</Link>
           </div>

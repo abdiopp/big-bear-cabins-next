@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
-
+import heroImage from "../../assets/contact-us-hero.jpeg";
 export default function Page() {
 
     const [formData, setFormData] = useState({
@@ -89,9 +89,9 @@ export default function Page() {
             {/* Hero Section */}
             <section className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
                 <ImageWithFallback
-                    src="https://res.cloudinary.com/dtqdflngh/image/upload/v1770838073/lyn5ilsj28ma6zzouw2f.jpg"
+                    src={heroImage.src}
                     alt="Contact us"
-                    className="w-full h-full object-cover object-[center_25%]"
+                    className="w-full h-full object-cover object-center"
                 />
 
                 <div className="absolute inset-0 bg-black/30" />

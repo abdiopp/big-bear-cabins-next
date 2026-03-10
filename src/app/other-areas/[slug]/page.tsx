@@ -2,14 +2,21 @@ import { notFound } from "next/navigation";
 import ContentShow from "@/components/ContentShow";
 import { ReactNode } from "react";
 import Link from "next/link";
+import heroImage1 from "../../../assets/other-areas1.jpg";
+import heroImage2 from "../../../assets/other-areas2.jpeg";
+import heroImage3 from "../../../assets/other-areas3.jpg";
+import heroImage5 from "../../../assets/other-areas5.jpeg";
+import heroImage6 from "../../../assets/other-areas6.jpg";
 
 type Area = {
     title: string;
     description: ReactNode;
+    heroImage: string;
 };
 
 const areas: Record<string, Area> = {
     "bear-mountain-rentals": {
+        heroImage: heroImage1.src,
         title: "Bear Mountain in Big Bear",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -46,6 +53,7 @@ const areas: Record<string, Area> = {
     },
 
     "east-area-rentals": {
+        heroImage: heroImage2.src,
         title: "East Area of Big Bear Lake",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -78,6 +86,7 @@ const areas: Record<string, Area> = {
     },
 
     "north-shore-rentals": {
+        heroImage: heroImage3.src,
         title: "North Shore Lakefront Cabins in Big Bear",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -135,6 +144,7 @@ const areas: Record<string, Area> = {
     },
 
     "snow-summit-rentals": {
+        heroImage: heroImage1.src,
         title: "Cozy Snow Summit Cabin Rentals",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -166,6 +176,7 @@ const areas: Record<string, Area> = {
     },
 
     "village-area-rentals": {
+        heroImage: heroImage5.src,
         title: "Big Bear Cozy Cabins in Town",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -193,6 +204,7 @@ const areas: Record<string, Area> = {
     },
 
     "west-area-rentals": {
+        heroImage: heroImage6.src,
         title: "Quaint West Area Cabins in Big Bear Lake CA",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -241,20 +253,6 @@ const areas: Record<string, Area> = {
             </div>
         ),
     },
-
-    "east-area-rentals2": {
-        title: "East Area Rentals",
-        description: (
-            <div className="space-y-5 text-gray-700 leading-relaxed">
-
-                <div className="space-y-2">
-                    <h2 className="text-2xl sm:text-3xl font-medium text-black"></h2>
-                    <p></p>
-                </div>
-            </div>
-        ),
-    },
-
 };
 
 export default async function Page({
@@ -272,6 +270,7 @@ export default async function Page({
         <ContentShow
             title={area.title}
             description={area.description}
+            image={area.heroImage}
         />
     );
 }

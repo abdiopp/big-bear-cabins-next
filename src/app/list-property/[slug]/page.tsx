@@ -2,14 +2,19 @@ import { notFound } from "next/navigation";
 import ContentShow from "@/components/ContentShow";
 import { ReactNode } from "react";
 import Link from "next/link";
+import heroImage1 from "../../../assets/management-hero1.jpg";
+import heroImage2 from "../../../assets/management-hero2.jpg";
+import heroImage3 from "../../../assets/management-hero3.jpg";
 
 type Area = {
     title: string;
     description: ReactNode;
+    heroImage: string;
 };
 
 const areas: Record<string, Area> = {
     "choosing-your-property": {
+        heroImage: heroImage1.src,
         title: "How to Choose Your Property Management Company",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -38,6 +43,7 @@ const areas: Record<string, Area> = {
     },
 
     "5-things-to-look": {
+        heroImage: heroImage2.src,
         title: "5 Things You Should Look for in Your Property Management Company",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -76,6 +82,7 @@ const areas: Record<string, Area> = {
     },
 
     "the-best-property-management": {
+        heroImage: heroImage3.src,
         title: "What Makes Big Bear Cabins the Best Property Management Company",
         description: (
             <div className="space-y-5 text-gray-700 leading-relaxed">
@@ -118,6 +125,7 @@ export default async function Page({
         <ContentShow
             title={area.title}
             description={area.description}
+            image={area.heroImage}
         />
     );
 }

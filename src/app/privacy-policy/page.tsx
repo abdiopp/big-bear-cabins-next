@@ -1,5 +1,5 @@
 import { ImageWithFallback } from "@/components/ImageWithFallback";
-
+import heroImage from "../../assets/privacy-policy-hero.png";
 export default function Page() {
     return (
         <main className="min-h-screen bg-white overflow-x-hidden">
@@ -7,9 +7,8 @@ export default function Page() {
             {/* Hero Section */}
             <section className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
                 <ImageWithFallback
-                    src="https://res.cloudinary.com/dtqdflngh/image/upload/v1770838073/lyn5ilsj28ma6zzouw2f.jpg"
-                    alt="Privacy Policy"
-                    className="w-full h-full object-cover object-[center_25%]"
+                    src={heroImage.src} alt="Privacy Policy"
+                    className="w-full h-full object-cover object-center"
                 />
 
                 <div className="absolute inset-0 bg-black/30" />

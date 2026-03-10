@@ -23,7 +23,7 @@ export default function ContentShow({
                         "https://res.cloudinary.com/dtqdflngh/image/upload/v1770838073/lyn5ilsj28ma6zzouw2f.jpg"
                     }
                     alt={title}
-                    className="w-full h-full object-cover object-[center_30%]"
+                    className="w-full h-full object-cover object-center"
                 />
 
                 <div className="absolute inset-0 bg-black/30" />
