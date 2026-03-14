@@ -22,6 +22,7 @@ export default async function AdminLayout({
                 <div className="p-4 text-xl font-bold">BBC Admin</div>
                 <nav className="p-4 space-y-2">
                     <Link href="/admin" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Dashboard</Link>
+                    <Link href="/admin/reservations" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Reservations</Link>
                     <Link href="/admin/home-hero" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Home Hero</Link>
                     <Link href="/admin/coupons" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Coupons (Offers)</Link>
                     <Link href="/admin/blogs" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blogs</Link>

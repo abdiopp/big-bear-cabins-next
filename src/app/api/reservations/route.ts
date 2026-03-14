@@ -6,6 +6,7 @@ import {
     getPreReservationPrice
 } from '@/lib/streamline';
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 // GET - Fetch reservations
 export async function GET(req: NextRequest) {
@@ -21,6 +22,13 @@ export async function GET(req: NextRequest) {
         };
 
         const data = await getReservations(params);
+
+        if (data?.data?.reservations) {
+            // Streamline returns a single object instead of array if there's only 1 reservation
+            if (!Array.isArray(data.data.reservations)) {
+                data.data.reservations = [data.data.reservations];
+            }
+        }
 
         return NextResponse.json(data);
     } catch (error: any) {
@@ -131,8 +139,6 @@ export async function POST(req: NextRequest) {
             ...optionalFeeParams
         });
 
-        // Check for Streamline API-level errors (they return 200 with error in body)
-        // Handle both direct format {status:{code}} and wrapped {Response:{...}}
         const responseData = data as any;
         const apiStatus = responseData?.status || responseData?.Response?.status;
         if (apiStatus?.code && !apiStatus.code.startsWith('S')) {
@@ -143,6 +149,23 @@ export async function POST(req: NextRequest) {
                 { error: cleanDescription, code: apiStatus.code },
                 { status: 400 }
             );
+        }
+
+        // After successful reservation, save the metadata (e.g. survey data)
+        try {
+            if (responseData?.confirmation_id) {
+                await prisma.reservationMeta.upsert({
+                    where: { confirmationId: responseData.confirmation_id.toString() },
+                    update: { heardAboutUs: body.heardAboutUs || null },
+                    create: {
+                        confirmationId: responseData.confirmation_id.toString(),
+                        heardAboutUs: body.heardAboutUs || null
+                    }
+                });
+            }
+        } catch (dbError) {
+            console.error('Error saving reservation metadata to Prisma:', dbError);
+            // We don't fail the whole request if meta saving fails
         }
 
         return NextResponse.json(data);

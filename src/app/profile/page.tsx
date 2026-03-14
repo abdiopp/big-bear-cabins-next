@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, Star, User, Calendar, Heart, Sparkles } from 'lucide-react';
 import { useWishlist } from '@/context/WishlistContext';
 import { PropertyCard } from '@/components/PropertyCard';
+import { useReservations } from '@/hooks/useReservations';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -13,6 +14,14 @@ export default function ProfilePage() {
   const { wishlist, wishlistItems } = useWishlist();
   const [wishlistProperties, setWishlistProperties] = useState<any[]>([]);
   const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+
+  const { reservations, fetchReservations, loading: isLoadingBookings } = useReservations();
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetchReservations({ email: session.user.email });
+    }
+  }, [session, fetchReservations]);
 
   useEffect(() => {
     async function fetchWishlistProperties() {
@@ -89,35 +98,7 @@ export default function ProfilePage() {
     }
   ];
 
-  const pastBookings = [
-    {
-      id: 1,
-      cabinName: "Pine Valley Cabin",
-      cabinImage: "https://images.unsplash.com/photo-1621771674545-849014cf91fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FiaW4lMjBmb3Jlc3R8ZW58MXx8fHwxNzYxNjMwNjYyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      checkIn: "Dec 1, 2024",
-      checkOut: "Dec 5, 2024",
-      guests: 4,
-      price: "$850"
-    },
-    {
-      id: 2,
-      cabinName: "Winter Wonderland Cabin",
-      cabinImage: "https://images.unsplash.com/photo-1648841931372-676febc626aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aW50ZXIlMjBjYWJpbiUyMHNub3d8ZW58MXx8fHwxNzYxNjcyMDcwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      checkIn: "Sep 15, 2024",
-      checkOut: "Sep 20, 2024",
-      guests: 2,
-      price: "$950"
-    },
-    {
-      id: 3,
-      cabinName: "Lakeside Escape",
-      cabinImage: "https://images.unsplash.com/photo-1592448981188-8bf53a3d7810?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYWtlJTIwY2FiaW4lMjByZXRyZWF0fGVufDF8fHx8MTc2MTY3MjA3MXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      checkIn: "Jun 10, 2024",
-      checkOut: "Jun 17, 2024",
-      guests: 6,
-      price: "$1,450"
-    }
-  ];
+  // Replaced hardcoded bookings with API fetched bookings
 
   // The static wishlist data has been replaced by the dynamic 'wishlistProperties' state
 
@@ -150,7 +131,7 @@ export default function ProfilePage() {
 
   const menuItems = [
     { id: 'about-me', label: 'About me', Icon: User },
-    { id: 'past-bookings', label: 'Past bookings', Icon: Calendar },
+    { id: 'past-bookings', label: 'My bookings', Icon: Calendar },
     { id: 'cabins-wishlist', label: 'Cabins Wishlist', Icon: Heart },
     { id: 'favourite-activities', label: 'Favourite Activities', Icon: Sparkles }
   ];
@@ -308,47 +289,64 @@ export default function ProfilePage() {
               <div>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-3xl font-semibold text-gray-900">Past bookings</h2>
+                  <h2 className="text-3xl font-semibold text-gray-900">My bookings</h2>
                 </div>
 
                 {/* Bookings Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {pastBookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                    >
-                      <div className="aspect-[4/3] overflow-hidden">
-                        <ImageWithFallback
-                          src={booking.cabinImage}
-                          alt={booking.cabinName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-3">{booking.cabinName}</h3>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          <div className="flex items-center justify-between">
-                            <span>Check-in:</span>
-                            <span className="font-medium text-gray-900">{booking.checkIn}</span>
+                {isLoadingBookings ? (
+                  <div className="flex justify-center py-12">
+                    <div className="text-gray-500">Loading your bookings...</div>
+                  </div>
+                ) : reservations.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {reservations.map((booking) => (
+                      <div
+                        key={booking.confirmation_id}
+                        className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      >
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="font-semibold text-gray-900">{booking.property_name || 'Cabin Booking'}</h3>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {booking.status}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span>Check-out:</span>
-                            <span className="font-medium text-gray-900">{booking.checkOut}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span>Guests:</span>
-                            <span className="font-medium text-gray-900">{booking.guests}</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                            <span>Total:</span>
-                            <span className="font-semibold text-gray-900">{booking.price}</span>
+                          
+                          <div className="space-y-2 text-sm text-gray-600">
+                            <div className="flex items-center justify-between">
+                              <span>Check-in:</span>
+                              <span className="font-medium text-gray-900">{booking.startdate}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Check-out:</span>
+                              <span className="font-medium text-gray-900">{booking.enddate}</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200 mt-2">
+                              <span>Total:</span>
+                              <span className="font-semibold text-gray-900">${booking.total?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            <div className="text-xs text-gray-400 mt-2 pt-2 border-t">
+                              Ref: {booking.confirmation_id}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-12 text-center shadow-sm">
+                    <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings found</h3>
+                    <p className="text-gray-500 mb-6">You haven't made any reservations yet.</p>
+                    <Button onClick={() => window.location.href = '/'}>
+                      Explore Cabins
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

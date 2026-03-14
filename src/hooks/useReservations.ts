@@ -52,6 +52,7 @@ interface CreateReservationParams {
     notes?: string;
     // Optional fee IDs to include
     optionalFeeIds?: string[];
+    heardAboutUs?: string;
 }
 
 export function useReservations() {
@@ -163,6 +164,7 @@ export function useReservations() {
                     credit_card_expiration: params.expiration,
                     // Notes
                     notes: params.notes,
+                    heardAboutUs: params.heardAboutUs,
                     // Optional fee selections
                     ...optionalFeeParams
                 })

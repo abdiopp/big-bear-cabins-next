@@ -6,6 +6,16 @@ export default function AdminDashboard() {
         <div>
             <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Link href="/admin/reservations">
+                    <Card className="hover:shadow-lg transition cursor-pointer">
+                        <CardHeader>
+                            <CardTitle>Reservations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            View recent bookings and marketing surveys.
+                        </CardContent>
+                    </Card>
+                </Link>
                 <Link href="/admin/home-hero">
                     <Card className="hover:shadow-lg transition cursor-pointer">
                         <CardHeader>

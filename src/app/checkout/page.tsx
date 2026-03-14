@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Check, Calendar } from 'lucide-react';
+import { ChevronLeft, Check, Calendar, CreditCard, Lock } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { useProperty } from '@/hooks/useProperty';
 import { useReservationPrice } from '@/hooks/useReservationPrice';
@@ -47,6 +47,7 @@ interface CheckoutFormData {
     promoCode: string;
     notes: string;
     acceptTerms: boolean;
+    heardAboutUs: string;
 }
 
 const US_STATES = [
@@ -96,6 +97,7 @@ function CheckoutContent() {
         promoCode: '',
         notes: '',
         acceptTerms: false,
+        heardAboutUs: '',
     });
 
     // Get selected optional fee IDs based on insurance choice
@@ -180,6 +182,7 @@ function CheckoutContent() {
             formData.creditCard.trim() !== '' &&
             formData.cvv.trim() !== '' &&
             formData.expiration.trim() !== '' &&
+            formData.heardAboutUs.trim() !== '' &&
             formData.acceptTerms
         );
     };
@@ -240,12 +243,26 @@ function CheckoutContent() {
             cvv: formData.cvv,
             expiration: formData.expiration,
             notes: formData.notes || undefined,
-            optionalFeeIds: selectedFeeIds
+            optionalFeeIds: selectedFeeIds,
+            heardAboutUs: formData.heardAboutUs
         });
 
-        if (result) {
+        if (result && result.confirmation_id) {
             toast.success(`Booking Submitted! Confirmation ID: ${result.confirmation_id}`);
-            router.push('/');
+            
+            // Redirect to success page with query params
+            const successParams = new URLSearchParams({
+                confirmation_id: result.confirmation_id.toString(),
+                propertyId: propertyId.toString(),
+                checkIn: checkIn,
+                checkOut: checkOut,
+                adults: adults.toString(),
+                children: children.toString(),
+                price: displayTotal.toString(),
+                nights: nights.toString()
+            });
+            
+            router.push(`/checkout/success?${successParams.toString()}`);
         }
     };
 
@@ -642,45 +659,69 @@ function CheckoutContent() {
                                                 </Select>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <Label htmlFor="creditCard">
-                                                    Credit card number <span className="text-red-500">*</span>
-                                                </Label>
-                                                <Input
-                                                    id="creditCard"
-                                                    placeholder="1234 5678 9012 3456"
-                                                    value={formData.creditCard}
-                                                    onChange={(e) => updateFormData('creditCard', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="md:col-span-3 space-y-2">
+                                                    <Label htmlFor="creditCard">
+                                                        Card Number <span className="text-red-500">*</span>
+                                                    </Label>
+                                                    <div className="relative">
+                                                        <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                                        <Input
+                                                            id="creditCard"
+                                                            placeholder="0000 0000 0000 0000"
+                                                            className="pl-10 font-mono bg-white"
+                                                            maxLength={19}
+                                                            value={formData.creditCard}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value.replace(/\D/g, '');
+                                                                const formatted = value.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+                                                                updateFormData('creditCard', formatted);
+                                                            }}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
+                                                <div className="md:col-span-2 space-y-2">
+                                                    <Label htmlFor="expiration">
+                                                        Expiration <span className="text-red-500">*</span>
+                                                    </Label>
+                                                    <div className="relative">
+                                                        <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                                        <Input
+                                                            id="expiration"
+                                                            placeholder="MM/YY"
+                                                            className="pl-10 font-mono bg-white"
+                                                            maxLength={5}
+                                                            value={formData.expiration}
+                                                            onChange={(e) => {
+                                                                let value = e.target.value.replace(/\D/g, '');
+                                                                if (value.length >= 2) {
+                                                                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                                                                }
+                                                                updateFormData('expiration', value);
+                                                            }}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="md:col-span-1 space-y-2">
                                                     <Label htmlFor="cvv">
                                                         CVV <span className="text-red-500">*</span>
                                                     </Label>
-                                                    <Input
-                                                        id="cvv"
-                                                        placeholder="123"
-                                                        maxLength={4}
-                                                        value={formData.cvv}
-                                                        onChange={(e) => updateFormData('cvv', e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="expiration">
-                                                        Expiration (mm/yy) <span className="text-red-500">*</span>
-                                                    </Label>
-                                                    <Input
-                                                        id="expiration"
-                                                        placeholder="MM/YY"
-                                                        value={formData.expiration}
-                                                        onChange={(e) => updateFormData('expiration', e.target.value)}
-                                                        required
-                                                    />
+                                                    <div className="relative">
+                                                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                                        <Input
+                                                            id="cvv"
+                                                            placeholder="123"
+                                                            className="pl-10 font-mono bg-white"
+                                                            maxLength={4}
+                                                            value={formData.cvv}
+                                                            onChange={(e) => updateFormData('cvv', e.target.value.replace(/\D/g, ''))}
+                                                            required
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -703,6 +744,27 @@ function CheckoutContent() {
                                                     value={formData.notes}
                                                     onChange={(e) => updateFormData('notes', e.target.value)}
                                                 />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="heardAboutUs">Where did you hear about us? <span className="text-red-500">*</span></Label>
+                                                <Select
+                                                    value={formData.heardAboutUs}
+                                                    onValueChange={(value) => updateFormData('heardAboutUs', value)}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select an option" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Social Media Ad (Facebook or Instagram)">Social Media Ad (Facebook or Instagram)</SelectItem>
+                                                        <SelectItem value="Friend or Family Referral">Friend or Family Referral</SelectItem>
+                                                        <SelectItem value="Email Newsletter">Email Newsletter</SelectItem>
+                                                        <SelectItem value="Podcast">Podcast</SelectItem>
+                                                        <SelectItem value="Google Search">Google Search</SelectItem>
+                                                        <SelectItem value="Event or Conference">Event or Conference</SelectItem>
+                                                        <SelectItem value="Other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
 
                                             <div className="flex items-start space-x-3 pt-4">

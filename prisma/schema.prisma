@@ -235,3 +235,10 @@ model ContactMessage {
   @@index([email])
   @@index([createdAt])
 }
+
+model ReservationMeta {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  confirmationId String   @unique // The reservation ID from streamline
+  heardAboutUs   String?
+  createdAt      DateTime @default(now())
+}
