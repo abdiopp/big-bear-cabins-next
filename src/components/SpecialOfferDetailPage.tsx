@@ -20,6 +20,7 @@ import {
   Star,
   Tag
 } from "lucide-react";
+import Link from "next/link";
 
 // Icon mapping
 const ICON_MAP: Record<string, any> = {
@@ -187,15 +188,19 @@ export function SpecialOfferDetailPage({ offer }: { offer: any }) {
                     </div>
                   </div>
                 )}
-
-                <Button className="w-full bg-[#477023] hover:bg-[#3a5c1c] text-white text-lg py-6 mb-4" size="lg">
-                  Book Now
-                </Button>
+                <Link href="/cabins">
+                  <Button className="w-full bg-[#477023] hover:bg-[#3a5c1c] text-white text-lg py-6 mb-4" size="lg">
+                    Book Now
+                  </Button>
+                </Link>
 
                 <div className="space-y-2 pt-4 border-t">
                   <div className="flex items-center justify-center space-x-2 text-gray-600">
                     <Phone className="h-4 w-4" />
-                    <span className="text-sm">(909) 555-BEAR</span>
+                    <a
+                      href="tel:8774735360"
+                      className="text-blue-600 hover:underline text-sm"
+                    >(877) 473-5360</a>
                   </div>
                   <div className="flex items-center justify-center space-x-2 text-gray-600">
                     <Mail className="h-4 w-4" />

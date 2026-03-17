@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import starIcon from "@/assets/star.png";
@@ -139,11 +139,30 @@ type SpecialOffersClientProps = { coupons: CouponsData | null };
 
 export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
   const [currentSpread, setCurrentSpread] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(2);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setItemsPerPage(1); // mobile
+      } else {
+        setItemsPerPage(2); // desktop
+      }
+    };
+
+    handleResize(); // initial run
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    setCurrentSpread(0); // reset to first page
+  }, [itemsPerPage]);
 
   const spreads = [];
   if (coupons && coupons.offers) {
-    for (let i = 0; i < coupons.offers.length; i += 2) {
-      spreads.push(coupons.offers.slice(i, i + 2));
+    for (let i = 0; i < coupons.offers.length; i += itemsPerPage) {
+      spreads.push(coupons.offers.slice(i, i + itemsPerPage));
     }
   }
 

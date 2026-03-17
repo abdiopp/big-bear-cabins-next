@@ -84,13 +84,13 @@ export function PropertyManagement() {
               <Button
                 // route to cabins page
                 onClick={() => router.push('/list-property')}
-                size="lg" className="flex-1 sm:flex-none">
+                size="lg" className="flex-1 sm:flex-none py-2 mb-2!">
                 Get Started Today
               </Button>
               <Button
                 // route to contact page
                 onClick={() => router.push('/list-property#form')}
-                variant="outline" size="lg" className="flex-1 sm:flex-none">
+                variant="outline" size="lg" className="flex-1 sm:flex-none py-2">
                 Free Property Evaluation
               </Button>
             </div>
