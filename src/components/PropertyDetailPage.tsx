@@ -254,24 +254,24 @@ export function PropertyDetailPage() {
       {/* Image Gallery - Airbnb Layout */}
       <div className="relative mb-8 w-full">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-2 h-[400px]">
+          <div className="sm:flex gap-2 min-h-[400px] max-sm:space-y-2">
             {/* Main large image - left side (60% width) */}
-            <div className="w-3/5">
+            <div className="sm:w-3/5">
               <ImageWithFallback
                 src={propertyImages[0]}
                 alt={cleanedTitle}
-                className="w-full h-full object-cover rounded-l-xl"
+                className="w-full h-full object-cover max-sm:rounded-xl sm:rounded-l-xl"
               />
             </div>
 
             {/* Right side - 2x2 grid of smaller images (40% width) */}
-            <div className="w-2/5 grid grid-cols-2 gap-2">
+            <div className="sm:w-2/5 grid grid-cols-2 gap-2">
               {propertyImages.slice(1, 5).map((image: string, index: number) => (
                 <div key={index} className="relative">
                   <ImageWithFallback
                     src={image}
                     alt={`${cleanedTitle} ${index + 2}`}
-                    className={`w-full h-full object-cover ${index === 1 ? "rounded-tr-xl" : index === 3 ? "rounded-br-xl" : ""
+                    className={`w-full h-full object-cover ${index === 1 ? "rounded-tr-xl" : index === 3 ? "rounded-br-xl" : index === 0 ? "max-sm:rounded-tl-xl" : index === 2 ? "max-sm:rounded-bl-xl" : ""
                       }`}
                   />
                   {/* Show all photos button on the last image (bottom-right) */}

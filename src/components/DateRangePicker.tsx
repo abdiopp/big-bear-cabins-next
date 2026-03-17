@@ -65,7 +65,7 @@ export function DateRangePicker({
       <PopoverTrigger asChild>
         <div className={cn("flex rounded-full cursor-pointer hover:shadow-md transition-shadow", className)}>
           {/* Check in section */}
-          <div className="flex-1 px-4 py-2 border-r border-border hover:bg-gray-50 transition-colors rounded-l-full min-w-0 px-[35px] py-[8px]">
+          <div className="flex-1 px-4 py-2 border-r border-border hover:bg-gray-50 transition-colors rounded-l-full min-w-0 sm:px-[35px]">
             <div className="flex items-center space-x-2">
               <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -80,7 +80,7 @@ export function DateRangePicker({
           </div>
 
           {/* Check out section */}
-          <div className="flex-1 px-4 py-2 border-r border-border hover:bg-gray-50 transition-colors min-w-0 px-[35px] py-[8px]">
+          <div className="flex-1 px-4 py-2 border-r border-border hover:bg-gray-50 transition-colors min-w-0 sm:px-[35px]">
             <div className="flex items-center space-x-2">
               <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">

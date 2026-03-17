@@ -2,7 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { Categories } from "../Categories";
-
+import {
+  Search,
+} from "lucide-react";
+import Link from "next/link";
 type HeroData = {
   heading: string;
   images: { url: string }[];
@@ -45,7 +48,17 @@ export function HeroClient({ data }: HeroProps) {
       <div className="relative z-10 h-full flex flex-col justify-start items-center px-4 sm:px-6 lg:px-8 pt-20">
         {/* Hero Text */}
         <div className="text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl text-white">{data.heading}</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white">{data.heading}</h1>
+
+          <Link href="/search" className="md:hidden">
+            <div className="bg-white mx-10 mt-5 border border-gray-400 shadow-lg rounded-full flex items-center justify-center px-4 py-2.5 gap-2">
+
+              <Search />
+              <span className="font-medium">
+                Start your search
+              </span>
+            </div>
+          </Link>
         </div>
       </div>
 
