@@ -22,6 +22,8 @@ import {
   Wind,
   Award,
   Medal,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 
 import { useProperty } from "@/hooks/useProperty";
@@ -35,6 +37,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 
 import { Map } from "./Map";
+import { useWishlist } from "@/context/WishlistContext";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 const amenityIcons = {
   Wifi: Wifi,
@@ -56,19 +61,42 @@ const defaultAmenities = [
 
 export function PropertyDetailPage() {
   const { id } = useParams();
+  const { wishlist, toggleWishlist } = useWishlist();
+  const { status } = useSession();
+
+
   const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [copied, setCopied] = useState<Boolean>(false);
 
-  console.log("property =>", property);
+  const isFavorite = (property as any)?.isFavorite ?? false;
+
+  const isFavorited = isFavorite || wishlist.includes(String(property?.id));
+
   // Helper to format date as MM/DD/YYYY for Streamline API
   const formatDateForAPI = (date: Date): string => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
+  };
+
+  const handleShare = async () => {
+    try {
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 3000);
+    } catch (err) {
+      console.error("Copy failed", err);
+    }
   };
 
   const today = new Date();
@@ -158,7 +186,22 @@ export function PropertyDetailPage() {
   const propertyDescription = property.description || "No description available for this property.";
   const propertyBadge = property.isSuperhost ? "platinum" : "gold";
   const cleanedTitle = property.title.replace(/^\d+-/, "");
-  console.log("Property Data:", property, propertyImages);
+
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (status === "unauthenticated") {
+      toast.error("Please log in to save properties to your wishlist.");
+      window.dispatchEvent(new Event("open-login-modal"));
+      return;
+    }
+
+    await toggleWishlist(String(property.id), propertyImages[0]);
+  };
+
+
   if (showAllPhotos) {
     return (
       <div className="fixed inset-0 bg-white z-50 overflow-auto">
@@ -239,12 +282,29 @@ export function PropertyDetailPage() {
             <h1 className="text-2xl font-semibold text-gray-900">{cleanedTitle}</h1>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-              <Share className="w-4 h-4" />
-              <span>Share</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="flex items-center space-x-2"
+            >
+              {copied ?
+                <>
+                  <CheckCheck className="size-5" />
+                  <span>Copied!</span>
+                </>
+                :
+                <>
+                  <Share className="w-4 h-4" />
+                  <span>Share</span>
+                </>
+              }
             </Button>
-            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-              <Heart className="w-4 h-4" />
+            <Button variant="ghost" size="sm" className="flex items-center space-x-2" onClick={handleFavoriteClick}>
+              <Heart
+                className={`h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : "text-foreground"
+                  }`}
+              />
               <span>Save</span>
             </Button>
           </div>

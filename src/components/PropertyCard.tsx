@@ -26,6 +26,7 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
+
   const {
     imageUrl,
     images,

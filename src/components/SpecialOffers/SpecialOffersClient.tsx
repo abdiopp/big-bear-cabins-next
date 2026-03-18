@@ -41,7 +41,6 @@ function OfferCard({ offer }: { offer: CouponOffer }) {
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   }, []);
-  console.log("Offer:", offer);
   return (
     <div className={`book-page p-3 md:p-6`}>
       <Card className="h-full border-0 shadow-none bg-white">

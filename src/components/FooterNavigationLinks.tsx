@@ -25,7 +25,6 @@ export function FooterNavigationLinks({ sections }: { sections: SectionType[] })
   return (
     <>
       {sections.map((section) => {
-        console.log("Section:", section);
 
         return (
           <div key={section.title}>
@@ -53,7 +52,6 @@ export function FooterNavigationLinks({ sections }: { sections: SectionType[] })
                   }
 
                   href = `/search?filters=${newFilters}`;
-                  console.log("newFilters Filters:", newFilters, href);
                 }
 
                 return (
