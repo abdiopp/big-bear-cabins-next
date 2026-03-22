@@ -2,13 +2,9 @@
 
 import {
   Search,
-  Calendar,
-  Users,
   Map,
   Menu,
   User,
-  X,
-  ChevronDown,
   Filter,
   LogOut,
   UserCircle,
@@ -27,7 +23,6 @@ import {
 } from "./ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Checkbox } from "./ui/checkbox";
-import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { DateRangePicker } from "./DateRangePicker";
 import { GuestSelector } from "./GuestSelector";
@@ -36,16 +31,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
-import { useIsMobile } from "./ui/use-mobile";
+import SearchFilterDrawer from "./Hero/SearchFilterDrawer";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isMobile = useIsMobile();
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
   const [guestCounts, setGuestCounts] = useState({
@@ -61,6 +53,10 @@ export function Header() {
     evCharger: false,
     hotTub: false,
   });
+
+  const [isSearchFilterDrawerOpen, setIsSearchFilterDrawerOpen] = useState<boolean>(false);
+
+  const toggleSearchFilterDrawer = () => setIsSearchFilterDrawerOpen(!isSearchFilterDrawerOpen);
 
   useEffect(() => {
     const handleOpenLogin = () => setIsLoginOpen(true);
@@ -135,19 +131,6 @@ export function Header() {
   };
 
   const isOnCategoryPage = pathname?.startsWith("/category/");
-  const isHomePage = pathname === "/";
-
-  const handleMobileMenuItemClick = (path: string) => {
-    router.push(path);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleMobileLogout = async () => {
-    await signOut({ redirect: false });
-    router.push("/");
-    router.refresh();
-    setIsMobileMenuOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -170,30 +153,34 @@ export function Header() {
 
           {/* Search Bar - Center (show on home, other areas, and special offers pages) */}
           {(pathname === "/" || pathname === "/other-areas" || pathname === "/special-offers") && (
-            <div className="hidden md:flex flex-1 justify-center mx-8">
-              <div className="bg-white rounded-full shadow-sm border border-border p-1 w-full max-w-2xl">
-                <div className="flex">
-                  {/* Date Range Picker */}
-                  <DateRangePicker
-                    checkInDate={checkInDate}
-                    checkOutDate={checkOutDate}
-                    onDateRangeSelect={handleDateRangeSelect}
-                  />
-                  <div className="w-full border-s border-gray-200">
 
-                    {/* Guests */}
-                    <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
-                  </div>
+            <>
 
-                  {/* Search Button */}
-                  <div className="flex items-center px-1">
-                    <button type="button" className="rounded-full size-10 p-0 bg-red-600! text-white flex items-center justify-center" onClick={handleSearch}>
-                      <Search className="size-5" />
-                    </button>
+              <div className="hidden md:flex flex-1 justify-center mx-8">
+                <div className="bg-white rounded-full shadow-sm border border-border p-1 w-full max-w-2xl">
+                  <div className="flex">
+                    {/* Date Range Picker */}
+                    <DateRangePicker
+                      checkInDate={checkInDate}
+                      checkOutDate={checkOutDate}
+                      onDateRangeSelect={handleDateRangeSelect}
+                    />
+                    <div className="w-full border-s border-gray-200">
+
+                      {/* Guests */}
+                      <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
+                    </div>
+
+                    {/* Search Button */}
+                    <div className="flex items-center px-1">
+                      <button type="button" className="rounded-full size-10 p-0 bg-red-600! text-white flex items-center justify-center" onClick={handleSearch}>
+                        <Search className="size-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* Category Page Search Bar */}
@@ -320,6 +307,13 @@ export function Header() {
           {/* Right side menu */}
           {/* Right side menu */}
           <div className="flex items-center space-x-4 flex-shrink-0">
+            {(pathname === "/" || pathname === "/other-areas" || pathname === "/special-offers") && (
+
+              <button onClick={toggleSearchFilterDrawer} type="button" className="rounded-full size-8 p-0 bg-red-600! text-white max-md:flex md:hidden items-center justify-center mx-2!">
+                <Search size={16} />
+              </button>
+
+            )}
             {/* CMS Button - Admin Only */}
             {session?.user?.role === "admin" && (
               <Button
@@ -328,7 +322,7 @@ export function Header() {
                 onClick={() => router.push("/admin")}
               >
                 <LayoutDashboard className="h-4 w-4" />
-                CMS
+                <span className="max-sm:hidden">CMS</span>
               </Button>
             )}
 
@@ -442,6 +436,7 @@ export function Header() {
           </div>
         </div>
       </div>
+      <SearchFilterDrawer isOpen={isSearchFilterDrawerOpen} onClose={toggleSearchFilterDrawer} />
     </header>
   );
 }
