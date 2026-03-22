@@ -866,61 +866,27 @@ function CheckoutContent() {
                                                     </span>
                                                 </div>
 
-                                                {/* Required Fees */}
-                                                {price.required_fees && price.required_fees.length > 0 && (
-                                                    <>
-                                                        {price.required_fees.map((fee: any, idx: number) => (
-                                                            <div key={`req-${idx}`} className="flex justify-between">
-                                                                <span className="text-gray-600">{fee.name || 'Fee'}</span>
-                                                                <span className="font-medium">${fee.amount.toFixed(2)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </>
-                                                )}
-
-                                                {/* Selected Optional Fees (Insurance) */}
-                                                {price.optional_fees && price.optional_fees.length > 0 && (
-                                                    <>
-                                                        {price.optional_fees
-                                                            .filter((fee: any) => {
-                                                                // Show the fee if it matches the user's insurance selection
-                                                                if (formData.travelInsurance === 'basic' && fee.type === 'travel_insurance') return true;
-                                                                if (formData.travelInsurance === 'premium' && fee.type === 'cancel_any_reason') return true;
-                                                                return false;
-                                                            })
-                                                            .map((fee: any, idx: number) => (
-                                                                <div key={`opt-${idx}`} className="flex justify-between">
-                                                                    <span className="text-gray-600">{fee.name}</span>
-                                                                    <span className="font-medium">${fee.amount.toFixed(2)}</span>
-                                                                </div>
-                                                            ))}
-                                                    </>
-                                                )}
-
-                                                {/* Coupon Discount */}
-                                                {price.coupon_discount && price.coupon_discount > 0 && (
-                                                    <div className="flex justify-between text-green-600">
-                                                        <span>Coupon Discount</span>
-                                                        <span className="font-medium">-${price.coupon_discount.toFixed(2)}</span>
-                                                    </div>
-                                                )}
-
-                                                {/* Taxes */}
-                                                {price.taxes_details && price.taxes_details.length > 0 ? (
-                                                    <>
-                                                        {price.taxes_details.map((tax: any, idx: number) => (
-                                                            <div key={`tax-${idx}`} className="flex justify-between">
-                                                                <span className="text-gray-600">{tax.name}</span>
-                                                                <span className="font-medium">${tax.amount.toFixed(2)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </>
-                                                ) : (
+                                                {/* Pet Fee (If applicable) */}
+                                                {price.required_fees && price.required_fees.some((fee: any) => fee.name.toLowerCase().includes('pet')) && (
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-600">Taxes</span>
-                                                        <span className="font-medium">${price.taxes.toFixed(2)}</span>
+                                                        <span className="text-gray-600">Pet Fee</span>
+                                                        <span className="font-medium">
+                                                            ${price.required_fees.find((fee: any) => fee.name.toLowerCase().includes('pet'))?.amount.toFixed(2)}
+                                                        </span>
                                                     </div>
                                                 )}
+
+                                                {/* Taxes and Fees */}
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Taxes and Fees</span>
+                                                    <span className="font-medium">
+                                                        ${(
+                                                            displayTotal -
+                                                            price.subtotal -
+                                                            (price.required_fees?.find((fee: any) => fee.name.toLowerCase().includes('pet'))?.amount || 0)
+                                                        ).toFixed(2)}
+                                                    </span>
+                                                </div>
 
                                                 <Separator />
 
