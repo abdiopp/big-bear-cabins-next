@@ -5,7 +5,9 @@ import { Categories } from "../Categories";
 import {
   Search,
 } from "lucide-react";
-import Link from "next/link";
+import { usePathname } from "next/navigation";
+import SearchFilterDrawer from "./SearchFilterDrawer";
+
 type HeroData = {
   heading: string;
   images: { url: string }[];
@@ -15,7 +17,11 @@ type HeroData = {
 type HeroProps = { data: HeroData };
 
 export function HeroClient({ data }: HeroProps) {
+  const pathname = usePathname();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isSearchFilterDrawerOpen, setIsSearchFilterDrawerOpen] = useState<boolean>(false);
+
+  const toggleSearchFilterDrawer = () => setIsSearchFilterDrawerOpen(!isSearchFilterDrawerOpen);
 
   useEffect(() => {
     if (data.images.length <= 1) return;
@@ -49,16 +55,18 @@ export function HeroClient({ data }: HeroProps) {
         {/* Hero Text */}
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white">{data.heading}</h1>
+          {(pathname === "/" || pathname === "/other-areas" || pathname === "/special-offers") && (
 
-          <Link href="/search" className="md:hidden">
-            <div className="bg-white mx-10 mt-5 border border-gray-400 shadow-lg rounded-full flex items-center justify-center px-4 py-2.5 gap-2">
+            <div className="max-md:flex md:hidden items-center justify-center mt-4">
+              <button onClick={toggleSearchFilterDrawer} type="button" className="bg-white mt-5 border border-gray-400 shadow-lg rounded-full flex items-center justify-center max-w-72 w-full px-4 py-2.5 gap-2 mx-auto">
 
-              <Search />
-              <span className="font-medium">
-                Start your search
-              </span>
+                <Search />
+                <span className="font-medium">
+                  Start your search
+                </span>
+              </button>
             </div>
-          </Link>
+          )}
         </div>
       </div>
 
@@ -66,6 +74,8 @@ export function HeroClient({ data }: HeroProps) {
       <Suspense fallback={null}>
         <Categories data={data.links} />
       </Suspense>
+
+      <SearchFilterDrawer isOpen={isSearchFilterDrawerOpen} onClose={toggleSearchFilterDrawer} />
     </div>
   );
 }

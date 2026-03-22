@@ -179,15 +179,17 @@ export function Header() {
                     checkOutDate={checkOutDate}
                     onDateRangeSelect={handleDateRangeSelect}
                   />
+                  <div className="w-full border-s border-gray-200">
 
-                  {/* Guests */}
-                  <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
+                    {/* Guests */}
+                    <GuestSelector counts={guestCounts} onGuestCountChange={handleGuestCountChange} />
+                  </div>
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">
-                    <Button size="sm" className="rounded-full h-8 w-8 p-0" onClick={handleSearch}>
-                      <Search className="h-4 w-4" />
-                    </Button>
+                    <button type="button" className="rounded-full size-10 p-0 bg-red-600! text-white flex items-center justify-center" onClick={handleSearch}>
+                      <Search className="size-5" />
+                    </button>
                   </div>
                 </div>
               </div>

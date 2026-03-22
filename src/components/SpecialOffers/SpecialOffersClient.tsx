@@ -187,14 +187,14 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
     <section className="py-8 md:py-16 bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-full overflow-hidden">
         {/* Header */}
-        <div className="text-center mb-6 md:mb-8 px-2">
-          <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 text-gray-800">
+        <div className="text-center mb-2 sm:mb-6 md:mb-8 px-2">
+          <div className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-gray-800">
             {coupons.carouselTitle}
           </div>
         </div>
 
         {/* Book Container */}
-        <div className="max-w-8xl mx-auto mb-12 relative px-8 md:px-0">
+        <div className="max-w-8xl mx-auto mb-3 sm:mb-12 relative px-8 md:px-0">
           {/* Left Navigation Arrow */}
           <Button
             onClick={prevSpread}
@@ -213,11 +213,11 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
             variant="outline"
             size="icon"
             className="absolute right-0 md:-right-16 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-20 md:h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
-          >
+          > 
             <ChevronRight className="h-6 w-6 md:h-12 md:w-12 text-black" />
           </Button>
 
-          <div className="book-container">
+          <div className="book-container max-sm:pt-2!">
             {/* Book Pages */}
             <div className="book-pages">
               <div className="book-spread">
