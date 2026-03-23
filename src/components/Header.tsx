@@ -334,7 +334,7 @@ export function Header() {
             </button>
 
             {/* Map/Other Areas Button */}
-            <Button variant="ghost" size="sm" className="rounded-full p-2" onClick={() => router.push("/other-areas")}>
+            <Button variant="ghost" size="sm" className="rounded-full p-2 max-sm:hidden! sm:flex" onClick={() => router.push("/other-areas")}>
               <Map className="h-4 w-4" />
             </Button>
 
@@ -381,6 +381,7 @@ export function Header() {
                   <DropdownMenuItem onClick={() => router.push("/activities")}>Activities</DropdownMenuItem>
                   {/* <DropdownMenuItem onClick={() => router.push("/about")}>About</DropdownMenuItem> */}
                   <DropdownMenuItem onClick={() => router.push("/attractions")}>Attractions</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/other-areas")} className="max-sm:flex! sm:hidden!">Other Areas</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/directions")}>Directions</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/events")}>Events</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/experiences")}>Experiences</DropdownMenuItem>

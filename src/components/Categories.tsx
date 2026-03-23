@@ -485,7 +485,7 @@ export function Categories({ data }: CategoriesProps) {
         scrollToCategory(nextIndex);
         return nextIndex;
       });
-    }, 3500); // 3.5 seconds feel more natural
+    }, 1000); // 1 seconds feel more natural
 
     return () => clearInterval(interval);
   }, [isMobile, data.length]);
