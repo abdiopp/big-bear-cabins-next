@@ -24,6 +24,7 @@ import {
   Medal,
   Check,
   CheckCheck,
+  Eye,
 } from "lucide-react";
 
 import { useProperty } from "@/hooks/useProperty";
@@ -67,6 +68,7 @@ export function PropertyDetailPage() {
 
   const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -214,14 +216,48 @@ export function PropertyDetailPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {propertyImages.map((image: string, index: number) => (
-              <ImageWithFallback
-                key={index}
-                src={image}
-                alt={`${property.title} ${index + 1}`}
-                className="w-full aspect-square object-cover rounded-lg"
-              />
+              <div className="relative group">
+                <ImageWithFallback
+                  key={index}
+                  src={image}
+                  alt={`${property.title} ${index + 1}`}
+                  className="w-full aspect-square object-cover rounded-lg"
+                />
+                <div
+                  className="absolute inset-0 bg-black/20 z-[50] rounded-lg flex items-center justify-center"
+                >
+                  <button onClick={() => setPreviewImage(image)} className="group-hover:scale-110 group-hover:border-2 px-4 group-hover:border-white h-12 flex items-center justify-center duration-200 transition-all">
+
+                    <Eye className="text-white" size={30} />
+                    <span className="text-white text-lg font-semibold ms-2">View</span>
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
+          {previewImage && (
+            <div
+              className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center"
+              onClick={() => setPreviewImage(null)}
+            >
+              <div className="relative max-w-5xl w-full px-4">
+                {/* Close button */}
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="absolute font-semibold top-2 right-6 text-black text-2xl bg-white size-8 rounded-full flex items-center justify-center"
+                >
+                  ✕
+                </button>
+
+                {/* Image */}
+                <img
+                  src={previewImage}
+                  alt="Preview"
+                  className="w-full max-h-[90vh] object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

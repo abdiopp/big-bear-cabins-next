@@ -332,13 +332,13 @@ export function DateRangePicker({
 
       <PopoverContent
         // Responsive width: mobile par screen ki width, desktop par auto
-        className="w-[95vw] sm:w-auto p-0 bg-white shadow-2xl rounded-3xl border border-gray-200 z-[100]"
+        className="w-[80vw] sm:w-auto p-0 bg-white shadow-2xl rounded-3xl border border-gray-200 z-[100]"
         align={isMobile ? "center" : "start"}
         sideOffset={12}
       >
         <div className="p-4 sm:p-6">
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="max-sm:hidden sm:flex items-center justify-between mb-4">
             <Button variant="ghost" size="icon" onClick={goToPreviousMonth} className="rounded-full">
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -361,7 +361,7 @@ export function DateRangePicker({
           </div>
 
           {/* Calendar Rendering */}
-          <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
             <Calendar
               mode="range"
               selected={range}
