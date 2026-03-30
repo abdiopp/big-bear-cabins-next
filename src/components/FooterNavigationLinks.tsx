@@ -40,18 +40,7 @@ export function FooterNavigationLinks({ sections }: { sections: SectionType[] })
                     .replace(/\s+/g, "")
                     .replace(/[^a-z]/g, "");
 
-                  let newFilters = filterName;
-                  if (existingFilters) {
-                    const filtersArray = existingFilters.split(",");
-
-                    if (!filtersArray.includes(filterName)) {
-                      filtersArray.push(filterName);
-                    }
-
-                    newFilters = filtersArray.join(",");
-                  }
-
-                  href = `/search?filters=${newFilters}`;
+                  href = `/search?filters=${filterName}`;
                 }
 
                 return (
