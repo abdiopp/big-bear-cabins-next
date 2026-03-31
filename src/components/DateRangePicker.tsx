@@ -311,7 +311,7 @@ export function DateRangePicker({
           <div className="flex-1 px-3 py-2 border-r border-border hover:bg-gray-50 flex items-center space-x-2">
             <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
             <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-400">Check in</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-400 whitespace-nowrap">Check in</label>
               <div className="text-sm font-medium truncate">
                 {checkInDate ? format(checkInDate, "MMM d") : "Add dates"}
               </div>
@@ -321,7 +321,7 @@ export function DateRangePicker({
           <div className="flex-1 px-3 py-2 flex items-center space-x-2 hover:bg-gray-50">
             <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
             <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-400">Check out</label>
+              <label className="block text-[10px] uppercase font-bold text-gray-400 whitespace-nowrap">Check out</label>
               <div className="text-sm font-medium truncate">
                 {checkOutDate ? format(checkOutDate, "MMM d") : "Add dates"}
               </div>

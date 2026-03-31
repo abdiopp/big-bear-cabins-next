@@ -200,7 +200,7 @@ export function Header() {
 
                   {/* Search Button */}
                   <div className="flex items-center px-1">
-                    <Button size="sm" className="rounded-full h-8 w-8 p-0" onClick={handleSearch}>
+                    <Button size="sm" className="rounded-full size-8 p-0 bg-red-600! text-white flex items-center justify-center" onClick={handleSearch}>
                       <Search className="h-4 w-4" />
                     </Button>
                   </div>
