@@ -16,8 +16,8 @@ export interface StreamlineProperty {
         image_path: string;
         thumbnail_path: string;
     }>;
-    lat?: number;
-    lng?: number;
+    location_latitude?: number;
+    location_longitude?: number;
     amenities?: Array<{
         group_name: string;
         amenity_name: string;

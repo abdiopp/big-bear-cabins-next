@@ -1,20 +1,38 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Calendar, Users, Baby, Filter, AlertCircle } from "lucide-react";
+import { Filter, AlertCircle, MapPin, ArrowLeft } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
-import { PropertyGrid } from "./PropertyGrid";
 import { useProperties } from "@/hooks/useProperties";
 import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import dynamic from "next/dynamic";
+import { Drawer as DrawerPrimitive } from "vaul";
 
-// Parse MM/DD/YYYY format from URL to YYYY-MM-DD for input fields
+// Lazy-load the map to avoid SSR issues and improve initial load
+const SearchMap = dynamic(
+  () => import("./SearchMap").then((m) => ({ default: m.SearchMap })),
+  { ssr: false, loading: () => <MapLoadingPlaceholder /> }
+);
+
+function MapLoadingPlaceholder() {
+  return (
+    <div className="w-full h-full rounded-2xl bg-gray-100 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-800 border-t-transparent" />
+        <span className="text-sm text-gray-500">Loading map…</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const parseApiDateToInput = (apiDate: string | null): string => {
   if (!apiDate) return "";
   const parts = apiDate.split("/");
@@ -23,7 +41,6 @@ const parseApiDateToInput = (apiDate: string | null): string => {
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 };
 
-// Convert input date (YYYY-MM-DD) to API format (MM/DD/YYYY)
 const formatInputToApiDate = (inputDate: string): string => {
   if (!inputDate) return "";
   const parts = inputDate.split("-");
@@ -32,7 +49,7 @@ const formatInputToApiDate = (inputDate: string): string => {
   return `${month}/${day}/${year}`;
 };
 
-// ── Location areas from Streamline API ─────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 const LOCATIONS = [
   { id: "", label: "Any Location" },
   { id: "11226", label: "Big Bear Lake" },
@@ -42,7 +59,6 @@ const LOCATIONS = [
   { id: "17611", label: "Ski Resorts" },
 ];
 
-// ── Bedroom options matching bigbearcabins.com ──────────────────────────────
 const BEDROOM_OPTIONS = [
   { value: "", label: "Any Bedrooms" },
   { value: "1", label: "1 Bedroom" },
@@ -57,7 +73,6 @@ const BEDROOM_OPTIONS = [
   { value: "13", label: "13 Bedrooms" },
 ];
 
-// ── Sort options matching bigbearcabins.com ─────────────────────────────────
 const SORT_OPTIONS = [
   { value: "price_daily_low", label: "Price: Low to High" },
   { value: "price_daily_high", label: "Price: High to Low" },
@@ -67,11 +82,14 @@ const SORT_OPTIONS = [
   { value: "max_occupants_asc", label: "Guests: Fewest First" },
 ];
 
+// Navbar is h-24 (96px) + search bar is ~65px = ~161px total top offset
+const STICKY_TOP = 96; // navbar height in px
+
 export function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // ── Primary filters ──────────────────────────────────────────────────────
+  // ── Filters ───────────────────────────────────────────────────────────────
   const [checkIn, setCheckIn] = useState(() =>
     parseApiDateToInput(searchParams.get("checkIn"))
   );
@@ -86,25 +104,26 @@ export function SearchPage() {
   const [bedrooms, setBedrooms] = useState(
     () => searchParams.get("bedrooms") || ""
   );
-  const [location, setLocation] = useState(
-    () => searchParams.get("location") || ""
-  );
+  const [location, setLocation] = useState<string>("");
+  const [dates, setDates] = useState<{ startDate: string; endDate: string }>({
+    startDate: "",
+    endDate: "",
+  });
+  const [snap, setSnap] = useState<number | string | null>(0.65);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortBy, setSortBy] = useState(
     () => searchParams.get("sort_by") || "price_daily_low"
   );
-
-  // ── Advanced amenity filters ──────────────────────────────────────────────
+  const [activeFilters, setActiveFilters] = useState<string[]>(() => {
+    const f = searchParams.get("filters");
+    return f ? f.split(",") : [];
+  });
   const [filters, setFilters] = useState({
     mountainView: false,
     lakefront: false,
     boatDock: false,
     evCharger: false,
     hotTub: false,
-  });
-
-  const [activeFilters, setActiveFilters] = useState<string[]>(() => {
-    const filtersParam = searchParams.get("filters");
-    return filtersParam ? filtersParam.split(",") : [];
   });
 
   useEffect(() => {
@@ -117,11 +136,17 @@ export function SearchPage() {
     });
   }, [activeFilters]);
 
-  // ── Build API params ──────────────────────────────────────────────────────
+  // ── Map / card interaction state ──────────────────────────────────────────
+  const [hoveredCardId, setHoveredCardId] = useState<string | number | null>(null);
+  const [activeMarkerId, setActiveMarkerId] = useState<string | number | null>(null);
+
+  // ── Mobile map toggle ─────────────────────────────────────────────────────
+  const [showMap, setShowMap] = useState(false);
+
+  // ── API params ────────────────────────────────────────────────────────────
   const searchApiParams = useMemo(() => {
     const startdate = formatInputToApiDate(checkIn);
     const enddate = formatInputToApiDate(checkOut);
-
     return {
       ...(startdate && { startdate }),
       ...(enddate && { enddate }),
@@ -137,10 +162,9 @@ export function SearchPage() {
 
   const { properties, loading, error } = useProperties(1, searchApiParams);
 
-  // ── URL sync on Search ────────────────────────────────────────────────────
+  // ── URL sync ──────────────────────────────────────────────────────────────
   const handleSearch = () => {
     const params = new URLSearchParams();
-
     if (checkIn) params.set("checkIn", formatInputToApiDate(checkIn));
     if (checkOut) params.set("checkOut", formatInputToApiDate(checkOut));
     if (guests) params.set("occupants", guests);
@@ -150,17 +174,15 @@ export function SearchPage() {
     if (bedrooms) params.set("bedrooms", bedrooms);
     if (location) params.set("location", location);
     if (sortBy && sortBy !== "price_daily_low") params.set("sort_by", sortBy);
-
     router.push(`/search?${params.toString()}`);
   };
 
   const handleFilterChange = (filterKey: keyof typeof filters) => {
     setFilters((prev) => {
       const updated = { ...prev, [filterKey]: !prev[filterKey] };
-      const newActiveFilters = Object.keys(updated).filter(
-        (key) => updated[key as keyof typeof updated]
+      setActiveFilters(
+        Object.keys(updated).filter((k) => updated[k as keyof typeof updated])
       );
-      setActiveFilters(newActiveFilters);
       return updated;
     });
   };
@@ -174,19 +196,31 @@ export function SearchPage() {
     return count;
   }, [activeFilters, guests, children, pets, sortBy]);
 
-  // ── Shared select style ───────────────────────────────────────────────────
+  const handleMarkerClick = useCallback((id: string | number | null) => {
+    setActiveMarkerId(id);
+  }, []);
+
   const selectClass =
     "h-9 rounded-md border border-input bg-[#f3f3f5] px-3 py-1 text-sm text-gray-600 shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ── Search Bar ──────────────────────────────────────────────────── */}
-      <div className="bg-white border-b sticky top-24 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-wrap gap-3 items-center">
+  // Effective hovered = either hovered card OR active marker
+  const effectiveHoveredId = hoveredCardId ?? activeMarkerId;
 
-            {/* Location dropdown */}
-            <div className="flex-1 min-w-[160px]">
+  // search bar is ~57px → total pinned offset = navbar(96) + searchbar(57) = 153px
+  const MAP_TOP = 153;
+
+  return (
+    <div className="flex flex-col bg-gray-50">
+      {/* ── Search / Filter Bar (Desktop) ─────────────────────────────────── */}
+      <div
+        className="bg-white border-b z-20 flex-shrink-0 max-lg:hidden"
+        style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}
+      >
+        <div className="px-4 sm:px-6 py-3">
+          <div className="flex flex-wrap gap-2 items-center">
+
+            {/* Location */}
+            <div className="flex-1 min-w-[140px]">
               <select
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -201,27 +235,29 @@ export function SearchPage() {
             </div>
 
             {/* Arrival */}
-            <div className="flex-1 min-w-[140px]">
+            <div className="flex-1 min-w-[130px]">
               <Input
                 type="date"
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
                 placeholder="Arrival"
+                className="h-9 text-sm"
               />
             </div>
 
             {/* Departure */}
-            <div className="flex-1 min-w-[140px]">
+            <div className="flex-1 min-w-[130px]">
               <Input
                 type="date"
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
                 placeholder="Departure"
+                className="h-9 text-sm"
               />
             </div>
 
-            {/* Bedrooms dropdown */}
-            <div className="flex-1 min-w-[140px]">
+            {/* Bedrooms */}
+            <div className="flex-1 min-w-[130px]">
               <select
                 value={bedrooms}
                 onChange={(e) => setBedrooms(e.target.value)}
@@ -235,17 +271,15 @@ export function SearchPage() {
               </select>
             </div>
 
-
-
-            {/* Advanced Filters button */}
+            {/* Advanced Filters */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="relative rounded-full h-9 px-3 border-gray-300 gap-1"
+                  className="relative rounded-full h-9 px-3 border-gray-300 gap-1.5"
                 >
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-3.5 w-3.5" />
                   <span className="text-sm">Filters</span>
                   {activeFilterCount > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
@@ -255,13 +289,10 @@ export function SearchPage() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-4 max-h-[80vh] overflow-y-auto" align="end">
-                <div className="space-y-6">
-
-                  {/* Occupancy Section */}
+                <div className="space-y-5">
+                  {/* Occupancy */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                      Occupancy
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wider">Occupancy</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-gray-500">Guests</Label>
@@ -288,11 +319,9 @@ export function SearchPage() {
                     </div>
                   </div>
 
-                  {/* Sort Section */}
+                  {/* Sort */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
-                      Sort By
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wider">Sort By</h3>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
@@ -306,12 +335,12 @@ export function SearchPage() {
                     </select>
                   </div>
 
-                  {/* Preferences Section */}
+                  {/* Amenities */}
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                    <h3 className="font-semibold text-gray-900 text-xs uppercase tracking-wider">
                       Preferences & Amenities
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id="pets_popover"
@@ -337,7 +366,10 @@ export function SearchPage() {
                               handleFilterChange(key as keyof typeof filters)
                             }
                           />
-                          <Label htmlFor={`popover_${key}`} className="text-sm cursor-pointer">
+                          <Label
+                            htmlFor={`popover_${key}`}
+                            className="text-sm cursor-pointer"
+                          >
                             {label}
                           </Label>
                         </div>
@@ -377,48 +409,209 @@ export function SearchPage() {
 
             {/* Search button */}
             <Button
-              className="bg-red-500 hover:bg-red-600 text-white px-6"
+              className="bg-red-500 hover:bg-red-600 text-white px-5 h-9 rounded-full text-sm font-semibold"
               onClick={handleSearch}
             >
-              Update Results
+              Search
             </Button>
           </div>
         </div>
       </div>
 
-      {/* ── Results ─────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="mb-1 text-2xl font-bold">Stay in Big Bear</h1>
-            {!loading && !error && (
-              <p className="text-gray-500 text-sm">
-                {properties.length} propert{properties.length === 1 ? "y" : "ies"} found
-              </p>
+      {/* ── Desktop & Mobile Layout ──────────────────────────────────────── */}
+
+      {/* Mobile Map Toggles (Hidden since we use Bottom Sheet) */}
+      <style>{`
+        .vaul-scrollable {
+          -webkit-overflow-scrolling: touch;
+        }
+        /* Completely hide the global footer on the Search map view to prevent social links bleeding */
+        footer {
+          display: none !important;
+        }
+      `}</style>
+      {(() => {
+        const listingsContent = (
+          <>
+            {/* Header */}
+            <div className="px-4 xl:px-6 pt-5 pb-3 bg-white">
+              <h1 className="text-xl font-bold text-gray-900">Stay in Big Bear</h1>
+              {!loading && !error && (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {properties.length} propert{properties.length === 1 ? "y" : "ies"} found
+                </p>
+              )}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="px-4 xl:px-6 mb-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    We couldn't load the properties at this moment. Please try
+                    again later.
+                  </AlertDescription>
+                </Alert>
+              </div>
             )}
+
+            {/* Grid */}
+            <div className="px-4 xl:px-6 pb-16">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                {loading
+                  ? Array.from({ length: 8 }).map((_, i) => (
+                    <PropertyCardSkeletonItem key={i} />
+                  ))
+                  : properties.map((property) => (
+                    <SearchPropertyCard
+                      key={property.id}
+                      {...property}
+                      isHovered={effectiveHoveredId === property.id}
+                      onMouseEnter={() => setHoveredCardId(property.id)}
+                      onMouseLeave={() => setHoveredCardId(null)}
+                    />
+                  ))}
+              </div>
+
+              {!loading && !error && properties.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="text-5xl mb-4">🏔️</div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No cabins found</h3>
+                  <p className="text-sm text-gray-500 max-w-xs">
+                    Try adjusting your dates, guests, or filters to find the perfect cabin.
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        );
+
+        return (
+          <div className="flex relative">
+            {/* Desktop Left: Listings */}
+            <div className="max-lg:hidden flex-shrink-0 w-[54%]">
+              {listingsContent}
+            </div>
+
+            {/* Desktop Right: Sticky Map */}
+            <div
+              className="max-lg:hidden flex-1 sticky"
+              style={{
+                top: `${MAP_TOP}px`,
+                height: `calc(100vh - ${MAP_TOP}px)`,
+                padding: "12px 12px 12px 4px",
+                minWidth: 0,
+              }}
+            >
+              <div className="w-full h-full rounded-2xl overflow-hidden shadow-sm">
+                <SearchMap
+                  properties={properties}
+                  hoveredId={effectiveHoveredId}
+                  onMarkerClick={handleMarkerClick}
+                  locationId={location}
+                />
+              </div>
+            </div>
+
+            {/* Mobile: Full Screen Background Map */}
+            <div
+              className="lg:hidden fixed inset-x-0 bottom-0 z-0 bg-gray-100"
+              style={{ top: `96px` }} // Start right below the main Navbar
+            >
+              {/* ── Mobile Custom Floating Header ── */}
+              <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between bg-white rounded-full shadow-lg px-4 py-3 border border-gray-100">
+                <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">
+                  <ArrowLeft size={20} className="text-gray-800" />
+                </button>
+
+                <div className="flex flex-col items-center flex-1 mx-2 cursor-pointer pt-0.5">
+                  <span className="text-[14px] font-[600] text-gray-900 leading-tight">Homes in Map area</span>
+                  <span className="text-xs text-gray-500 leading-tight mt-0.5">Any week • {guests ? `${guests} guest${guests === '1' ? '' : 's'}` : '1 guest'}</span>
+                </div>
+
+                <button className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm ml-1">
+                  <Filter size={16} className="text-gray-800" />
+                </button>
+              </div>
+
+              <SearchMap
+                properties={properties}
+                hoveredId={effectiveHoveredId}
+                onMarkerClick={handleMarkerClick}
+                locationId={location}
+              />
+            </div>
+
+            {/* Mobile: Persistent Static Drawer Handle (Visible when drawer is closed) */}
+            <div 
+              className={`lg:hidden fixed bottom-0 left-0 right-0 z-20 flex flex-col items-center justify-start w-full h-[80px] pt-3 bg-white rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] border-t border-gray-200 cursor-pointer transition-opacity duration-300 ${drawerOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+              onClick={() => {
+                setSnap(0.65);
+                setDrawerOpen(true);
+              }}
+            >
+              <div className="w-10 h-1.5 rounded-full bg-gray-300 mb-2" />
+              <div className="mt-0.5">
+                <span className="text-[15px] font-[600] text-gray-900">
+                  Over {properties.length} homes
+                </span>
+              </div>
+            </div>
+
+            {/* Mobile: Vaul Bottom Sheet for Listings */}
+            <div className="lg:hidden">
+              <DrawerPrimitive.Root
+                snapPoints={[0.65, 1]}
+                activeSnapPoint={snap}
+                setActiveSnapPoint={setSnap}
+                fadeFromIndex={0}
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                modal={false}
+              >
+                <DrawerPrimitive.Portal>
+                  <DrawerPrimitive.Content
+                    className="fixed bottom-0 left-0 right-0 z-30 flex flex-col bg-white rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.12)] outline-none border-t border-gray-200 lg:hidden pointer-events-auto"
+                    style={{ height: `calc(100vh - ${MAP_TOP}px)` }}
+                  >
+                    {/* Accessibility requirements for Radix Dialog natively requested by vaul */}
+                    <DrawerPrimitive.Title className="sr-only">Properties in Map Area</DrawerPrimitive.Title>
+                    <DrawerPrimitive.Description className="sr-only">A list of available properties covering the visible map area.</DrawerPrimitive.Description>
+
+                    {/* Drawer Handle (Inside Sheet) */}
+                    <div 
+                      className="flex flex-col items-center justify-start w-full h-[52px] pt-3 pb-2 bg-white rounded-t-3xl cursor-grab active:cursor-grabbing border-b border-gray-100 flex-shrink-0"
+                      onClick={() => snap === 1 ? setSnap(0.65) : setSnap(1)}
+                    >
+                      <div className="w-10 h-1.5 rounded-full bg-gray-300" />
+                    </div>
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto vaul-scrollable bg-white">
+                      {listingsContent}
+                    </div>
+                  </DrawerPrimitive.Content>
+                </DrawerPrimitive.Portal>
+              </DrawerPrimitive.Root>
+            </div>
           </div>
-        </div>
+        );
+      })()}
+    </div>
+  );
+}
 
-        {error && (
-          <Alert variant="destructive" className="mb-8">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              We couldn&apos;t load the properties at this moment. Please try again
-              later.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <PropertyGrid>
-          {loading
-            ? Array.from({ length: 8 }).map((_, i) => (
-              <PropertyCardSkeleton key={i} />
-            ))
-            : properties.map((property) => (
-              <SearchPropertyCard key={property.id} {...property} />
-            ))}
-        </PropertyGrid>
+// Inline skeleton so we don't need the old PropertyCardSkeleton shape
+function PropertyCardSkeletonItem() {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-white shadow-sm animate-pulse">
+      <div className="aspect-[4/3] bg-gray-200" />
+      <div className="p-3.5 space-y-2">
+        <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-1/3" />
+        <div className="h-4 bg-gray-200 rounded w-1/4 mt-2" />
       </div>
     </div>
   );

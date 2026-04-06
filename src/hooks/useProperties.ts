@@ -48,8 +48,8 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => {
         guests: p.max_occupants,
         dates: "Available now",
         isSuperhost: (p.rating_average || 0) >= 4.5,
-        latitude: p.lat,
-        longitude: p.lng,
+        latitude: p.location_latitude,
+        longitude: p.location_longitude,
         amenities,
     };
 };
