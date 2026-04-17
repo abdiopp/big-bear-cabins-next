@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { Heart, Star, BedDouble, Users, Bath } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -23,6 +24,8 @@ interface SearchPropertyCardProps {
   isHovered?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  cardRef?: (node: HTMLAnchorElement | null) => void;
+  onCardClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 export function SearchPropertyCard({
@@ -43,6 +46,8 @@ export function SearchPropertyCard({
   isHovered = false,
   onMouseEnter,
   onMouseLeave,
+  cardRef,
+  onCardClick,
 }: SearchPropertyCardProps) {
   const cleanLocation = location.replace(/^[\d]+-?/, "").trim();
 
@@ -50,8 +55,10 @@ export function SearchPropertyCard({
     <Link
       href={`/property/${id}`}
       className="group block cursor-pointer"
+      ref={cardRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onClick={onCardClick}
     >
       <div
         className="rounded-2xl overflow-hidden transition-all duration-200"

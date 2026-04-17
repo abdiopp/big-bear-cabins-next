@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Filter, AlertCircle, MapPin, ArrowLeft } from "lucide-react";
+import { Filter, AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
 import { useProperties } from "@/hooks/useProperties";
-import { PropertyCardSkeleton } from "./PropertyCardSkeleton";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Checkbox } from "./ui/checkbox";
@@ -85,6 +84,11 @@ const SORT_OPTIONS = [
 // Navbar is h-24 (96px) + search bar is ~65px = ~161px total top offset
 const STICKY_TOP = 96; // navbar height in px
 
+const isSamePropertyId = (
+  left: string | number | null | undefined,
+  right: string | number | null | undefined
+) => left != null && right != null && String(left) === String(right);
+
 export function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -139,6 +143,9 @@ export function SearchPage() {
   // ── Map / card interaction state ──────────────────────────────────────────
   const [hoveredCardId, setHoveredCardId] = useState<string | number | null>(null);
   const [activeMarkerId, setActiveMarkerId] = useState<string | number | null>(null);
+  const [focusedPropertyId, setFocusedPropertyId] = useState<string | number | null>(null);
+  const [focusRequestId, setFocusRequestId] = useState(0);
+  const propertyCardRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   // ── Mobile map toggle ─────────────────────────────────────────────────────
   const [showMap, setShowMap] = useState(false);
@@ -196,9 +203,70 @@ export function SearchPage() {
     return count;
   }, [activeFilters, guests, children, pets, sortBy]);
 
+  const requestMapFocus = useCallback((id: string | number | null) => {
+    setFocusedPropertyId(id);
+    setFocusRequestId((current) => current + 1);
+  }, []);
+
+  const registerPropertyCardRef = useCallback(
+    (id: string | number, node: HTMLAnchorElement | null) => {
+      const key = String(id);
+      if (node) {
+        propertyCardRefs.current[key] = node;
+      } else {
+        delete propertyCardRefs.current[key];
+      }
+    },
+    []
+  );
+
   const handleMarkerClick = useCallback((id: string | number | null) => {
     setActiveMarkerId(id);
+    if (
+      id != null &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 1023px)").matches
+    ) {
+      setSnap(0.65);
+      setDrawerOpen(true);
+    }
   }, []);
+
+  const handleListingCardClick = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>, id: string | number) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      // Keep keyboard Enter behavior for accessibility and direct navigation.
+      if (event.detail === 0) {
+        return;
+      }
+
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 1024px)").matches
+      ) {
+        event.preventDefault();
+        setActiveMarkerId(id);
+        setHoveredCardId(id);
+        requestMapFocus(id);
+      }
+    },
+    [requestMapFocus]
+  );
+
+  useEffect(() => {
+    if (activeMarkerId == null) return;
+    const cardNode = propertyCardRefs.current[String(activeMarkerId)];
+    if (!cardNode) return;
+
+    cardNode.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, [activeMarkerId, properties.length]);
 
   const selectClass =
     "h-9 rounded-md border border-input bg-[#f3f3f5] px-3 py-1 text-sm text-gray-600 shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
@@ -468,9 +536,11 @@ export function SearchPage() {
                     <SearchPropertyCard
                       key={property.id}
                       {...property}
-                      isHovered={effectiveHoveredId === property.id}
+                      cardRef={(node) => registerPropertyCardRef(property.id, node)}
+                      isHovered={isSamePropertyId(effectiveHoveredId, property.id)}
                       onMouseEnter={() => setHoveredCardId(property.id)}
                       onMouseLeave={() => setHoveredCardId(null)}
+                      onCardClick={(event) => handleListingCardClick(event, property.id)}
                     />
                   ))}
               </div>
@@ -511,6 +581,8 @@ export function SearchPage() {
                   hoveredId={effectiveHoveredId}
                   onMarkerClick={handleMarkerClick}
                   locationId={location}
+                  focusedPropertyId={focusedPropertyId}
+                  focusRequestId={focusRequestId}
                 />
               </div>
             </div>
@@ -541,6 +613,8 @@ export function SearchPage() {
                 hoveredId={effectiveHoveredId}
                 onMarkerClick={handleMarkerClick}
                 locationId={location}
+                focusedPropertyId={focusedPropertyId}
+                focusRequestId={focusRequestId}
               />
             </div>
 

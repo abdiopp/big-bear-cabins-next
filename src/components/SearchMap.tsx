@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { Property } from "@/lib/types";
 import Link from "next/link";
@@ -35,11 +35,18 @@ const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
   "17611": { lat: 34.2300, lng: -116.8900 },
 };
 
+const idsMatch = (
+  left: string | number | null | undefined,
+  right: string | number | null | undefined
+) => left != null && right != null && String(left) === String(right);
+
 interface SearchMapProps {
   properties: Property[];
   hoveredId: string | number | null;
   onMarkerClick?: (id: string | number | null) => void;
   locationId?: string;
+  focusedPropertyId?: string | number | null;
+  focusRequestId?: number;
 }
 
 // ── Price Pill Marker ──────────────────────────────────────────────────────
@@ -48,11 +55,15 @@ const PriceMarker = React.memo(function PriceMarker({
   isActive,
   isHovered,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   properties: Property[];
   isActive: boolean;
   isHovered: boolean;
   onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }) {
   const isCluster = properties.length > 1;
   const price = properties[0].price > 0 ? `$${properties[0].price}` : "—";
@@ -67,6 +78,8 @@ const PriceMarker = React.memo(function PriceMarker({
           e.preventDefault();
           onClick();
         }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         style={{
           background: active ? "#222222" : "#ffffff",
           color: active ? "#ffffff" : "#222222",
@@ -88,6 +101,121 @@ const PriceMarker = React.memo(function PriceMarker({
       >
         {display}
       </button>
+    </div>
+  );
+});
+
+// ── Hover Preview Card ─────────────────────────────────────────────────────
+const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
+  property,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  property: Property;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}) {
+  return (
+    <div
+      className="max-lg:hidden"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position: "absolute",
+        transform: "translate(-50%, calc(-100% - 58px))",
+        zIndex: 18,
+      }}
+    >
+      <Link
+        href={`/property/${property.id}`}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          display: "block",
+          width: "252px",
+          background: "#ffffff",
+          borderRadius: "14px",
+          boxShadow: "0 8px 28px rgba(0,0,0,0.2)",
+          overflow: "hidden",
+          textDecoration: "none",
+          color: "#111827",
+        }}
+      >
+        <div style={{ height: "126px", overflow: "hidden" }}>
+          <ImageWithFallback
+            src={property.imageUrl}
+            alt={property.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+
+        <div style={{ padding: "10px 12px 12px" }}>
+          <h3
+            style={{
+              fontSize: "13px",
+              fontWeight: 700,
+              lineHeight: 1.35,
+              margin: 0,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {property.title}
+          </h3>
+
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#6b7280",
+              lineHeight: 1.35,
+              margin: "4px 0 0",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {property.location}
+          </p>
+
+          <p
+            style={{
+              fontSize: "11px",
+              color: "#6b7280",
+              margin: "6px 0 0",
+            }}
+          >
+            {[property.bedrooms ? `${property.bedrooms} bd` : null, property.bathrooms ? `${property.bathrooms} ba` : null, property.guests ? `${property.guests} guests` : null]
+              .filter(Boolean)
+              .join(" · ") || "Big Bear cabin"}
+          </p>
+
+          <div
+            style={{
+              marginTop: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+              {property.rating > 0 && (
+                <>
+                  <Star size={12} fill="#111827" color="#111827" />
+                  <span style={{ fontSize: "12px", fontWeight: 600 }}>{property.rating.toFixed(1)}</span>
+                </>
+              )}
+            </div>
+
+            <span style={{ fontSize: "13px", fontWeight: 700 }}>
+              {property.price > 0 ? `$${property.price}` : "—"}
+              {property.price > 0 && (
+                <span style={{ fontWeight: 400, fontSize: "11px", color: "#6b7280" }}>/night</span>
+              )}
+            </span>
+          </div>
+        </div>
+      </Link>
     </div>
   );
 });
@@ -287,7 +415,14 @@ const MapPopupCard = React.memo(function MapPopupCard({
 });
 
 // ── Main Search Map ────────────────────────────────────────────────────────
-export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: SearchMapProps) {
+export function SearchMap({
+  properties,
+  hoveredId,
+  onMarkerClick,
+  locationId,
+  focusedPropertyId,
+  focusRequestId,
+}: SearchMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "",
@@ -295,6 +430,8 @@ export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: 
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const [activePopup, setActivePopup] = useState<Property | null>(null);
+  const [hoveredPopup, setHoveredPopup] = useState<Property | null>(null);
+  const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -303,6 +440,24 @@ export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: 
   const onUnmount = useCallback(() => {
     mapRef.current = null;
   }, []);
+
+  const clearHoverTimeout = useCallback(() => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current);
+      hoverClearTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleHoverClear = useCallback(() => {
+    clearHoverTimeout();
+    hoverClearTimeoutRef.current = setTimeout(() => {
+      setHoveredPopup(null);
+    }, 120);
+  }, [clearHoverTimeout]);
+
+  useEffect(() => {
+    return () => clearHoverTimeout();
+  }, [clearHoverTimeout]);
 
   // Group properties by exact lat/lng to prevent overlapping marker chaos
   const propertyGroups = useMemo(() => {
@@ -348,34 +503,75 @@ export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: 
     return DEFAULT_CENTER;
   }, [propertyGroups, locationId]);
 
+  const panToProperty = useCallback((property: Property) => {
+    if (!mapRef.current) return;
+
+    const lat = Number(property.latitude);
+    const lng = Number(property.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
+
+    mapRef.current.panTo({ lat, lng });
+    const currentZoom = mapRef.current.getZoom() || 12;
+    if (currentZoom < 15) {
+      mapRef.current.setZoom(15);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (focusedPropertyId == null) return;
+    const focusedProperty = properties.find((property) =>
+      idsMatch(property.id, focusedPropertyId)
+    );
+    if (!focusedProperty) return;
+
+    clearHoverTimeout();
+    setHoveredPopup(null);
+    setActivePopup(focusedProperty);
+    panToProperty(focusedProperty);
+  }, [focusedPropertyId, focusRequestId, properties, clearHoverTimeout, panToProperty]);
+
+  const handleMarkerMouseEnter = useCallback(
+    (property: Property) => {
+      clearHoverTimeout();
+      if (activePopup) return;
+      setHoveredPopup(property);
+    },
+    [activePopup, clearHoverTimeout]
+  );
+
+  const handleMarkerMouseLeave = useCallback(() => {
+    scheduleHoverClear();
+  }, [scheduleHoverClear]);
+
+  const handleHoverCardMouseEnter = useCallback(() => {
+    clearHoverTimeout();
+  }, [clearHoverTimeout]);
+
+  const handleHoverCardMouseLeave = useCallback(() => {
+    scheduleHoverClear();
+  }, [scheduleHoverClear]);
+
   const handleMarkerClick = useCallback(
     (property: Property) => {
       const isClosing = activePopup?.id === property.id;
+      clearHoverTimeout();
+      setHoveredPopup(null);
       setActivePopup(isClosing ? null : property);
       onMarkerClick?.(isClosing ? null : property.id);
 
       if (!isClosing && mapRef.current) {
-        const lat = Number(property.latitude);
-        const lng = Number(property.longitude);
-        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-          // Pan map to center on the clicked marker
-          mapRef.current.panTo({ lat, lng });
-          
-          // Zoom in smoothly if the map is too zoomed out
-          const currentZoom = mapRef.current.getZoom() || 12;
-          if (currentZoom < 15) {
-            mapRef.current.setZoom(15);
-          }
-        }
+        panToProperty(property);
       }
     },
-    [activePopup, onMarkerClick]
+    [activePopup, clearHoverTimeout, onMarkerClick, panToProperty]
   );
 
   const handleClosePopup = useCallback(() => {
+    clearHoverTimeout();
+    setHoveredPopup(null);
     setActivePopup(null);
     onMarkerClick?.(null);
-  }, [onMarkerClick]);
+  }, [clearHoverTimeout, onMarkerClick]);
 
   if (!isLoaded) {
     return (
@@ -402,9 +598,14 @@ export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: 
         {propertyGroups.map((group) => {
           const { lat, lng, properties: groupProps } = group;
           // Group is active if any of its properties is the activePopup
-          const isActive = groupProps.some((p) => activePopup?.id === p.id);
+          const isActive = groupProps.some((p) => idsMatch(activePopup?.id, p.id));
           // Group is hovered if any of its properties is hovered
-          const isHovered = groupProps.some((p) => hoveredId === p.id);
+          const isHovered = groupProps.some(
+            (p) => idsMatch(hoveredId, p.id) || idsMatch(hoveredPopup?.id, p.id)
+          );
+          const hoveredProperty = hoveredPopup
+            ? groupProps.find((p) => idsMatch(hoveredPopup.id, p.id)) || null
+            : null;
 
           return (
             <React.Fragment key={`group-${group.id}`}>
@@ -418,8 +619,24 @@ export function SearchMap({ properties, hoveredId, onMarkerClick, locationId }: 
                   isActive={isActive}
                   isHovered={isHovered}
                   onClick={() => handleMarkerClick(groupProps[0])}
+                  onMouseEnter={() => handleMarkerMouseEnter(groupProps[0])}
+                  onMouseLeave={handleMarkerMouseLeave}
                 />
               </OverlayView>
+
+              {/* Hover Preview */}
+              {!activePopup && hoveredProperty && (
+                <OverlayView
+                  position={{ lat, lng }}
+                  mapPaneName={OverlayView.FLOAT_PANE}
+                >
+                  <MapHoverPreviewCard
+                    property={hoveredProperty}
+                    onMouseEnter={handleHoverCardMouseEnter}
+                    onMouseLeave={handleHoverCardMouseLeave}
+                  />
+                </OverlayView>
+              )}
 
               {/* Popup */}
               {isActive && activePopup && (
