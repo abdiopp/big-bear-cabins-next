@@ -79,6 +79,7 @@ const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
 
 const CLUSTER_GRID_SIZE_PX = 64;
 const MAX_CLUSTER_ZOOM = 16;
+const DEFAULT_PAGE_SIZE = 20;
 
 const idsMatch = (
   left: string | number | null | undefined,
@@ -92,6 +93,11 @@ interface SearchMapProps {
   locationId?: string;
   focusedPropertyId?: string | number | null;
   focusRequestId?: number;
+  pageSize?: number;
+  onRenderedPropertiesChange?: (
+    renderedProperties: Property[],
+    meta: { visibleCount: number; batchIndex: number; totalBatches: number }
+  ) => void;
 }
 
 interface PropertyGroup {
@@ -494,6 +500,8 @@ export function SearchMap({
   locationId,
   focusedPropertyId,
   focusRequestId,
+  pageSize = DEFAULT_PAGE_SIZE,
+  onRenderedPropertiesChange,
 }: SearchMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -511,6 +519,36 @@ export function SearchMap({
   const viewportSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const renderedCanvasNodesRef = useRef<CanvasNode[]>([]);
+  const viewportFilterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRenderedSetKeyRef = useRef("");
+
+  const mappableProperties = useMemo(
+    () =>
+      properties.filter(
+        (p) =>
+          p.latitude != null &&
+          p.longitude != null &&
+          !isNaN(Number(p.latitude)) &&
+          !isNaN(Number(p.longitude)) &&
+          Number(p.latitude) !== 0 &&
+          Number(p.longitude) !== 0 &&
+          isWithinCabinsArea(Number(p.latitude), Number(p.longitude))
+      ),
+    [properties]
+  );
+
+  const [visibleCabins, setVisibleCabins] = useState<Property[]>(mappableProperties);
+  const [activeBatchIndex, setActiveBatchIndex] = useState(0);
+
+  const totalBatches = useMemo(
+    () => Math.max(1, Math.ceil(visibleCabins.length / pageSize)),
+    [visibleCabins.length, pageSize]
+  );
+
+  const paginatedCabins = useMemo(() => {
+    const start = activeBatchIndex * pageSize;
+    return visibleCabins.slice(start, start + pageSize);
+  }, [visibleCabins, activeBatchIndex, pageSize]);
 
   const syncViewportBounds = useCallback(() => {
     const bounds = mapRef.current?.getBounds();
@@ -527,6 +565,34 @@ export function SearchMap({
     });
   }, []);
 
+  const updateVisibleCabinsForViewport = useCallback(() => {
+    const bounds = mapRef.current?.getBounds();
+    const nextVisible =
+      bounds == null
+        ? mappableProperties
+        : mappableProperties.filter((property) => {
+            const lat = Number(property.latitude);
+            const lng = Number(property.longitude);
+            return bounds.contains({ lat, lng });
+          });
+
+    setVisibleCabins(nextVisible);
+    setActiveBatchIndex(0);
+  }, [mappableProperties]);
+
+  const scheduleViewportFilter = useCallback(
+    (delay = 120) => {
+      if (viewportFilterTimeoutRef.current) {
+        clearTimeout(viewportFilterTimeoutRef.current);
+      }
+
+      viewportFilterTimeoutRef.current = setTimeout(() => {
+        updateVisibleCabinsForViewport();
+      }, delay);
+    },
+    [updateVisibleCabinsForViewport]
+  );
+
   const scheduleViewportSync = useCallback((delay = 120) => {
     if (viewportSyncTimeoutRef.current) {
       clearTimeout(viewportSyncTimeoutRef.current);
@@ -541,13 +607,18 @@ export function SearchMap({
     mapRef.current = map;
     setMapZoom(map.getZoom() ?? 12);
     syncViewportBounds();
-  }, [syncViewportBounds]);
+    updateVisibleCabinsForViewport();
+  }, [syncViewportBounds, updateVisibleCabinsForViewport]);
 
   const onUnmount = useCallback(() => {
     mapRef.current = null;
     if (viewportSyncTimeoutRef.current) {
       clearTimeout(viewportSyncTimeoutRef.current);
       viewportSyncTimeoutRef.current = null;
+    }
+    if (viewportFilterTimeoutRef.current) {
+      clearTimeout(viewportFilterTimeoutRef.current);
+      viewportFilterTimeoutRef.current = null;
     }
   }, []);
 
@@ -575,24 +646,46 @@ export function SearchMap({
         clearTimeout(viewportSyncTimeoutRef.current);
         viewportSyncTimeoutRef.current = null;
       }
+      if (viewportFilterTimeoutRef.current) {
+        clearTimeout(viewportFilterTimeoutRef.current);
+        viewportFilterTimeoutRef.current = null;
+      }
     };
   }, []);
 
+  useEffect(() => {
+    setVisibleCabins(mappableProperties);
+    setActiveBatchIndex(0);
+  }, [mappableProperties]);
+
+  useEffect(() => {
+    if (!onRenderedPropertiesChange) return;
+    const mapDiv = mapRef.current?.getDiv();
+    if (!mapDiv || mapDiv.offsetParent == null || mapDiv.clientWidth === 0 || mapDiv.clientHeight === 0) {
+      return;
+    }
+
+    const renderedSetKey = paginatedCabins.map((property) => String(property.id)).join("|");
+    if (renderedSetKey === lastRenderedSetKeyRef.current) return;
+    lastRenderedSetKeyRef.current = renderedSetKey;
+
+    onRenderedPropertiesChange(paginatedCabins, {
+      visibleCount: visibleCabins.length,
+      batchIndex: activeBatchIndex,
+      totalBatches,
+    });
+  }, [
+    onRenderedPropertiesChange,
+    paginatedCabins,
+    visibleCabins.length,
+    activeBatchIndex,
+    totalBatches,
+  ]);
+
   // Group properties by exact lat/lng to prevent overlapping marker chaos
   const propertyGroups = useMemo(() => {
-    const validProps = properties.filter(
-      (p) =>
-        p.latitude != null &&
-        p.longitude != null &&
-        !isNaN(Number(p.latitude)) &&
-        !isNaN(Number(p.longitude)) &&
-        Number(p.latitude) !== 0 &&
-        Number(p.longitude) !== 0 &&
-        isWithinCabinsArea(Number(p.latitude), Number(p.longitude))
-    );
-
     const grouped = new Map<string, Property[]>();
-    validProps.forEach((p) => {
+    paginatedCabins.forEach((p) => {
       // Create a key based on 4 decimal points (approx 10m precision)
       const lat = Number(p.latitude).toFixed(4);
       const lng = Number(p.longitude).toFixed(4);
@@ -607,7 +700,7 @@ export function SearchMap({
       lng: Number(group[0].longitude),
       id: group[0].id, // Primary ID for the group
     }));
-  }, [properties]);
+  }, [paginatedCabins]);
 
   const clusteredMarkers = useMemo<ClusterNode[]>(() => {
     const visibleGroups =
@@ -672,16 +765,16 @@ export function SearchMap({
   // Map center
   const center = useMemo(() => {
     if (locationId && LOCATION_CENTERS[locationId]) return LOCATION_CENTERS[locationId];
-    if (propertyGroups.length > 0) {
-      const lats = propertyGroups.map((g) => g.lat);
-      const lngs = propertyGroups.map((g) => g.lng);
+    if (mappableProperties.length > 0) {
+      const lats = mappableProperties.map((property) => Number(property.latitude));
+      const lngs = mappableProperties.map((property) => Number(property.longitude));
       return {
         lat: lats.reduce((a, b) => a + b, 0) / lats.length,
         lng: lngs.reduce((a, b) => a + b, 0) / lngs.length,
       };
     }
     return DEFAULT_CENTER;
-  }, [propertyGroups, locationId]);
+  }, [mappableProperties, locationId]);
 
   const panToProperty = useCallback((property: Property) => {
     if (!mapRef.current) return;
@@ -760,16 +853,19 @@ export function SearchMap({
     }
     setIsMapIdle(false);
     scheduleViewportSync();
-  }, [scheduleViewportSync]);
+    scheduleViewportFilter(150);
+  }, [scheduleViewportSync, scheduleViewportFilter]);
 
   const handleDragStart = useCallback(() => {
     setIsMapIdle(false);
     scheduleViewportSync(180);
-  }, [scheduleViewportSync]);
+    scheduleViewportFilter(180);
+  }, [scheduleViewportSync, scheduleViewportFilter]);
 
   const handleDragEnd = useCallback(() => {
     scheduleViewportSync(80);
-  }, [scheduleViewportSync]);
+    scheduleViewportFilter(80);
+  }, [scheduleViewportSync, scheduleViewportFilter]);
 
   const handleMapIdle = useCallback(() => {
     setIsMapIdle(true);
@@ -777,8 +873,13 @@ export function SearchMap({
       clearTimeout(viewportSyncTimeoutRef.current);
       viewportSyncTimeoutRef.current = null;
     }
+    if (viewportFilterTimeoutRef.current) {
+      clearTimeout(viewportFilterTimeoutRef.current);
+      viewportFilterTimeoutRef.current = null;
+    }
     syncViewportBounds();
-  }, [syncViewportBounds]);
+    updateVisibleCabinsForViewport();
+  }, [syncViewportBounds, updateVisibleCabinsForViewport]);
 
   const handleClusterClick = useCallback(
     (cluster: ClusterNode) => {

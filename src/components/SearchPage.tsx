@@ -13,6 +13,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import dynamic from "next/dynamic";
 import { Drawer as DrawerPrimitive } from "vaul";
+import { Property } from "@/lib/types";
 
 // Lazy-load the map to avoid SSR issues and improve initial load
 const SearchMap = dynamic(
@@ -83,6 +84,8 @@ const SORT_OPTIONS = [
 
 // Navbar is h-24 (96px) + search bar is ~65px = ~161px total top offset
 const STICKY_TOP = 96; // navbar height in px
+const MAP_PAGE_SIZE = 20;
+const MAP_LIST_SYNC_DEBOUNCE_MS = 280;
 
 const isSamePropertyId = (
   left: string | number | null | undefined,
@@ -168,6 +171,93 @@ export function SearchPage() {
   }, [checkIn, checkOut, guests, children, pets, activeFilters, bedrooms, location, sortBy]);
 
   const { properties, loading, error } = useProperties(1, searchApiParams);
+  const allCabins = properties;
+  const [mapRenderedCabins, setMapRenderedCabins] = useState<Property[]>([]);
+  const [hasMapSyncInitialized, setHasMapSyncInitialized] = useState(false);
+  const mapSyncDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isListTransitioning, setIsListTransitioning] = useState(false);
+  const [listAnimationCycle, setListAnimationCycle] = useState(0);
+  const listTransitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousDisplayedSignatureRef = useRef("");
+
+  const displayedCabins = useMemo(() => {
+    if (!hasMapSyncInitialized) {
+      return allCabins.slice(0, MAP_PAGE_SIZE);
+    }
+
+    return mapRenderedCabins;
+  }, [hasMapSyncInitialized, allCabins, mapRenderedCabins]);
+
+  const displayedCabinsSignature = useMemo(
+    () => displayedCabins.map((cabin) => String(cabin.id)).join("|"),
+    [displayedCabins]
+  );
+
+  const applyRenderedProperties = useCallback((renderedCabins: Property[]) => {
+    setHasMapSyncInitialized(true);
+    setMapRenderedCabins((current) => {
+      if (
+        current.length === renderedCabins.length &&
+        current.every((cabin, index) => String(cabin.id) === String(renderedCabins[index]?.id))
+      ) {
+        return current;
+      }
+
+      return renderedCabins;
+    });
+  }, []);
+
+  const handleRenderedPropertiesChange = useCallback(
+    (renderedCabins: Property[]) => {
+      if (mapSyncDebounceTimeoutRef.current) {
+        clearTimeout(mapSyncDebounceTimeoutRef.current);
+      }
+
+      mapSyncDebounceTimeoutRef.current = setTimeout(() => {
+        applyRenderedProperties(renderedCabins);
+        mapSyncDebounceTimeoutRef.current = null;
+      }, MAP_LIST_SYNC_DEBOUNCE_MS);
+    },
+    [applyRenderedProperties]
+  );
+
+  useEffect(() => {
+    if (loading) return;
+
+    const previousSignature = previousDisplayedSignatureRef.current;
+    if (!previousSignature) {
+      previousDisplayedSignatureRef.current = displayedCabinsSignature;
+      return;
+    }
+
+    if (previousSignature === displayedCabinsSignature) return;
+
+    previousDisplayedSignatureRef.current = displayedCabinsSignature;
+    setListAnimationCycle((current) => current + 1);
+    setIsListTransitioning(true);
+
+    if (listTransitionTimeoutRef.current) {
+      clearTimeout(listTransitionTimeoutRef.current);
+    }
+
+    listTransitionTimeoutRef.current = setTimeout(() => {
+      setIsListTransitioning(false);
+      listTransitionTimeoutRef.current = null;
+    }, 300);
+  }, [displayedCabinsSignature, loading]);
+
+  useEffect(() => {
+    return () => {
+      if (listTransitionTimeoutRef.current) {
+        clearTimeout(listTransitionTimeoutRef.current);
+        listTransitionTimeoutRef.current = null;
+      }
+      if (mapSyncDebounceTimeoutRef.current) {
+        clearTimeout(mapSyncDebounceTimeoutRef.current);
+        mapSyncDebounceTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // ── URL sync ──────────────────────────────────────────────────────────────
   const handleSearch = () => {
@@ -266,7 +356,7 @@ export function SearchPage() {
       block: "center",
       inline: "nearest",
     });
-  }, [activeMarkerId, properties.length]);
+  }, [activeMarkerId, displayedCabins.length]);
 
   const selectClass =
     "h-9 rounded-md border border-input bg-[#f3f3f5] px-3 py-1 text-sm text-gray-600 shadow-sm focus:outline-none focus:ring-1 focus:ring-ring";
@@ -506,7 +596,7 @@ export function SearchPage() {
               <h1 className="text-xl font-bold text-gray-900">Stay in Big Bear</h1>
               {!loading && !error && (
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {properties.length} propert{properties.length === 1 ? "y" : "ies"} found
+                  {displayedCabins.length} propert{displayedCabins.length === 1 ? "y" : "ies"} in map area
                 </p>
               )}
             </div>
@@ -527,30 +617,49 @@ export function SearchPage() {
 
             {/* Grid */}
             <div className="px-4 xl:px-6 pb-16">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-                {loading
-                  ? Array.from({ length: 8 }).map((_, i) => (
-                    <PropertyCardSkeletonItem key={i} />
-                  ))
-                  : properties.map((property) => (
-                    <SearchPropertyCard
-                      key={property.id}
-                      {...property}
-                      cardRef={(node) => registerPropertyCardRef(property.id, node)}
-                      isHovered={isSamePropertyId(effectiveHoveredId, property.id)}
-                      onMouseEnter={() => setHoveredCardId(property.id)}
-                      onMouseLeave={() => setHoveredCardId(null)}
-                      onCardClick={(event) => handleListingCardClick(event, property.id)}
-                    />
-                  ))}
+              <div className="relative">
+                <div
+                  className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 transition-opacity duration-300 ${
+                    isListTransitioning ? "opacity-75" : "opacity-100"
+                  }`}
+                >
+                  {loading
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                      <PropertyCardSkeletonItem key={i} />
+                    ))
+                    : displayedCabins.map((property, index) => (
+                      <div
+                        key={`${listAnimationCycle}-${property.id}`}
+                        className="animate-in fade-in-0 slide-in-from-bottom-1 duration-500"
+                        style={{ animationDelay: `${Math.min(index, 5) * 40}ms` }}
+                      >
+                        <SearchPropertyCard
+                          {...property}
+                          cardRef={(node) => registerPropertyCardRef(property.id, node)}
+                          isHovered={isSamePropertyId(effectiveHoveredId, property.id)}
+                          onMouseEnter={() => setHoveredCardId(property.id)}
+                          onMouseLeave={() => setHoveredCardId(null)}
+                          onCardClick={(event) => handleListingCardClick(event, property.id)}
+                        />
+                      </div>
+                    ))}
+                </div>
+
+                {!loading && isListTransitioning && displayedCabins.length > 0 && (
+                  <div className="pointer-events-none absolute inset-0 z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                    {Array.from({ length: Math.min(4, displayedCabins.length) }).map((_, index) => (
+                      <PropertyCardTransitionSkeleton key={index} />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {!loading && !error && properties.length === 0 && (
+              {!loading && !error && displayedCabins.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <div className="text-5xl mb-4">🏔️</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No cabins found</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No cabins in map area</h3>
                   <p className="text-sm text-gray-500 max-w-xs">
-                    Try adjusting your dates, guests, or filters to find the perfect cabin.
+                    Try panning or zooming the map, or adjust your filters to find cabins in this view.
                   </p>
                 </div>
               )}
@@ -577,12 +686,14 @@ export function SearchPage() {
             >
               <div className="w-full h-full rounded-2xl overflow-hidden shadow-sm">
                 <SearchMap
-                  properties={properties}
+                  properties={allCabins}
                   hoveredId={effectiveHoveredId}
                   onMarkerClick={handleMarkerClick}
                   locationId={location}
                   focusedPropertyId={focusedPropertyId}
                   focusRequestId={focusRequestId}
+                  pageSize={MAP_PAGE_SIZE}
+                  onRenderedPropertiesChange={handleRenderedPropertiesChange}
                 />
               </div>
             </div>
@@ -609,12 +720,14 @@ export function SearchPage() {
               </div>
 
               <SearchMap
-                properties={properties}
+                properties={allCabins}
                 hoveredId={effectiveHoveredId}
                 onMarkerClick={handleMarkerClick}
                 locationId={location}
                 focusedPropertyId={focusedPropertyId}
                 focusRequestId={focusRequestId}
+                pageSize={MAP_PAGE_SIZE}
+                onRenderedPropertiesChange={handleRenderedPropertiesChange}
               />
             </div>
 
@@ -629,7 +742,7 @@ export function SearchPage() {
               <div className="w-10 h-1.5 rounded-full bg-gray-300 mb-2" />
               <div className="mt-0.5">
                 <span className="text-[15px] font-[600] text-gray-900">
-                  Over {properties.length} homes
+                  Over {displayedCabins.length} homes
                 </span>
               </div>
             </div>
@@ -686,6 +799,20 @@ function PropertyCardSkeletonItem() {
         <div className="h-3 bg-gray-100 rounded w-1/2" />
         <div className="h-3 bg-gray-100 rounded w-1/3" />
         <div className="h-4 bg-gray-200 rounded w-1/4 mt-2" />
+      </div>
+    </div>
+  );
+}
+
+function PropertyCardTransitionSkeleton() {
+  return (
+    <div className="rounded-2xl overflow-hidden bg-white/80 shadow-sm border border-white/70 backdrop-blur-[1px] animate-pulse">
+      <div className="aspect-[4/3] bg-gray-200/80" />
+      <div className="p-3.5 space-y-2">
+        <div className="h-3.5 bg-gray-200/80 rounded w-3/4" />
+        <div className="h-3 bg-gray-100/80 rounded w-1/2" />
+        <div className="h-3 bg-gray-100/80 rounded w-1/3" />
+        <div className="h-4 bg-gray-200/80 rounded w-1/4 mt-2" />
       </div>
     </div>
   );
