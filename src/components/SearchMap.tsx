@@ -94,10 +94,12 @@ interface SearchMapProps {
   focusedPropertyId?: string | number | null;
   focusRequestId?: number;
   pageSize?: number;
+  activeBatchIndex?: number;
   onRenderedPropertiesChange?: (
     renderedProperties: Property[],
     meta: { visibleCount: number; batchIndex: number; totalBatches: number }
   ) => void;
+  onVisiblePropertiesChange?: (visibleProperties: Property[]) => void;
 }
 
 interface PropertyGroup {
@@ -501,7 +503,9 @@ export function SearchMap({
   focusedPropertyId,
   focusRequestId,
   pageSize = DEFAULT_PAGE_SIZE,
+  activeBatchIndex: controlledBatchIndex,
   onRenderedPropertiesChange,
+  onVisiblePropertiesChange,
 }: SearchMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -538,7 +542,8 @@ export function SearchMap({
   );
 
   const [visibleCabins, setVisibleCabins] = useState<Property[]>(mappableProperties);
-  const [activeBatchIndex, setActiveBatchIndex] = useState(0);
+  const [uncontrolledBatchIndex, setUncontrolledBatchIndex] = useState(0);
+  const activeBatchIndex = controlledBatchIndex ?? uncontrolledBatchIndex;
 
   const totalBatches = useMemo(
     () => Math.max(1, Math.ceil(visibleCabins.length / pageSize)),
@@ -577,8 +582,11 @@ export function SearchMap({
           });
 
     setVisibleCabins(nextVisible);
-    setActiveBatchIndex(0);
-  }, [mappableProperties]);
+    if (controlledBatchIndex == null) {
+      setUncontrolledBatchIndex(0);
+    }
+    onVisiblePropertiesChange?.(nextVisible);
+  }, [controlledBatchIndex, mappableProperties, onVisiblePropertiesChange]);
 
   const scheduleViewportFilter = useCallback(
     (delay = 120) => {
@@ -655,8 +663,10 @@ export function SearchMap({
 
   useEffect(() => {
     setVisibleCabins(mappableProperties);
-    setActiveBatchIndex(0);
-  }, [mappableProperties]);
+    if (controlledBatchIndex == null) {
+      setUncontrolledBatchIndex(0);
+    }
+  }, [controlledBatchIndex, mappableProperties]);
 
   useEffect(() => {
     if (!onRenderedPropertiesChange) return;
@@ -681,6 +691,18 @@ export function SearchMap({
     activeBatchIndex,
     totalBatches,
   ]);
+
+  useEffect(() => {
+    if (controlledBatchIndex == null) return;
+    const maxBatchIndex = Math.max(0, totalBatches - 1);
+    if (controlledBatchIndex > maxBatchIndex) {
+      onRenderedPropertiesChange?.(paginatedCabins, {
+        visibleCount: visibleCabins.length,
+        batchIndex: maxBatchIndex,
+        totalBatches,
+      });
+    }
+  }, [controlledBatchIndex, paginatedCabins, totalBatches, visibleCabins.length, onRenderedPropertiesChange]);
 
   // Group properties by exact lat/lng to prevent overlapping marker chaos
   const propertyGroups = useMemo(() => {

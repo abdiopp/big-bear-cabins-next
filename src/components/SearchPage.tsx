@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Filter, AlertCircle, ArrowLeft } from "lucide-react";
+import { Filter, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
@@ -172,8 +172,9 @@ export function SearchPage() {
 
   const { properties, loading, error } = useProperties(1, searchApiParams);
   const allCabins = properties;
-  const [mapRenderedCabins, setMapRenderedCabins] = useState<Property[]>([]);
+  const [visibleCabins, setVisibleCabins] = useState<Property[]>([]);
   const [hasMapSyncInitialized, setHasMapSyncInitialized] = useState(false);
+  const [activePageIndex, setActivePageIndex] = useState(0);
   const mapSyncDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isListTransitioning, setIsListTransitioning] = useState(false);
   const [listAnimationCycle, setListAnimationCycle] = useState(0);
@@ -181,45 +182,51 @@ export function SearchPage() {
   const previousDisplayedSignatureRef = useRef("");
 
   const displayedCabins = useMemo(() => {
-    if (!hasMapSyncInitialized) {
-      return allCabins.slice(0, MAP_PAGE_SIZE);
-    }
+    const sourceCabins = hasMapSyncInitialized ? visibleCabins : allCabins;
+    const start = activePageIndex * MAP_PAGE_SIZE;
+    return sourceCabins.slice(start, start + MAP_PAGE_SIZE);
+  }, [activePageIndex, allCabins, hasMapSyncInitialized, visibleCabins]);
 
-    return mapRenderedCabins;
-  }, [hasMapSyncInitialized, allCabins, mapRenderedCabins]);
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(allCabins.length / MAP_PAGE_SIZE));
+  }, [allCabins]);
 
   const displayedCabinsSignature = useMemo(
     () => displayedCabins.map((cabin) => String(cabin.id)).join("|"),
     [displayedCabins]
   );
 
-  const applyRenderedProperties = useCallback((renderedCabins: Property[]) => {
+  const applyVisibleProperties = useCallback((nextVisibleCabins: Property[]) => {
     setHasMapSyncInitialized(true);
-    setMapRenderedCabins((current) => {
-      if (
-        current.length === renderedCabins.length &&
-        current.every((cabin, index) => String(cabin.id) === String(renderedCabins[index]?.id))
-      ) {
-        return current;
-      }
-
-      return renderedCabins;
-    });
+    setVisibleCabins(nextVisibleCabins);
+    setActivePageIndex(0);
   }, []);
 
   const handleRenderedPropertiesChange = useCallback(
-    (renderedCabins: Property[]) => {
+    () => {
       if (mapSyncDebounceTimeoutRef.current) {
         clearTimeout(mapSyncDebounceTimeoutRef.current);
       }
 
       mapSyncDebounceTimeoutRef.current = setTimeout(() => {
-        applyRenderedProperties(renderedCabins);
+        setHasMapSyncInitialized(true);
         mapSyncDebounceTimeoutRef.current = null;
       }, MAP_LIST_SYNC_DEBOUNCE_MS);
     },
-    [applyRenderedProperties]
+    []
   );
+
+  const handleVisiblePropertiesChange = useCallback(
+    (nextVisibleCabins: Property[]) => {
+      applyVisibleProperties(nextVisibleCabins);
+    },
+    [applyVisibleProperties]
+  );
+
+  const handlePageChange = useCallback((nextPageIndex: number) => {
+    setActivePageIndex(nextPageIndex);
+    setHoveredCardId(null);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -245,6 +252,43 @@ export function SearchPage() {
       listTransitionTimeoutRef.current = null;
     }, 300);
   }, [displayedCabinsSignature, loading]);
+
+  useEffect(() => {
+    if (activePageIndex >= totalPages) {
+      setActivePageIndex(Math.max(0, totalPages - 1));
+    }
+  }, [activePageIndex, totalPages]);
+
+  const paginationItems = useMemo(() => {
+    const currentPage = activePageIndex + 1;
+    if (totalPages <= 6) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const pages: Array<number | "ellipsis"> = [];
+    const pushRange = (start: number, end: number) => {
+      for (let page = start; page <= end; page++) {
+        if (!pages.includes(page)) pages.push(page);
+      }
+    };
+
+    if (currentPage <= 4) {
+      pushRange(1, 4);
+      pages.push("ellipsis", totalPages);
+      return pages;
+    }
+
+    if (currentPage >= totalPages - 3) {
+      pages.push(1, "ellipsis");
+      pushRange(totalPages - 3, totalPages);
+      return pages;
+    }
+
+    pages.push(1, "ellipsis");
+    pushRange(currentPage - 1, currentPage + 1);
+    pages.push("ellipsis", totalPages);
+    return pages;
+  }, [activePageIndex, totalPages]);
 
   useEffect(() => {
     return () => {
@@ -594,11 +638,11 @@ export function SearchPage() {
             {/* Header */}
             <div className="px-4 xl:px-6 pt-5 pb-3 bg-white">
               <h1 className="text-xl font-bold text-gray-900">Stay in Big Bear</h1>
-              {!loading && !error && (
+              {/* {!loading && !error && (
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {displayedCabins.length} propert{displayedCabins.length === 1 ? "y" : "ies"} in map area
+                  {allCabins.length} propert{allCabins.length === 1 ? "y" : "ies"} found
                 </p>
-              )}
+              )} */}
             </div>
 
             {/* Error */}
@@ -654,12 +698,65 @@ export function SearchPage() {
                 )}
               </div>
 
+              {!loading && !error && totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2 sm:gap-4 flex-wrap select-none">
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(Math.max(0, activePageIndex - 1))}
+                    disabled={activePageIndex === 0}
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:text-gray-900 hover:bg-gray-100"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+
+                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center">
+                    {paginationItems.map((item, index) => {
+                      if (item === "ellipsis") {
+                        return (
+                          <span key={`ellipsis-${index}`} className="px-1 text-2xl leading-none text-gray-600 tracking-[0.2em]">
+                            ...
+                          </span>
+                        );
+                      }
+
+                      const isActivePage = item - 1 === activePageIndex;
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => handlePageChange(item - 1)}
+                          className={`flex h-11 w-11 items-center justify-center rounded-full text-[17px] font-medium transition-all duration-200 ${
+                            isActivePage
+                              ? "bg-gray-900 text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)]"
+                              : "text-gray-900 hover:bg-gray-100"
+                          }`}
+                          aria-current={isActivePage ? "page" : undefined}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(Math.min(totalPages - 1, activePageIndex + 1))}
+                    disabled={activePageIndex >= totalPages - 1}
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:text-gray-900 hover:bg-gray-100"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
+
               {!loading && !error && displayedCabins.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
                   <div className="text-5xl mb-4">🏔️</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No cabins in map area</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No cabins found</h3>
                   <p className="text-sm text-gray-500 max-w-xs">
-                    Try panning or zooming the map, or adjust your filters to find cabins in this view.
+                    Try adjusting your dates, guests, or filters to find the perfect cabin.
                   </p>
                 </div>
               )}
@@ -694,6 +791,7 @@ export function SearchPage() {
                   focusRequestId={focusRequestId}
                   pageSize={MAP_PAGE_SIZE}
                   onRenderedPropertiesChange={handleRenderedPropertiesChange}
+                  onVisiblePropertiesChange={handleVisiblePropertiesChange}
                 />
               </div>
             </div>
@@ -728,6 +826,7 @@ export function SearchPage() {
                 focusRequestId={focusRequestId}
                 pageSize={MAP_PAGE_SIZE}
                 onRenderedPropertiesChange={handleRenderedPropertiesChange}
+                onVisiblePropertiesChange={handleVisiblePropertiesChange}
               />
             </div>
 
@@ -742,7 +841,7 @@ export function SearchPage() {
               <div className="w-10 h-1.5 rounded-full bg-gray-300 mb-2" />
               <div className="mt-0.5">
                 <span className="text-[15px] font-[600] text-gray-900">
-                  Over {displayedCabins.length} homes
+                  Over {allCabins.length} homes
                 </span>
               </div>
             </div>
@@ -764,8 +863,8 @@ export function SearchPage() {
                     style={{ height: `calc(100vh - ${MAP_TOP}px)` }}
                   >
                     {/* Accessibility requirements for Radix Dialog natively requested by vaul */}
-                    <DrawerPrimitive.Title className="sr-only">Properties in Map Area</DrawerPrimitive.Title>
-                    <DrawerPrimitive.Description className="sr-only">A list of available properties covering the visible map area.</DrawerPrimitive.Description>
+                    <DrawerPrimitive.Title className="sr-only">Properties</DrawerPrimitive.Title>
+                    <DrawerPrimitive.Description className="sr-only">A list of available properties.</DrawerPrimitive.Description>
 
                     {/* Drawer Handle (Inside Sheet) */}
                     <div 
