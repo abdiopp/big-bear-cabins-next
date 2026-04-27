@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
 import { Property } from "@/lib/types";
 import Link from "next/link";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -10,22 +10,64 @@ import { Star, X, Heart } from "lucide-react";
 // Big Bear Lake center
 const DEFAULT_CENTER = { lat: 34.2439, lng: -116.9114 };
 
+// Keep map interactions and clustering focused on the cabins service area.
+const CABINS_AREA_BOUNDS: google.maps.LatLngBoundsLiteral = {
+  north: 34.335,
+  south: 34.165,
+  east: -116.77,
+  west: -117.03,
+};
+
+const isWithinCabinsArea = (lat: number, lng: number) =>
+  lat <= CABINS_AREA_BOUNDS.north &&
+  lat >= CABINS_AREA_BOUNDS.south &&
+  lng <= CABINS_AREA_BOUNDS.east &&
+  lng >= CABINS_AREA_BOUNDS.west;
+
+const isInViewportBounds = (
+  lat: number,
+  lng: number,
+  bounds: google.maps.LatLngBoundsLiteral
+) => lat <= bounds.north && lat >= bounds.south && lng <= bounds.east && lng >= bounds.west;
+
 const MAP_OPTIONS: google.maps.MapOptions = {
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: false,
+  disableDefaultUI: true,
   zoomControl: true,
+  isFractionalZoomEnabled: false,
+  minZoom: 10,
+  maxZoom: 17,
   scrollwheel: true,
+  gestureHandling: "greedy",
   clickableIcons: false,
+  restriction: {
+    latLngBounds: CABINS_AREA_BOUNDS,
+    strictBounds: true,
+  },
   styles: [
-    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+    { featureType: "poi", elementType: "geometry", stylers: [{ visibility: "off" }] },
+    { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", elementType: "geometry", stylers: [{ visibility: "off" }] },
+    { featureType: "administrative", elementType: "labels", stylers: [{ visibility: "off" }] },
     { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+    { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ visibility: "off" }] },
+    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ saturation: -100 }, { lightness: 8 }] },
     { featureType: "water", elementType: "geometry", stylers: [{ color: "#a0cfe4" }] },
     { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#f5f5f0" }] },
+    { featureType: "road.local", elementType: "geometry", stylers: [{ visibility: "simplified" }] },
+    { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "off" }] },
+    { featureType: "road.arterial", elementType: "labels", stylers: [{ visibility: "off" }] },
     { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
     { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#f5f3ee" }] },
+    { featureType: "road.highway", elementType: "labels", stylers: [{ visibility: "off" }] },
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ visibility: "simplified" }] },
   ],
 };
+
+const SINGLE_MARKER_RADIUS = 16;
+const CLUSTER_MARKER_RADIUS = 22;
 
 const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
   "11226": { lat: 34.2439, lng: -116.9114 },
@@ -34,6 +76,9 @@ const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
   "13073": { lat: 34.2750, lng: -116.9526 },
   "17611": { lat: 34.2300, lng: -116.8900 },
 };
+
+const CLUSTER_GRID_SIZE_PX = 64;
+const MAX_CLUSTER_ZOOM = 16;
 
 const idsMatch = (
   left: string | number | null | undefined,
@@ -49,71 +94,87 @@ interface SearchMapProps {
   focusRequestId?: number;
 }
 
-// ── Price Pill Marker ──────────────────────────────────────────────────────
-const PriceMarker = React.memo(function PriceMarker({
-  properties,
-  isActive,
-  isHovered,
-  onClick,
-  onMouseEnter,
-  onMouseLeave,
-}: {
+interface PropertyGroup {
   properties: Property[];
-  isActive: boolean;
-  isHovered: boolean;
-  onClick: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-}) {
-  const isCluster = properties.length > 1;
-  const price = properties[0].price > 0 ? `$${properties[0].price}` : "—";
-  const display = isCluster ? `${properties.length} cabins` : price;
-  const active = isActive || isHovered;
+  lat: number;
+  lng: number;
+  id: string | number;
+}
 
-  return (
-    <div style={{ position: "absolute", transform: "translate(-50%, -100%)" }}>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onClick();
-        }}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        style={{
-          background: active ? "#222222" : "#ffffff",
-          color: active ? "#ffffff" : "#222222",
-          border: `2px solid ${active ? "#222222" : "#e0e0e0"}`,
-          borderRadius: "20px",
-          padding: "5px 11px",
-          fontSize: "13px",
-          fontWeight: 700,
-          whiteSpace: "nowrap",
-          cursor: "pointer",
-          boxShadow: active ? "0 4px 14px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.14)",
-          transition: "all 0.15s ease",
-          outline: "none",
-          lineHeight: "1.3",
-          display: "block",
-          fontFamily: "inherit",
-          zIndex: active ? 100 : 1,
-        }}
-      >
-        {display}
-      </button>
-    </div>
-  );
-});
+interface ClusterNode {
+  id: string;
+  lat: number;
+  lng: number;
+  groups: PropertyGroup[];
+  properties: Property[];
+  isCluster: boolean;
+}
+
+interface CanvasNode {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  radius: number;
+  isCluster: boolean;
+  label: string;
+  property: Property;
+  properties: Property[];
+}
+
+function projectToPixel(lat: number, lng: number, zoom: number) {
+  const sinLat = Math.sin((lat * Math.PI) / 180);
+  const clampedSinLat = Math.min(Math.max(sinLat, -0.9999), 0.9999);
+  const scale = 256 * Math.pow(2, zoom);
+
+  return {
+    x: ((lng + 180) / 360) * scale,
+    y:
+      (0.5 -
+        Math.log((1 + clampedSinLat) / (1 - clampedSinLat)) / (4 * Math.PI)) *
+      scale,
+  };
+}
+
+function buildMarkerIcon(
+  isActive: boolean,
+  isCluster: boolean
+): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: isCluster ? CLUSTER_MARKER_RADIUS : SINGLE_MARKER_RADIUS,
+    fillColor: isActive ? "#111827" : isCluster ? "#1f2937" : "#ffffff",
+    fillOpacity: 1,
+    strokeColor: isActive ? "#111827" : isCluster ? "#ffffff" : "#d1d5db",
+    strokeWeight: 2,
+  };
+}
+
+function buildMarkerLabel(
+  text: string,
+  isActive: boolean,
+  isCluster: boolean
+): google.maps.MarkerLabel {
+  return {
+    text,
+    color: isActive ? "#ffffff" : isCluster ? "#ffffff" : "#111827",
+    fontSize: isCluster ? "12px" : "11px",
+    fontWeight: "700",
+  };
+}
 
 // ── Hover Preview Card ─────────────────────────────────────────────────────
 const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
   property,
   onMouseEnter,
   onMouseLeave,
+  anchorStyle,
 }: {
   property: Property;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  anchorStyle?: React.CSSProperties;
 }) {
   return (
     <div
@@ -122,8 +183,12 @@ const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
       onMouseLeave={onMouseLeave}
       style={{
         position: "absolute",
+        left: 0,
+        top: 0,
         transform: "translate(-50%, calc(-100% - 58px))",
-        zIndex: 18,
+        pointerEvents: "auto",
+        zIndex: 50,
+        ...anchorStyle,
       }}
     >
       <Link
@@ -225,10 +290,13 @@ const MapPopupCard = React.memo(function MapPopupCard({
   property,
   onClose,
   variant = 'desktop'
+  ,
+  anchorStyle,
 }: {
   property: Property;
   onClose: () => void;
   variant?: 'desktop' | 'mobile';
+  anchorStyle?: React.CSSProperties;
 }) {
   if (variant === 'mobile') {
     return (
@@ -294,8 +362,12 @@ const MapPopupCard = React.memo(function MapPopupCard({
       className="max-lg:hidden"
       style={{
         position: "absolute",
+        left: 0,
+        top: 0,
         transform: "translate(-50%, calc(-100% - 58px))",
-        zIndex: 20,
+        pointerEvents: "auto",
+        zIndex: 60,
+        ...anchorStyle,
       }}
     >
       <div
@@ -431,14 +503,52 @@ export function SearchMap({
   const mapRef = useRef<google.maps.Map | null>(null);
   const [activePopup, setActivePopup] = useState<Property | null>(null);
   const [hoveredPopup, setHoveredPopup] = useState<Property | null>(null);
+  const [mapZoom, setMapZoom] = useState(12);
+  const [viewportBounds, setViewportBounds] =
+    useState<google.maps.LatLngBoundsLiteral | null>(null);
+  const [isMapIdle, setIsMapIdle] = useState(true);
   const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewportSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderedCanvasNodesRef = useRef<CanvasNode[]>([]);
+
+  const syncViewportBounds = useCallback(() => {
+    const bounds = mapRef.current?.getBounds();
+    if (!bounds) return;
+
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+
+    setViewportBounds({
+      north: northEast.lat(),
+      east: northEast.lng(),
+      south: southWest.lat(),
+      west: southWest.lng(),
+    });
+  }, []);
+
+  const scheduleViewportSync = useCallback((delay = 120) => {
+    if (viewportSyncTimeoutRef.current) {
+      clearTimeout(viewportSyncTimeoutRef.current);
+    }
+
+    viewportSyncTimeoutRef.current = setTimeout(() => {
+      syncViewportBounds();
+    }, delay);
+  }, [syncViewportBounds]);
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-  }, []);
+    setMapZoom(map.getZoom() ?? 12);
+    syncViewportBounds();
+  }, [syncViewportBounds]);
 
   const onUnmount = useCallback(() => {
     mapRef.current = null;
+    if (viewportSyncTimeoutRef.current) {
+      clearTimeout(viewportSyncTimeoutRef.current);
+      viewportSyncTimeoutRef.current = null;
+    }
   }, []);
 
   const clearHoverTimeout = useCallback(() => {
@@ -459,6 +569,15 @@ export function SearchMap({
     return () => clearHoverTimeout();
   }, [clearHoverTimeout]);
 
+  useEffect(() => {
+    return () => {
+      if (viewportSyncTimeoutRef.current) {
+        clearTimeout(viewportSyncTimeoutRef.current);
+        viewportSyncTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Group properties by exact lat/lng to prevent overlapping marker chaos
   const propertyGroups = useMemo(() => {
     const validProps = properties.filter(
@@ -468,7 +587,8 @@ export function SearchMap({
         !isNaN(Number(p.latitude)) &&
         !isNaN(Number(p.longitude)) &&
         Number(p.latitude) !== 0 &&
-        Number(p.longitude) !== 0
+        Number(p.longitude) !== 0 &&
+        isWithinCabinsArea(Number(p.latitude), Number(p.longitude))
     );
 
     const grouped = new Map<string, Property[]>();
@@ -488,6 +608,66 @@ export function SearchMap({
       id: group[0].id, // Primary ID for the group
     }));
   }, [properties]);
+
+  const clusteredMarkers = useMemo<ClusterNode[]>(() => {
+    const visibleGroups =
+      viewportBounds == null
+        ? propertyGroups
+        : propertyGroups.filter((group) =>
+            isInViewportBounds(group.lat, group.lng, viewportBounds)
+          );
+
+    if (visibleGroups.length === 0) return [];
+
+    if (mapZoom >= MAX_CLUSTER_ZOOM) {
+      return visibleGroups.map((group) => ({
+        id: `group-${String(group.id)}`,
+        lat: group.lat,
+        lng: group.lng,
+        groups: [group],
+        properties: group.properties,
+        isCluster: false,
+      }));
+    }
+
+    const buckets = new Map<string, PropertyGroup[]>();
+    for (const group of visibleGroups) {
+      const { x, y } = projectToPixel(group.lat, group.lng, mapZoom);
+      const bucketX = Math.floor(x / CLUSTER_GRID_SIZE_PX);
+      const bucketY = Math.floor(y / CLUSTER_GRID_SIZE_PX);
+      const key = `${bucketX},${bucketY}`;
+
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key)!.push(group);
+    }
+
+    return Array.from(buckets.entries()).map(([bucketKey, groups]) => {
+      const propertiesInBucket = groups.flatMap((group) => group.properties);
+      const total = groups.reduce((sum, group) => sum + group.properties.length, 0);
+      const weightedLat =
+        groups.reduce(
+          (sum, group) => sum + group.lat * group.properties.length,
+          0
+        ) / total;
+      const weightedLng =
+        groups.reduce(
+          (sum, group) => sum + group.lng * group.properties.length,
+          0
+        ) / total;
+      const isCluster = groups.length > 1;
+
+      return {
+        id: isCluster
+          ? `cluster-${mapZoom}-${bucketKey}`
+          : `group-${String(groups[0].id)}`,
+        lat: isCluster ? weightedLat : groups[0].lat,
+        lng: isCluster ? weightedLng : groups[0].lng,
+        groups,
+        properties: propertiesInBucket,
+        isCluster,
+      };
+    });
+  }, [propertyGroups, mapZoom, viewportBounds]);
 
   // Map center
   const center = useMemo(() => {
@@ -573,6 +753,373 @@ export function SearchMap({
     onMarkerClick?.(null);
   }, [clearHoverTimeout, onMarkerClick]);
 
+  const handleZoomChanged = useCallback(() => {
+    const nextZoom = mapRef.current?.getZoom();
+    if (typeof nextZoom === "number") {
+      setMapZoom(nextZoom);
+    }
+    setIsMapIdle(false);
+    scheduleViewportSync();
+  }, [scheduleViewportSync]);
+
+  const handleDragStart = useCallback(() => {
+    setIsMapIdle(false);
+    scheduleViewportSync(180);
+  }, [scheduleViewportSync]);
+
+  const handleDragEnd = useCallback(() => {
+    scheduleViewportSync(80);
+  }, [scheduleViewportSync]);
+
+  const handleMapIdle = useCallback(() => {
+    setIsMapIdle(true);
+    if (viewportSyncTimeoutRef.current) {
+      clearTimeout(viewportSyncTimeoutRef.current);
+      viewportSyncTimeoutRef.current = null;
+    }
+    syncViewportBounds();
+  }, [syncViewportBounds]);
+
+  const handleClusterClick = useCallback(
+    (cluster: ClusterNode) => {
+      if (!mapRef.current || !cluster.isCluster) return;
+
+      clearHoverTimeout();
+      setHoveredPopup(null);
+      setActivePopup(null);
+      onMarkerClick?.(null);
+
+      const bounds = new google.maps.LatLngBounds();
+      cluster.groups.forEach((group) => {
+        bounds.extend({ lat: group.lat, lng: group.lng });
+      });
+
+      mapRef.current.fitBounds(bounds, 80);
+      google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
+        const zoomAfterFit = mapRef.current?.getZoom() ?? 12;
+        if (zoomAfterFit > MAX_CLUSTER_ZOOM) {
+          mapRef.current?.setZoom(MAX_CLUSTER_ZOOM);
+        }
+      });
+    },
+    [clearHoverTimeout, onMarkerClick]
+  );
+
+  const drawCanvasMarkers = useCallback(() => {
+    const canvas = canvasRef.current;
+    const map = mapRef.current;
+    const bounds = viewportBounds;
+    if (!canvas || !map || !bounds) return;
+
+    const mapDiv = map.getDiv();
+    const rect = mapDiv.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    const dpr = window.devicePixelRatio || 1;
+
+    if (canvas.width !== Math.round(width * dpr)) canvas.width = Math.round(width * dpr);
+    if (canvas.height !== Math.round(height * dpr)) canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+  const projection = map.getProjection();
+  const mapCenter = map.getCenter();
+  if (!projection || !mapCenter) return;
+  const centerPoint = projection.fromLatLngToPoint(mapCenter);
+  if (!centerPoint) return;
+  const scale = Math.pow(2, mapZoom);
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = true;
+
+    const visibleNodes: CanvasNode[] = [];
+    const zoom = mapZoom;
+    const activeId = activePopup?.id == null ? null : String(activePopup.id);
+    const hoveredIdString = hoveredPopup?.id == null ? null : String(hoveredPopup.id);
+
+    const visibleGroups = propertyGroups.filter((group) =>
+      isInViewportBounds(group.lat, group.lng, bounds)
+    );
+
+    const clusters: ClusterNode[] = (() => {
+      if (visibleGroups.length === 0) return [];
+
+      if (zoom >= MAX_CLUSTER_ZOOM) {
+        return visibleGroups.map((group) => ({
+          id: `group-${String(group.id)}`,
+          lat: group.lat,
+          lng: group.lng,
+          groups: [group],
+          properties: group.properties,
+          isCluster: false,
+        }));
+      }
+
+      const buckets = new Map<string, PropertyGroup[]>();
+      for (const group of visibleGroups) {
+        const { x, y } = projectToPixel(group.lat, group.lng, zoom);
+        const bucketX = Math.floor(x / CLUSTER_GRID_SIZE_PX);
+        const bucketY = Math.floor(y / CLUSTER_GRID_SIZE_PX);
+        const key = `${bucketX},${bucketY}`;
+
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key)!.push(group);
+      }
+
+      return Array.from(buckets.entries()).map(([bucketKey, groups]) => {
+        const propertiesInBucket = groups.flatMap((group) => group.properties);
+        const total = groups.reduce((sum, group) => sum + group.properties.length, 0);
+        const weightedLat =
+          groups.reduce((sum, group) => sum + group.lat * group.properties.length, 0) /
+          total;
+        const weightedLng =
+          groups.reduce((sum, group) => sum + group.lng * group.properties.length, 0) /
+          total;
+        const isCluster = groups.length > 1;
+
+        return {
+          id: isCluster
+            ? `cluster-${zoom}-${bucketKey}`
+            : `group-${String(groups[0].id)}`,
+          lat: isCluster ? weightedLat : groups[0].lat,
+          lng: isCluster ? weightedLng : groups[0].lng,
+          groups,
+          properties: propertiesInBucket,
+          isCluster,
+        };
+      });
+    })();
+
+    clusters.forEach((node) => {
+      const worldPoint = projection.fromLatLngToPoint(new google.maps.LatLng(node.lat, node.lng));
+      if (!worldPoint) return;
+
+      const x = (worldPoint.x - centerPoint.x) * scale + width / 2;
+      const y = (worldPoint.y - centerPoint.y) * scale + height / 2;
+      const primaryProperty = node.properties[0];
+      const isActive = node.properties.some((p) => String(p.id) === activeId);
+      const isHovered = node.properties.some((p) => String(p.id) === hoveredIdString);
+      const highlighted = isActive || isHovered;
+
+      if (node.isCluster) {
+        const radius = 22;
+        visibleNodes.push({
+          id: node.id,
+          x,
+          y,
+          width: radius * 2,
+          height: radius * 2,
+          radius,
+          isCluster: true,
+          label: String(node.properties.length),
+          property: primaryProperty,
+          properties: node.properties,
+        });
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = highlighted ? "#111827" : "#1f2937";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(node.properties.length), x, y + 0.5);
+        ctx.restore();
+        return;
+      }
+
+      const label = primaryProperty.price > 0 ? `$${primaryProperty.price}` : "-";
+      ctx.save();
+      ctx.font = "700 11px sans-serif";
+      const textWidth = Math.ceil(ctx.measureText(label).width);
+      const pillWidth = Math.max(34, textWidth + 20);
+      const pillHeight = 30;
+      const left = x - pillWidth / 2;
+      const top = y - pillHeight;
+      const radius = 15;
+
+      visibleNodes.push({
+        id: node.id,
+        x,
+        y,
+        width: pillWidth,
+        height: pillHeight,
+        radius,
+        isCluster: false,
+        label,
+        property: primaryProperty,
+        properties: node.properties,
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(left + radius, top);
+      ctx.lineTo(left + pillWidth - radius, top);
+      ctx.quadraticCurveTo(left + pillWidth, top, left + pillWidth, top + radius);
+      ctx.lineTo(left + pillWidth, top + pillHeight - radius);
+      ctx.quadraticCurveTo(
+        left + pillWidth,
+        top + pillHeight,
+        left + pillWidth - radius,
+        top + pillHeight
+      );
+      ctx.lineTo(left + radius, top + pillHeight);
+      ctx.quadraticCurveTo(left, top + pillHeight, left, top + pillHeight - radius);
+      ctx.lineTo(left, top + radius);
+      ctx.quadraticCurveTo(left, top, left + radius, top);
+      ctx.closePath();
+      ctx.fillStyle = highlighted ? "#111827" : "#ffffff";
+      ctx.strokeStyle = highlighted ? "#111827" : "#d1d5db";
+      ctx.lineWidth = 2;
+      ctx.shadowColor = "rgba(0,0,0,0.18)";
+      ctx.shadowBlur = highlighted ? 10 : 6;
+      ctx.shadowOffsetY = 3;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.stroke();
+      ctx.fillStyle = highlighted ? "#ffffff" : "#222222";
+      ctx.font = "700 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, x, top + pillHeight / 2 + 0.5);
+      ctx.restore();
+    });
+
+    renderedCanvasNodesRef.current = visibleNodes;
+  }, [activePopup?.id, hoveredPopup?.id, mapZoom, propertyGroups, viewportBounds]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    let raf = 0;
+    raf = window.requestAnimationFrame(() => {
+      drawCanvasMarkers();
+    });
+
+    return () => {
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [drawCanvasMarkers, isLoaded]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const mapDiv = map.getDiv();
+    let hoverRaf = 0;
+
+    const hitTest = (clientX: number, clientY: number) => {
+      const rect = mapDiv.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const nodes = renderedCanvasNodesRef.current;
+
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const node = nodes[i];
+        if (node.isCluster) {
+          const dx = x - node.x;
+          const dy = y - node.y;
+          if (Math.sqrt(dx * dx + dy * dy) <= node.radius + 4) return node;
+        } else {
+          const left = node.x - node.width / 2;
+          const right = node.x + node.width / 2;
+          const top = node.y - node.height;
+          const bottom = node.y;
+          if (x >= left && x <= right && y >= top && y <= bottom) return node;
+        }
+      }
+
+      return null;
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isMapIdle) return;
+      if (hoverRaf) cancelAnimationFrame(hoverRaf);
+      hoverRaf = requestAnimationFrame(() => {
+        const hit = hitTest(event.clientX, event.clientY);
+        if (!hit || hit.isCluster) {
+          clearHoverTimeout();
+          return;
+        }
+
+        if (!activePopup || String(activePopup.id) !== String(hit.property.id)) {
+          setHoveredPopup((current) => {
+            if (current && String(current.id) === String(hit.property.id)) return current;
+            return hit.property;
+          });
+        }
+      });
+    };
+
+    const handleMouseLeave = () => {
+      scheduleHoverClear();
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      const hit = hitTest(event.clientX, event.clientY);
+      if (!hit) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (hit.isCluster) {
+        const cluster = clusteredMarkers.find((node) => node.id === hit.id);
+        if (cluster) handleClusterClick(cluster);
+        return;
+      }
+
+      handleMarkerClick(hit.property);
+    };
+
+    mapDiv.addEventListener("mousemove", handleMouseMove, true);
+    mapDiv.addEventListener("mouseleave", handleMouseLeave, true);
+    mapDiv.addEventListener("click", handleClick, true);
+
+    return () => {
+      if (hoverRaf) cancelAnimationFrame(hoverRaf);
+      mapDiv.removeEventListener("mousemove", handleMouseMove, true);
+      mapDiv.removeEventListener("mouseleave", handleMouseLeave, true);
+      mapDiv.removeEventListener("click", handleClick, true);
+    };
+  }, [activePopup, clearHoverTimeout, clusteredMarkers, handleClusterClick, handleMarkerClick, isMapIdle, scheduleHoverClear]);
+
+  const getAnchorStyle = useCallback(
+    (node: ClusterNode | undefined): React.CSSProperties | null => {
+      if (!node || node.isCluster) return null;
+
+      const map = mapRef.current;
+      if (!map) return null;
+
+      const projection = map.getProjection();
+      const mapCenter = map.getCenter();
+      if (!projection || !mapCenter) return null;
+
+      const worldPoint = projection.fromLatLngToPoint(
+        new google.maps.LatLng(node.lat, node.lng)
+      );
+      const centerPoint = projection.fromLatLngToPoint(mapCenter);
+      if (!worldPoint || !centerPoint) return null;
+
+      const rect = map.getDiv().getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width));
+      const height = Math.max(1, Math.round(rect.height));
+      const scale = Math.pow(2, mapZoom);
+
+      return {
+        left: (worldPoint.x - centerPoint.x) * scale + width / 2,
+        top: (worldPoint.y - centerPoint.y) * scale + height / 2,
+      };
+    },
+    [mapZoom]
+  );
+
   if (!isLoaded) {
     return (
       <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-2xl">
@@ -585,74 +1132,66 @@ export function SearchMap({
   }
 
   return (
-    <div className="w-full h-full rounded-2xl overflow-hidden">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={{ width: "100%", height: "100%" }}
         center={center}
         zoom={12}
         onLoad={onLoad}
         onUnmount={onUnmount}
+        onZoomChanged={handleZoomChanged}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onIdle={handleMapIdle}
         options={MAP_OPTIONS}
         onClick={handleClosePopup}
-      >
-        {propertyGroups.map((group) => {
-          const { lat, lng, properties: groupProps } = group;
-          // Group is active if any of its properties is the activePopup
-          const isActive = groupProps.some((p) => idsMatch(activePopup?.id, p.id));
-          // Group is hovered if any of its properties is hovered
-          const isHovered = groupProps.some(
-            (p) => idsMatch(hoveredId, p.id) || idsMatch(hoveredPopup?.id, p.id)
+      />
+
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        {(() => {
+          const activeNode = clusteredMarkers.find((node) =>
+            node.properties.some((p) => idsMatch(activePopup?.id, p.id))
           );
-          const hoveredProperty = hoveredPopup
-            ? groupProps.find((p) => idsMatch(hoveredPopup.id, p.id)) || null
-            : null;
+          const hoveredNode = clusteredMarkers.find((node) =>
+            node.properties.some((p) => idsMatch(hoveredPopup?.id, p.id))
+          );
+          const activeAnchorStyle = getAnchorStyle(activeNode);
+          const hoveredAnchorStyle = getAnchorStyle(hoveredNode);
 
           return (
-            <React.Fragment key={`group-${group.id}`}>
-              {/* Price Pill */}
-              <OverlayView
-                position={{ lat, lng }}
-                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-              >
-                <PriceMarker
-                  properties={groupProps}
-                  isActive={isActive}
-                  isHovered={isHovered}
-                  onClick={() => handleMarkerClick(groupProps[0])}
-                  onMouseEnter={() => handleMarkerMouseEnter(groupProps[0])}
-                  onMouseLeave={handleMarkerMouseLeave}
-                />
-              </OverlayView>
-
+            <>
               {/* Hover Preview */}
-              {!activePopup && hoveredProperty && (
-                <OverlayView
-                  position={{ lat, lng }}
-                  mapPaneName={OverlayView.FLOAT_PANE}
-                >
-                  <MapHoverPreviewCard
-                    property={hoveredProperty}
-                    onMouseEnter={handleHoverCardMouseEnter}
-                    onMouseLeave={handleHoverCardMouseLeave}
-                  />
-                </OverlayView>
+              {!activePopup && isMapIdle && hoveredPopup && hoveredNode && hoveredAnchorStyle && (
+                <MapHoverPreviewCard
+                  property={hoveredPopup}
+                  onMouseEnter={handleHoverCardMouseEnter}
+                  onMouseLeave={handleHoverCardMouseLeave}
+                  anchorStyle={hoveredAnchorStyle}
+                />
               )}
 
               {/* Popup */}
-              {isActive && activePopup && (
+              {activePopup && activeNode && activeAnchorStyle && (
                 <div className="max-lg:hidden">
-                  <OverlayView
-                    position={{ lat, lng }}
-                    mapPaneName={OverlayView.FLOAT_PANE}
-                  >
-                    <MapPopupCard property={activePopup} onClose={handleClosePopup} variant="desktop" />
-                  </OverlayView>
+                  <MapPopupCard
+                    property={activePopup}
+                    onClose={handleClosePopup}
+                    variant="desktop"
+                    anchorStyle={activeAnchorStyle}
+                  />
                 </div>
               )}
-            </React.Fragment>
+            </>
           );
-        })}
-      </GoogleMap>
+        })()}
+      </div>
+
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        />
+      </div>
 
       {/* Mobile Fixed Popup Card */}
       {activePopup && (
