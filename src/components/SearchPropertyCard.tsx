@@ -1,7 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { Heart, Star, BedDouble, Users, Bath } from "lucide-react";
+import { Heart, BedDouble, Users, Bath } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import Link from "next/link";
@@ -33,8 +33,6 @@ export function SearchPropertyCard({
   imageUrl,
   title,
   location,
-  rating,
-  reviewCount,
   price,
   dates,
   isSuperhost = false,
@@ -105,22 +103,11 @@ export function SearchPropertyCard({
 
         {/* Details */}
         <div className="p-3.5">
-          {/* Title + Rating row */}
-          <div className="flex items-start justify-between gap-2 mb-1">
+          {/* Title */}
+          <div className="mb-1">
             <h3 className="font-semibold text-[13px] text-gray-900 truncate leading-tight">
               {title}
             </h3>
-            {rating > 0 && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Star className="h-3 w-3 fill-gray-900 text-gray-900" />
-                <span className="text-[12px] font-semibold text-gray-900">
-                  {rating.toFixed(1)}
-                </span>
-                {reviewCount > 0 && (
-                  <span className="text-[11px] text-gray-400">({reviewCount})</span>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Location */}

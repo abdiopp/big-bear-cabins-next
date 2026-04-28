@@ -66,9 +66,6 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   ],
 };
 
-const SINGLE_MARKER_RADIUS = 16;
-const CLUSTER_MARKER_RADIUS = 22;
-
 const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
   "11226": { lat: 34.2439, lng: -116.9114 },
   "17601": { lat: 34.2583, lng: -116.8469 },
@@ -77,8 +74,6 @@ const LOCATION_CENTERS: Record<string, { lat: number; lng: number }> = {
   "17611": { lat: 34.2300, lng: -116.8900 },
 };
 
-const CLUSTER_GRID_SIZE_PX = 64;
-const MAX_CLUSTER_ZOOM = 16;
 const DEFAULT_PAGE_SIZE = 20;
 
 const idsMatch = (
@@ -109,67 +104,40 @@ interface PropertyGroup {
   id: string | number;
 }
 
-interface ClusterNode {
-  id: string;
-  lat: number;
-  lng: number;
-  groups: PropertyGroup[];
-  properties: Property[];
-  isCluster: boolean;
-}
-
 interface CanvasNode {
   id: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  radius: number;
-  isCluster: boolean;
-  label: string;
-  property: Property;
-  properties: Property[];
+  property?: Property;
+  properties?: Property[];
+  moreCount?: number;
 }
 
-function projectToPixel(lat: number, lng: number, zoom: number) {
-  const sinLat = Math.sin((lat * Math.PI) / 180);
-  const clampedSinLat = Math.min(Math.max(sinLat, -0.9999), 0.9999);
-  const scale = 256 * Math.pow(2, zoom);
+function getCabinMarkerOffset(index: number, total: number) {
+  if (total <= 1) {
+    return { offsetX: 0, offsetY: 0 };
+  }
+
+  // Use a Fermat/Golden-angle spiral to distribute many markers without overlap.
+  const goldenAngle = 2.399963229728653; // ~137.5 degrees in radians
+  const spacing = 14; // pixels base spacing
+  const r = spacing * Math.sqrt(index + 1);
+  const angle = index * goldenAngle - Math.PI / 2;
 
   return {
-    x: ((lng + 180) / 360) * scale,
-    y:
-      (0.5 -
-        Math.log((1 + clampedSinLat) / (1 - clampedSinLat)) / (4 * Math.PI)) *
-      scale,
+    offsetX: Math.cos(angle) * r,
+    offsetY: Math.sin(angle) * r * 0.75,
   };
 }
 
-function buildMarkerIcon(
-  isActive: boolean,
-  isCluster: boolean
-): google.maps.Symbol {
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    scale: isCluster ? CLUSTER_MARKER_RADIUS : SINGLE_MARKER_RADIUS,
-    fillColor: isActive ? "#111827" : isCluster ? "#1f2937" : "#ffffff",
-    fillOpacity: 1,
-    strokeColor: isActive ? "#111827" : isCluster ? "#ffffff" : "#d1d5db",
-    strokeWeight: 2,
-  };
-}
-
-function buildMarkerLabel(
-  text: string,
-  isActive: boolean,
-  isCluster: boolean
-): google.maps.MarkerLabel {
-  return {
-    text,
-    color: isActive ? "#ffffff" : isCluster ? "#ffffff" : "#111827",
-    fontSize: isCluster ? "12px" : "11px",
-    fontWeight: "700",
-  };
+function getVisibleCabinsPerLocation(zoom: number, total: number) {
+  if (total <= 5) return total;
+  if (zoom >= 15) return total;
+  if (zoom >= 14) return Math.min(total, 15);
+  if (zoom >= 13) return Math.min(total, 10);
+  return 5;
 }
 
 // ── Hover Preview Card ─────────────────────────────────────────────────────
@@ -704,14 +672,11 @@ export function SearchMap({
     }
   }, [controlledBatchIndex, paginatedCabins, totalBatches, visibleCabins.length, onRenderedPropertiesChange]);
 
-  // Group properties by exact lat/lng to prevent overlapping marker chaos
+  // Group properties only by their exact stored coordinates so nearby cabins are not merged.
   const propertyGroups = useMemo(() => {
     const grouped = new Map<string, Property[]>();
     paginatedCabins.forEach((p) => {
-      // Create a key based on 4 decimal points (approx 10m precision)
-      const lat = Number(p.latitude).toFixed(4);
-      const lng = Number(p.longitude).toFixed(4);
-      const key = `${lat},${lng}`;
+      const key = `${p.latitude},${p.longitude}`;
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(p);
     });
@@ -724,7 +689,7 @@ export function SearchMap({
     }));
   }, [paginatedCabins]);
 
-  const clusteredMarkers = useMemo<ClusterNode[]>(() => {
+  const renderedMarkers = useMemo(() => {
     const visibleGroups =
       viewportBounds == null
         ? propertyGroups
@@ -732,56 +697,55 @@ export function SearchMap({
             isInViewportBounds(group.lat, group.lng, viewportBounds)
           );
 
-    if (visibleGroups.length === 0) return [];
+    const nodes: Array<{
+      id: string;
+      lat: number;
+      lng: number;
+      offsetX: number;
+      offsetY: number;
+      property?: Property;
+      properties?: Property[];
+      moreCount?: number;
+    }> = [];
 
-    if (mapZoom >= MAX_CLUSTER_ZOOM) {
-      return visibleGroups.map((group) => ({
-        id: `group-${String(group.id)}`,
-        lat: group.lat,
-        lng: group.lng,
-        groups: [group],
-        properties: group.properties,
-        isCluster: false,
-      }));
-    }
+    visibleGroups.forEach((group) => {
+      const total = group.properties.length;
+      const visibleCount = getVisibleCabinsPerLocation(mapZoom, total);
 
-    const buckets = new Map<string, PropertyGroup[]>();
-    for (const group of visibleGroups) {
-      const { x, y } = projectToPixel(group.lat, group.lng, mapZoom);
-      const bucketX = Math.floor(x / CLUSTER_GRID_SIZE_PX);
-      const bucketY = Math.floor(y / CLUSTER_GRID_SIZE_PX);
-      const key = `${bucketX},${bucketY}`;
+      // push visible properties
+      group.properties.slice(0, visibleCount).forEach((property, index) => {
+        const { offsetX, offsetY } = getCabinMarkerOffset(index, total);
 
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key)!.push(group);
-    }
+        nodes.push({
+          id: `property-${String(property.id)}`,
+          lat: Number(property.latitude),
+          lng: Number(property.longitude),
+          offsetX,
+          offsetY,
+          property,
+        });
+      });
 
-    return Array.from(buckets.entries()).map(([bucketKey, groups]) => {
-      const propertiesInBucket = groups.flatMap((group) => group.properties);
-      const total = groups.reduce((sum, group) => sum + group.properties.length, 0);
-      const weightedLat =
-        groups.reduce(
-          (sum, group) => sum + group.lat * group.properties.length,
-          0
-        ) / total;
-      const weightedLng =
-        groups.reduce(
-          (sum, group) => sum + group.lng * group.properties.length,
-          0
-        ) / total;
-      const isCluster = groups.length > 1;
+      // if there are remaining cabins, push a single '+N' overflow marker
+      const remaining = total - visibleCount;
+      if (remaining > 0) {
+        // place the overflow marker just outside the last visible item
+        const overflowIndex = visibleCount;
+        const { offsetX, offsetY } = getCabinMarkerOffset(overflowIndex, total);
 
-      return {
-        id: isCluster
-          ? `cluster-${mapZoom}-${bucketKey}`
-          : `group-${String(groups[0].id)}`,
-        lat: isCluster ? weightedLat : groups[0].lat,
-        lng: isCluster ? weightedLng : groups[0].lng,
-        groups,
-        properties: propertiesInBucket,
-        isCluster,
-      };
+        nodes.push({
+          id: `more-${String(group.id)}`,
+          lat: group.lat,
+          lng: group.lng,
+          offsetX,
+          offsetY,
+          moreCount: remaining,
+          properties: group.properties,
+        });
+      }
     });
+
+    return nodes;
   }, [propertyGroups, mapZoom, viewportBounds]);
 
   // Map center
@@ -903,9 +867,9 @@ export function SearchMap({
     updateVisibleCabinsForViewport();
   }, [syncViewportBounds, updateVisibleCabinsForViewport]);
 
-  const handleClusterClick = useCallback(
-    (cluster: ClusterNode) => {
-      if (!mapRef.current || !cluster.isCluster) return;
+  const handleMoreClick = useCallback(
+    (node: { properties?: Property[] } | null) => {
+      if (!mapRef.current || !node || !node.properties || node.properties.length === 0) return;
 
       clearHoverTimeout();
       setHoveredPopup(null);
@@ -913,17 +877,11 @@ export function SearchMap({
       onMarkerClick?.(null);
 
       const bounds = new google.maps.LatLngBounds();
-      cluster.groups.forEach((group) => {
-        bounds.extend({ lat: group.lat, lng: group.lng });
+      node.properties.forEach((p) => {
+        bounds.extend({ lat: Number(p.latitude), lng: Number(p.longitude) });
       });
 
       mapRef.current.fitBounds(bounds, 80);
-      google.maps.event.addListenerOnce(mapRef.current, "idle", () => {
-        const zoomAfterFit = mapRef.current?.getZoom() ?? 12;
-        if (zoomAfterFit > MAX_CLUSTER_ZOOM) {
-          mapRef.current?.setZoom(MAX_CLUSTER_ZOOM);
-        }
-      });
     },
     [clearHoverTimeout, onMarkerClick]
   );
@@ -947,119 +905,36 @@ export function SearchMap({
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-  const projection = map.getProjection();
-  const mapCenter = map.getCenter();
-  if (!projection || !mapCenter) return;
-  const centerPoint = projection.fromLatLngToPoint(mapCenter);
-  if (!centerPoint) return;
-  const scale = Math.pow(2, mapZoom);
+    const projection = map.getProjection();
+    const mapCenter = map.getCenter();
+    if (!projection || !mapCenter) return;
+    const centerPoint = projection.fromLatLngToPoint(mapCenter);
+    if (!centerPoint) return;
+    const scale = Math.pow(2, mapZoom);
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
     ctx.imageSmoothingEnabled = true;
 
     const visibleNodes: CanvasNode[] = [];
-    const zoom = mapZoom;
     const activeId = activePopup?.id == null ? null : String(activePopup.id);
     const hoveredIdString = hoveredPopup?.id == null ? null : String(hoveredPopup.id);
 
-    const visibleGroups = propertyGroups.filter((group) =>
-      isInViewportBounds(group.lat, group.lng, bounds)
-    );
-
-    const clusters: ClusterNode[] = (() => {
-      if (visibleGroups.length === 0) return [];
-
-      if (zoom >= MAX_CLUSTER_ZOOM) {
-        return visibleGroups.map((group) => ({
-          id: `group-${String(group.id)}`,
-          lat: group.lat,
-          lng: group.lng,
-          groups: [group],
-          properties: group.properties,
-          isCluster: false,
-        }));
-      }
-
-      const buckets = new Map<string, PropertyGroup[]>();
-      for (const group of visibleGroups) {
-        const { x, y } = projectToPixel(group.lat, group.lng, zoom);
-        const bucketX = Math.floor(x / CLUSTER_GRID_SIZE_PX);
-        const bucketY = Math.floor(y / CLUSTER_GRID_SIZE_PX);
-        const key = `${bucketX},${bucketY}`;
-
-        if (!buckets.has(key)) buckets.set(key, []);
-        buckets.get(key)!.push(group);
-      }
-
-      return Array.from(buckets.entries()).map(([bucketKey, groups]) => {
-        const propertiesInBucket = groups.flatMap((group) => group.properties);
-        const total = groups.reduce((sum, group) => sum + group.properties.length, 0);
-        const weightedLat =
-          groups.reduce((sum, group) => sum + group.lat * group.properties.length, 0) /
-          total;
-        const weightedLng =
-          groups.reduce((sum, group) => sum + group.lng * group.properties.length, 0) /
-          total;
-        const isCluster = groups.length > 1;
-
-        return {
-          id: isCluster
-            ? `cluster-${zoom}-${bucketKey}`
-            : `group-${String(groups[0].id)}`,
-          lat: isCluster ? weightedLat : groups[0].lat,
-          lng: isCluster ? weightedLng : groups[0].lng,
-          groups,
-          properties: propertiesInBucket,
-          isCluster,
-        };
-      });
-    })();
-
-    clusters.forEach((node) => {
+    renderedMarkers.forEach((node) => {
       const worldPoint = projection.fromLatLngToPoint(new google.maps.LatLng(node.lat, node.lng));
       if (!worldPoint) return;
 
-      const x = (worldPoint.x - centerPoint.x) * scale + width / 2;
-      const y = (worldPoint.y - centerPoint.y) * scale + height / 2;
-      const primaryProperty = node.properties[0];
-      const isActive = node.properties.some((p) => String(p.id) === activeId);
-      const isHovered = node.properties.some((p) => String(p.id) === hoveredIdString);
+      const x = (worldPoint.x - centerPoint.x) * scale + width / 2 + node.offsetX;
+      const y = (worldPoint.y - centerPoint.y) * scale + height / 2 + node.offsetY;
+      const isActive = !!node.property && String(node.property.id) === activeId;
+      const isHovered = !!node.property && String(node.property.id) === hoveredIdString;
       const highlighted = isActive || isHovered;
-
-      if (node.isCluster) {
-        const radius = 22;
-        visibleNodes.push({
-          id: node.id,
-          x,
-          y,
-          width: radius * 2,
-          height: radius * 2,
-          radius,
-          isCluster: true,
-          label: String(node.properties.length),
-          property: primaryProperty,
-          properties: node.properties,
-        });
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = highlighted ? "#111827" : "#1f2937";
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "#ffffff";
-        ctx.stroke();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "700 12px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(String(node.properties.length), x, y + 0.5);
-        ctx.restore();
-        return;
+      let label = "";
+      if (node.moreCount && node.moreCount > 0) {
+        label = `+${node.moreCount}`;
+      } else if (node.property) {
+        label = node.property.price > 0 ? `$${node.property.price}` : "-";
       }
-
-      const label = primaryProperty.price > 0 ? `$${primaryProperty.price}` : "-";
       ctx.save();
       ctx.font = "700 11px sans-serif";
       const textWidth = Math.ceil(ctx.measureText(label).width);
@@ -1075,11 +950,9 @@ export function SearchMap({
         y,
         width: pillWidth,
         height: pillHeight,
-        radius,
-        isCluster: false,
-        label,
-        property: primaryProperty,
+        property: node.property,
         properties: node.properties,
+        moreCount: node.moreCount,
       });
 
       ctx.beginPath();
@@ -1098,8 +971,14 @@ export function SearchMap({
       ctx.lineTo(left, top + radius);
       ctx.quadraticCurveTo(left, top, left + radius, top);
       ctx.closePath();
-      ctx.fillStyle = highlighted ? "#111827" : "#ffffff";
-      ctx.strokeStyle = highlighted ? "#111827" : "#d1d5db";
+      // Use a distinct style for overflow markers
+      if (node.moreCount && node.moreCount > 0) {
+        ctx.fillStyle = highlighted ? "#111827" : "#f8fafc";
+        ctx.strokeStyle = highlighted ? "#111827" : "#d1d5db";
+      } else {
+        ctx.fillStyle = highlighted ? "#111827" : "#ffffff";
+        ctx.strokeStyle = highlighted ? "#111827" : "#d1d5db";
+      }
       ctx.lineWidth = 2;
       ctx.shadowColor = "rgba(0,0,0,0.18)";
       ctx.shadowBlur = highlighted ? 10 : 6;
@@ -1117,7 +996,7 @@ export function SearchMap({
     });
 
     renderedCanvasNodesRef.current = visibleNodes;
-  }, [activePopup?.id, hoveredPopup?.id, mapZoom, propertyGroups, viewportBounds]);
+  }, [activePopup?.id, hoveredPopup?.id, mapZoom, renderedMarkers]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -1146,17 +1025,11 @@ export function SearchMap({
 
       for (let i = nodes.length - 1; i >= 0; i--) {
         const node = nodes[i];
-        if (node.isCluster) {
-          const dx = x - node.x;
-          const dy = y - node.y;
-          if (Math.sqrt(dx * dx + dy * dy) <= node.radius + 4) return node;
-        } else {
-          const left = node.x - node.width / 2;
-          const right = node.x + node.width / 2;
-          const top = node.y - node.height;
-          const bottom = node.y;
-          if (x >= left && x <= right && y >= top && y <= bottom) return node;
-        }
+        const left = node.x - node.width / 2;
+        const right = node.x + node.width / 2;
+        const top = node.y - node.height;
+        const bottom = node.y;
+        if (x >= left && x <= right && y >= top && y <= bottom) return node;
       }
 
       return null;
@@ -1167,15 +1040,16 @@ export function SearchMap({
       if (hoverRaf) cancelAnimationFrame(hoverRaf);
       hoverRaf = requestAnimationFrame(() => {
         const hit = hitTest(event.clientX, event.clientY);
-        if (!hit || hit.isCluster) {
+        if (!hit || !hit.property) {
           clearHoverTimeout();
           return;
         }
 
-        if (!activePopup || String(activePopup.id) !== String(hit.property.id)) {
+        const hitProp = hit.property;
+        if (!activePopup || String(activePopup.id) !== String(hitProp.id)) {
           setHoveredPopup((current) => {
-            if (current && String(current.id) === String(hit.property.id)) return current;
-            return hit.property;
+            if (current && String(current.id) === String(hitProp.id)) return current;
+            return hitProp;
           });
         }
       });
@@ -1192,13 +1066,12 @@ export function SearchMap({
       event.preventDefault();
       event.stopPropagation();
 
-      if (hit.isCluster) {
-        const cluster = clusteredMarkers.find((node) => node.id === hit.id);
-        if (cluster) handleClusterClick(cluster);
+      if (hit.moreCount && hit.moreCount > 0) {
+        handleMoreClick(hit);
         return;
       }
 
-      handleMarkerClick(hit.property);
+      if (hit.property) handleMarkerClick(hit.property);
     };
 
     mapDiv.addEventListener("mousemove", handleMouseMove, true);
@@ -1211,11 +1084,11 @@ export function SearchMap({
       mapDiv.removeEventListener("mouseleave", handleMouseLeave, true);
       mapDiv.removeEventListener("click", handleClick, true);
     };
-  }, [activePopup, clearHoverTimeout, clusteredMarkers, handleClusterClick, handleMarkerClick, isMapIdle, scheduleHoverClear]);
+  }, [activePopup, clearHoverTimeout, handleMarkerClick, isMapIdle, scheduleHoverClear]);
 
   const getAnchorStyle = useCallback(
-    (node: ClusterNode | undefined): React.CSSProperties | null => {
-      if (!node || node.isCluster) return null;
+    (node: { lat: number; lng: number; offsetX: number; offsetY: number } | undefined): React.CSSProperties | null => {
+      if (!node) return null;
 
       const map = mapRef.current;
       if (!map) return null;
@@ -1236,8 +1109,8 @@ export function SearchMap({
       const scale = Math.pow(2, mapZoom);
 
       return {
-        left: (worldPoint.x - centerPoint.x) * scale + width / 2,
-        top: (worldPoint.y - centerPoint.y) * scale + height / 2,
+        left: (worldPoint.x - centerPoint.x) * scale + width / 2 + node.offsetX,
+        top: (worldPoint.y - centerPoint.y) * scale + height / 2 + node.offsetY,
       };
     },
     [mapZoom]
@@ -1272,12 +1145,8 @@ export function SearchMap({
 
       <div className="absolute inset-0 z-20 pointer-events-none">
         {(() => {
-          const activeNode = clusteredMarkers.find((node) =>
-            node.properties.some((p) => idsMatch(activePopup?.id, p.id))
-          );
-          const hoveredNode = clusteredMarkers.find((node) =>
-            node.properties.some((p) => idsMatch(hoveredPopup?.id, p.id))
-          );
+          const activeNode = renderedMarkers.find((node) => node.property && idsMatch(activePopup?.id, node.property.id));
+          const hoveredNode = renderedMarkers.find((node) => node.property && idsMatch(hoveredPopup?.id, node.property.id));
           const activeAnchorStyle = getAnchorStyle(activeNode);
           const hoveredAnchorStyle = getAnchorStyle(hoveredNode);
 
