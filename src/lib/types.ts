@@ -1,6 +1,7 @@
 export interface StreamlineProperty {
     id: number;
     name: string;
+    web_name?: string;
     location_name: string;
     state_name: string;
     rating_average: number;

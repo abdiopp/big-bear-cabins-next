@@ -70,10 +70,14 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => {
         }
     }
 
+    // Clean cabin name by removing numeric prefixes and suffixes (e.g., "0101-Sunset" -> "Sunset", "Sunset #101" -> "Sunset")
+    const cleanName = (name: string) => name.replace(/^\d+[-]?\s*/, '').replace(/\s*#\d+.*$/, '').trim();
+
     return {
         id: p.id,
-        title: p.name,
-        location: `${p.location_name || ''}, ${p.state_name || ''}`,
+        title: cleanName(p.web_name || p.name),
+        location: `${cleanName(p.location_name) || ''}, ${p.state_name || ''}`,
+
         price: resolveNightlyPrice(p),
         rating: p.rating_average || 0,
         reviewCount: p.rating_count || 0,
