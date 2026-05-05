@@ -3,6 +3,42 @@
 import { useState, useEffect } from 'react';
 import { Property, StreamlineProperty } from '@/lib/types';
 
+function parsePrice(value: unknown): number {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) && value > 0 ? value : 0;
+    }
+
+    if (typeof value === 'string') {
+        const cleaned = value.replace(/[$,\s]/g, '');
+        const parsed = Number.parseFloat(cleaned);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+
+    return 0;
+}
+
+function resolveNightlyPrice(property: StreamlineProperty): number {
+    const rawProperty = property as any;
+    const candidates = [
+        property.prices?.nightly_price,
+        rawProperty.price,
+        rawProperty.first_day_price,
+        rawProperty.minimum_day_price,
+        rawProperty.price_data?.daily,
+        rawProperty.price_str,
+        property.daily_pricing_starting,
+    ];
+
+    for (const candidate of candidates) {
+        const price = parsePrice(candidate);
+        if (price > 0) {
+            return price;
+        }
+    }
+
+    return 0;
+}
+
 export const mapStreamlineProperty = (p: StreamlineProperty): Property => {
     // Handle gallery in both formats:
     // - Raw API: { image: [{ image_path, ... }] }
@@ -38,7 +74,7 @@ export const mapStreamlineProperty = (p: StreamlineProperty): Property => {
         id: p.id,
         title: p.name,
         location: `${p.location_name || ''}, ${p.state_name || ''}`,
-        price: p.prices?.nightly_price || (p.daily_pricing_starting > 0 ? p.daily_pricing_starting : 150),
+        price: resolveNightlyPrice(p),
         rating: p.rating_average || 0,
         reviewCount: p.rating_count || 0,
         imageUrl: p.default_image_path,

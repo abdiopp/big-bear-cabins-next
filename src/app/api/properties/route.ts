@@ -221,8 +221,47 @@ export async function POST(req: Request) {
             method = 'GetPropertyListWordPress';
         }
 
-        const data = await streamlineRequest(method, params);
+        const pricingLookupParams: any = {
+            startdate: '',
+            enddate: '',
+        };
+        if (body.occupants) pricingLookupParams.occupants = body.occupants;
+        if (body.bedrooms_number) pricingLookupParams.bedrooms_number = body.bedrooms_number;
+
+        const [propertyListResult, pricingResult] = await Promise.allSettled([
+            streamlineRequest(method, params),
+            streamlineRequest('GetPropertyAvailabilityWithRatesWordPress', pricingLookupParams),
+        ]);
+
+        if (propertyListResult.status === 'rejected') {
+            throw propertyListResult.reason;
+        }
+
+        const data = propertyListResult.value;
         const responseData = (data as any).Response?.data || (data as any).data || data;
+
+        const pricingMap = new Map<string, any>();
+        if (pricingResult.status === 'fulfilled') {
+            const pricingResponseData = (pricingResult.value as any).Response?.data || (pricingResult.value as any).data || pricingResult.value;
+
+            let pricedProperties: any[] = [];
+            if (pricingResponseData?.available_properties?.property) {
+                pricedProperties = Array.isArray(pricingResponseData.available_properties.property)
+                    ? pricingResponseData.available_properties.property
+                    : [pricingResponseData.available_properties.property];
+            } else if (pricingResponseData?.property) {
+                pricedProperties = Array.isArray(pricingResponseData.property)
+                    ? pricingResponseData.property
+                    : [pricingResponseData.property];
+            }
+
+            pricedProperties.forEach((pricedProperty: any) => {
+                const unitId = String(pricedProperty.id || pricedProperty.unit_id || '');
+                if (unitId) {
+                    pricingMap.set(unitId, pricedProperty);
+                }
+            });
+        }
 
         let properties: any[] = [];
         if (responseData && responseData.property && Array.isArray(responseData.property)) {
@@ -263,6 +302,22 @@ export async function POST(req: Request) {
                     return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
                 });
             }
+        }
+
+        if (pricingMap.size > 0) {
+            properties = properties.map((property: any) => {
+                const unitId = String(property.id || property.unit_id || '');
+                const priceData = pricingMap.get(unitId);
+
+                if (!priceData) return property;
+
+                return {
+                    ...property,
+                    ...priceData,
+                    id: property.id || priceData.id || priceData.unit_id,
+                    name: property.name || priceData.name || priceData.unit_name,
+                };
+            });
         }
 
         // Filter by Mountain View or Lakefront if requested (using properties)
