@@ -239,17 +239,17 @@ const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
               gap: "8px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+            {/* <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
               {property.rating > 0 && (
                 <>
                   <Star size={12} fill="#111827" color="#111827" />
                   <span style={{ fontSize: "12px", fontWeight: 600 }}>{property.rating.toFixed(1)}</span>
                 </>
               )}
-            </div>
+            </div> */}
 
             <span style={{ fontSize: "13px", fontWeight: 700 }}>
-              {property.price > 0 ? `$${property.price}` : "—"}
+              {property.price > 0 && `$${property.price}`}
               {property.price > 0 && (
                 <span style={{ fontWeight: 400, fontSize: "11px", color: "#6b7280" }}>/night</span>
               )}
@@ -299,8 +299,8 @@ const MapPopupCard = React.memo(function MapPopupCard({
           </button>
         </div>
         <div className="flex-1 p-[14px] flex flex-col relative bg-white">
-          <button 
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} 
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             className="absolute top-3 right-3"
           >
             <Heart size={18} className="text-gray-900 hover:text-red-500 transition-colors" />
@@ -310,13 +310,13 @@ const MapPopupCard = React.memo(function MapPopupCard({
             <h3 className="text-[14px] font-[600] pr-7 truncate leading-tight">{property.title}</h3>
             <p className="text-[13px] text-gray-500 mt-1 truncate leading-tight">{property.location}</p>
             <p className="text-[13px] text-gray-500 mt-1 truncate leading-tight">May 10 – 15</p>
-            
-            <div className="flex items-center gap-[3px] mt-1 line-clamp-1">
+
+            {/* <div className="flex items-center gap-[3px] mt-1 line-clamp-1">
               <Star size={11} className="fill-gray-900 text-gray-900 mb-[1px]" />
               <span className="text-[13px] font-[500] text-gray-900">
                 {property.rating > 0 ? `${property.rating.toFixed(1)} (80)` : "New"}
               </span>
-            </div>
+            </div> */}
           </div>
 
           <div className="mt-1">
@@ -325,7 +325,7 @@ const MapPopupCard = React.memo(function MapPopupCard({
               {property.price > 0 && <span className="font-[400]">for 5 nights</span>}
             </p>
             <div className="mt-1">
-               <span className="text-[11px] font-[500] text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded-[4px]">Free cancellation</span>
+              <span className="text-[11px] font-[500] text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded-[4px]">Free cancellation</span>
             </div>
           </div>
         </div>
@@ -421,7 +421,7 @@ const MapPopupCard = React.memo(function MapPopupCard({
           </p>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+            {/* <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
               {property.rating > 0 && (
                 <>
                   <Star size={12} fill="#222222" color="#222222" />
@@ -430,9 +430,9 @@ const MapPopupCard = React.memo(function MapPopupCard({
                   </span>
                 </>
               )}
-            </div>
+            </div> */}
             <span style={{ fontSize: "13px", fontWeight: 700, color: "#222222" }}>
-              {property.price > 0 ? `$${property.price}` : "—"}
+              {property.price > 0 && `$${property.price}`}
               {property.price > 0 && (
                 <span style={{ fontWeight: 400, fontSize: "11px", color: "#717171" }}>/night</span>
               )}
@@ -544,10 +544,10 @@ export function SearchMap({
       bounds == null
         ? mappableProperties
         : mappableProperties.filter((property) => {
-            const lat = Number(property.latitude);
-            const lng = Number(property.longitude);
-            return bounds.contains({ lat, lng });
-          });
+          const lat = Number(property.latitude);
+          const lng = Number(property.longitude);
+          return bounds.contains({ lat, lng });
+        });
 
     setVisibleCabins(nextVisible);
     if (controlledBatchIndex == null) {
@@ -694,8 +694,8 @@ export function SearchMap({
       viewportBounds == null
         ? propertyGroups
         : propertyGroups.filter((group) =>
-            isInViewportBounds(group.lat, group.lng, viewportBounds)
-          );
+          isInViewportBounds(group.lat, group.lng, viewportBounds)
+        );
 
     const nodes: Array<{
       id: string;
@@ -1188,7 +1188,7 @@ export function SearchMap({
       {/* Mobile Fixed Popup Card */}
       {activePopup && (
         <div className="lg:hidden absolute bottom-[96px] left-4 right-4 z-10 pointer-events-auto transition-all animate-in slide-in-from-bottom-4 fade-in-50 duration-200">
-           <MapPopupCard property={activePopup} onClose={handleClosePopup} variant="mobile" />
+          <MapPopupCard property={activePopup} onClose={handleClosePopup} variant="mobile" />
         </div>
       )}
     </div>

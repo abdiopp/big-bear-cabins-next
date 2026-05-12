@@ -94,9 +94,8 @@ export function SearchPropertyCard({
             }}
           >
             <Heart
-              className={`h-4 w-4 transition-colors ${
-                isFavorite ? "fill-red-500 text-red-500" : "text-gray-700"
-              }`}
+              className={`h-4 w-4 transition-colors ${isFavorite ? "fill-red-500 text-red-500" : "text-gray-700"
+                }`}
             />
           </Button>
         </div>
@@ -140,7 +139,7 @@ export function SearchPropertyCard({
           {/* Price */}
           <div className="flex items-baseline gap-1">
             <span className="text-[15px] font-bold text-gray-900">
-              {price > 0 ? `$${price}` : "Contact for price"}
+              {price > 0 ? `$${price}` : "Select dates for price"}
             </span>
             {price > 0 && (
               <span className="text-[12px] text-gray-500">/ night</span>

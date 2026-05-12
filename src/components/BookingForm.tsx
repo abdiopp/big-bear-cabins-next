@@ -139,7 +139,7 @@ export function BookingForm({
                 <CardContent className="p-0 space-y-4">
                     {/* Price */}
                     <div className="flex items-baseline space-x-1">
-                        <span className="text-2xl font-semibold">${basePrice}</span>
+                        <span className="text-2xl font-semibold">${price?.average_nightly_rate.toFixed(2) || 0}</span>
                         <span className="text-gray-600">night</span>
                     </div>
 
