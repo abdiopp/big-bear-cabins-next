@@ -44,6 +44,7 @@ export async function createBlogCategory(data: {
 }) {
     const category = await prisma.blogCategory.create({ data });
     revalidatePath("/admin/blog-categories");
+    revalidatePath(`/${category.slug}`);
     return category;
 }
 
@@ -59,11 +60,20 @@ export async function updateBlogCategory(
         designType?: string;
     }
 ) {
+    const existingCategory = await prisma.blogCategory.findUnique({
+        where: { id },
+        select: { slug: true },
+    });
+
     const category = await prisma.blogCategory.update({
         where: { id },
         data,
     });
+
     revalidatePath("/admin/blog-categories");
+    if (existingCategory && existingCategory.slug !== category.slug) {
+        revalidatePath(`/${existingCategory.slug}`);
+    }
     revalidatePath(`/${category.slug}`);
     return category;
 }
@@ -137,8 +147,17 @@ export async function createBlog(data: {
     const existing = await prisma.blog.findUnique({ where: { slug: data.slug } });
     if (existing) return { success: false, error: "A blog post with this slug already exists." };
 
+    const category = await prisma.blogCategory.findUnique({
+        where: { id: data.categoryId },
+        select: { slug: true },
+    });
+
     const blog = await prisma.blog.create({ data });
     revalidatePath("/admin/blogs");
+    if (category?.slug) {
+        revalidatePath(`/${category.slug}`);
+        revalidatePath(`/${category.slug}/${blog.slug}`);
+    }
     return { success: true, data: blog };
 }
 
@@ -170,16 +189,64 @@ export async function updateBlog(
         if (existing) return { success: false, error: "A blog post with this slug already exists." };
     }
 
+    const existingBlog = await prisma.blog.findUnique({
+        where: { id },
+        select: { slug: true, categoryId: true },
+    });
+
     const blog = await prisma.blog.update({
         where: { id },
         data,
     });
+
+    const [oldCategory, newCategory] = await Promise.all([
+        existingBlog
+            ? prisma.blogCategory.findUnique({
+                where: { id: existingBlog.categoryId },
+                select: { slug: true },
+            })
+            : null,
+        prisma.blogCategory.findUnique({
+            where: { id: blog.categoryId },
+            select: { slug: true },
+        }),
+    ]);
+
     revalidatePath("/admin/blogs");
+    if (oldCategory?.slug) {
+        revalidatePath(`/${oldCategory.slug}`);
+        if (existingBlog?.slug) {
+            revalidatePath(`/${oldCategory.slug}/${existingBlog.slug}`);
+        }
+    }
+    if (newCategory?.slug) {
+        revalidatePath(`/${newCategory.slug}`);
+        revalidatePath(`/${newCategory.slug}/${blog.slug}`);
+    }
     return { success: true, data: blog };
 }
 
 export async function deleteBlog(id: string) {
+    const existingBlog = await prisma.blog.findUnique({
+        where: { id },
+        select: { slug: true, categoryId: true },
+    });
+
     await prisma.blog.delete({ where: { id } });
+
+    let categorySlug: string | null = null;
+    if (existingBlog) {
+        const category = await prisma.blogCategory.findUnique({
+            where: { id: existingBlog.categoryId },
+            select: { slug: true },
+        });
+        categorySlug = category?.slug ?? null;
+    }
+
     revalidatePath("/admin/blogs");
+    if (categorySlug && existingBlog?.slug) {
+        revalidatePath(`/${categorySlug}`);
+        revalidatePath(`/${categorySlug}/${existingBlog.slug}`);
+    }
     return { success: true };
 }

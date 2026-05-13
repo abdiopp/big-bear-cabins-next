@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     "Find the perfect cabin rental in Big Bear Lake. Luxury mountain cabins, lakefront retreats, and cozy lodges for your next vacation.",
 };
 
+// Regenerate cached routes periodically so CMS/admin updates appear automatically.
+export const revalidate = 60;
+
 export default function RootLayout({
   children,
 }: Readonly<{

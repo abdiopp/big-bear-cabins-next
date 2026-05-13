@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/authOptions";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
     try {
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
                 },
             });
         }
+
+        // Footer is rendered from the root layout; invalidate layout cache site-wide.
+        revalidatePath("/", "layout");
 
         return NextResponse.json(savedFooter);
     } catch (error) {
