@@ -1,5 +1,5 @@
 import { PropertyDetailPage } from "@/components/PropertyDetailPage";
 
-export default function PropertyDetail({ params }: { params: { id: string } }) {
+export default function PropertyDetail() {
   return <PropertyDetailPage />;
 }
