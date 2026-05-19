@@ -4,8 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getHomeHero() {
-    const data = await prisma.homeHero.findFirst();
-    return data;
+    try {
+        const data = await prisma.homeHero.findFirst();
+        return data;
+    } catch (error) {
+        console.error("getHomeHero failed:", error);
+        return null;
+    }
 }
 
 export async function updateHomeHero(data: any) {
@@ -39,8 +44,13 @@ export async function updateHomeHero(data: any) {
 }
 
 export async function getCoupons() {
-    const data = await prisma.couponSection.findFirst();
-    return data;
+    try {
+        const data = await prisma.couponSection.findFirst();
+        return data;
+    } catch (error) {
+        console.error("getCoupons failed:", error);
+        return null;
+    }
 }
 
 export async function updateCoupons(data: any) {

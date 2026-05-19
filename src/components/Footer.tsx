@@ -26,7 +26,12 @@ const fallbackSections = [
 ];
 
 export async function Footer() {
-  const footerData = await prisma.footer.findFirst();
+  let footerData: Awaited<ReturnType<typeof prisma.footer.findFirst>> | null = null;
+  try {
+    footerData = await prisma.footer.findFirst();
+  } catch (error) {
+    console.error("Footer query failed, using fallback footer data:", error);
+  }
 
   const sections = footerData?.sections?.length ? footerData.sections : fallbackSections;
   const socialLinks = footerData?.socialLinks || [];

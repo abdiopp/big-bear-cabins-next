@@ -15,10 +15,15 @@ function validateSlug(slug: string): string | null {
 // ============== BLOG CATEGORIES ==============
 
 export async function getBlogCategories() {
-    return await prisma.blogCategory.findMany({
-        where: { published: true },
-        orderBy: { createdAt: "desc" },
-    });
+    try {
+        return await prisma.blogCategory.findMany({
+            where: { published: true },
+            orderBy: { createdAt: "desc" },
+        });
+    } catch (error) {
+        console.error("getBlogCategories failed:", error);
+        return [];
+    }
 }
 
 export async function getAllBlogCategories() {
@@ -28,9 +33,14 @@ export async function getAllBlogCategories() {
 }
 
 export async function getBlogCategoryBySlug(slug: string) {
-    return await prisma.blogCategory.findUnique({
-        where: { slug },
-    });
+    try {
+        return await prisma.blogCategory.findUnique({
+            where: { slug },
+        });
+    } catch (error) {
+        console.error("getBlogCategoryBySlug failed:", error);
+        return null;
+    }
 }
 
 export async function createBlogCategory(data: {
@@ -93,24 +103,34 @@ export async function deleteBlogCategory(id: string) {
 // ============== BLOGS ==============
 
 export async function getBlogs(categoryId?: string) {
-    return await prisma.blog.findMany({
-        where: {
-            published: true,
-            ...(categoryId ? { categoryId } : {}),
-        },
-        orderBy: { createdAt: "desc" },
-    });
+    try {
+        return await prisma.blog.findMany({
+            where: {
+                published: true,
+                ...(categoryId ? { categoryId } : {}),
+            },
+            orderBy: { createdAt: "desc" },
+        });
+    } catch (error) {
+        console.error("getBlogs failed:", error);
+        return [];
+    }
 }
 
 export async function getBlogsByCategorySlug(categorySlug: string) {
-    const category = await prisma.blogCategory.findUnique({
-        where: { slug: categorySlug },
-    });
-    if (!category) return [];
-    return await prisma.blog.findMany({
-        where: { categoryId: category.id, published: true },
-        orderBy: { createdAt: "desc" },
-    });
+    try {
+        const category = await prisma.blogCategory.findUnique({
+            where: { slug: categorySlug },
+        });
+        if (!category) return [];
+        return await prisma.blog.findMany({
+            where: { categoryId: category.id, published: true },
+            orderBy: { createdAt: "desc" },
+        });
+    } catch (error) {
+        console.error("getBlogsByCategorySlug failed:", error);
+        return [];
+    }
 }
 
 export async function getAllBlogs() {
@@ -120,9 +140,14 @@ export async function getAllBlogs() {
 }
 
 export async function getBlogBySlug(slug: string) {
-    return await prisma.blog.findUnique({
-        where: { slug },
-    });
+    try {
+        return await prisma.blog.findUnique({
+            where: { slug },
+        });
+    } catch (error) {
+        console.error("getBlogBySlug failed:", error);
+        return null;
+    }
 }
 
 export async function createBlog(data: {
