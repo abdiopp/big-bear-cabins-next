@@ -22,7 +22,8 @@ datasource db {
 //   updatedAt DateTime @updatedAt
 // }
 
-model User {
+model 
+ {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   name     String
   email    String @unique

@@ -26,6 +26,7 @@ export default async function AdminLayout({
                     <Link href="/admin/home-hero" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Home Hero</Link>
                     <Link href="/admin/coupons" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Coupons (Offers)</Link>
                     <Link href="/admin/blogs" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blogs</Link>
+                    <Link href="/admin/users" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Users</Link>
                     <Link href="/admin/blog-categories" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Blog Categories</Link>
                     <Link href="/admin/footer" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Footer</Link>
                     <Link href="/admin/experiences-page" className="block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Experiences Page</Link>
