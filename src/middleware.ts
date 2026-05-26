@@ -23,19 +23,12 @@ export async function middleware(req: any) {
 
   // Redirect logged-in users away from login/register pages
   if (isAuthPage && token) {
-    console.log(`🔄 Redirecting authenticated user ${token.email} from ${path} to /dashboard`);
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !token) {
-    console.log(`🔒 Redirecting unauthenticated user from ${path} to /login`);
     return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  // Log protected route access
-  if (token && isProtectedRoute) {
-    console.log(`✅ Authenticated access to ${path} by ${token.email}`);
   }
 
   // Allow access

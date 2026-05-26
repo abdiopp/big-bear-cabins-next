@@ -21,7 +21,6 @@ export async function streamlineRequest<T = any>(
         try {
             if (i > 0) {
                 const delay = Math.pow(2, i - 1) * 1000;
-                console.log(`🔄 Retry attempt ${i} for ${methodName} after ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
 
