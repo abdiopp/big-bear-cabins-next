@@ -25,6 +25,18 @@ function getAmenityIds(filters: string[]) {
     return filters.map(f => AMENITY_IDS[f]).filter(id => id && id > 0);
 }
 
+function hasAllAmenities(property: any, amenityIds: number[]) {
+    let propertyAmenities = property.unit_amenities?.amenity;
+    if (!propertyAmenities) return false;
+
+    if (!Array.isArray(propertyAmenities)) {
+        propertyAmenities = [propertyAmenities];
+    }
+
+    const propertyAmenityIds = new Set(propertyAmenities.map((a: any) => Number(a.amenity_id)));
+    return amenityIds.every((id: number) => propertyAmenityIds.has(Number(id)));
+}
+
 export async function POST(req: Request) {
     const body = await req.json();
 
@@ -53,8 +65,6 @@ export async function POST(req: Request) {
 
         // 2. Handle Date-Based Search
         if (body.startdate && body.enddate) {
-            console.log('🔍 Executing Date-Based Search:', { start: body.startdate, end: body.enddate, occupants: body.occupants });
-
             // Step A: Get Availability & Pricing
             const availabilityParams: any = {
                 startdate: body.startdate,
@@ -98,15 +108,13 @@ export async function POST(req: Request) {
                 availableUnits = availableDataRaw;
             }
 
-            console.log(`📦 Found ${availableUnits.length} available units`);
-
             // Create a map of available unit IDs for quick lookup and to store pricing info
             const availabilityMap = new Map<string, any>();
-            availableUnits.forEach((unit: any) => {
+            for (const unit of availableUnits) {
                 if (unit.unit_id) {
                     availabilityMap.set(String(unit.unit_id), unit);
                 }
-            });
+            }
 
             // Step D: Process Property List Data
             const propertyListRaw = (propertyListData as any).Response?.data || (propertyListData as any).data || propertyListData;
@@ -116,8 +124,6 @@ export async function POST(req: Request) {
             } else if (propertyListRaw?.available_properties?.property) {
                 allProperties = Array.isArray(propertyListRaw.available_properties.property) ? propertyListRaw.available_properties.property : [propertyListRaw.available_properties.property];
             }
-
-            console.log(`📦 Fetched ${allProperties.length} total properties details`);
 
             // Step E: Merge & Filter
             let mergedProperties = allProperties.filter(prop => {
@@ -134,8 +140,6 @@ export async function POST(req: Request) {
                     id: unitId
                 };
             });
-
-            console.log(`✅ Merged ${mergedProperties.length} properties`);
 
             // Step F: Apply Additional Filters (if any)
             if (body.bedrooms_number) {
@@ -155,22 +159,7 @@ export async function POST(req: Request) {
 
             // Client-side filtering for amenities
             if (amenityIds.length > 0) {
-                mergedProperties = mergedProperties.filter(p => {
-                    let propertyAmenities = p.unit_amenities?.amenity;
-
-                    // Handle case where it's a single object or undefined
-                    if (!propertyAmenities) {
-                        return false;
-                    }
-
-                    if (!Array.isArray(propertyAmenities)) {
-                        propertyAmenities = [propertyAmenities];
-                    }
-
-                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
-                    // Check if property has ALL requested amenities
-                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
-                });
+                mergedProperties = mergedProperties.filter(p => hasAllAmenities(p, amenityIds));
             }
 
             // Client-side filtering for properties that are not amenities
@@ -198,7 +187,6 @@ export async function POST(req: Request) {
         }
 
         // 3. Handle General Search (No Dates)
-        console.log('🔍 Executing General Search (No Dates)');
         const params: any = {
             sort_by: body.sort_by || 'price_daily_low',
             return_gallery: 1,
@@ -255,12 +243,12 @@ export async function POST(req: Request) {
                     : [pricingResponseData.property];
             }
 
-            pricedProperties.forEach((pricedProperty: any) => {
+            for (const pricedProperty of pricedProperties) {
                 const unitId = String(pricedProperty.id || pricedProperty.unit_id || '');
                 if (unitId) {
                     pricingMap.set(unitId, pricedProperty);
                 }
-            });
+            }
         }
 
         let properties: any[] = [];
@@ -269,22 +257,7 @@ export async function POST(req: Request) {
 
             // Client-side filtering for amenities (double check, as API might ignore amenities_filter)
             if (amenityIds.length > 0) {
-                properties = properties.filter((p: any) => {
-                    let propertyAmenities = p.unit_amenities?.amenity;
-
-                    // Handle case where it's a single object or undefined
-                    if (!propertyAmenities) {
-                        return false;
-                    }
-
-                    if (!Array.isArray(propertyAmenities)) {
-                        propertyAmenities = [propertyAmenities];
-                    }
-
-                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
-                    // Check if property has ALL requested amenities
-                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
-                });
+                properties = properties.filter((p: any) => hasAllAmenities(p, amenityIds));
             }
         } else if (responseData && responseData.available_properties && responseData.available_properties.property) {
             // Handle WordPress API structure where properties might be nested
@@ -292,15 +265,7 @@ export async function POST(req: Request) {
 
             // Client-side filtering for amenities (duplicates logic but necessary if structure differs)
             if (amenityIds.length > 0) {
-                properties = properties.filter((p: any) => {
-                    let propertyAmenities = p.unit_amenities?.amenity;
-
-                    if (!propertyAmenities) return false;
-                    if (!Array.isArray(propertyAmenities)) propertyAmenities = [propertyAmenities];
-
-                    const propertyAmenityIds = propertyAmenities.map((a: any) => a.amenity_id);
-                    return amenityIds.every((id: number) => propertyAmenityIds.includes(id));
-                });
+                properties = properties.filter((p: any) => hasAllAmenities(p, amenityIds));
             }
         }
 
@@ -360,5 +325,4 @@ export async function POST(req: Request) {
         return NextResponse.json({ data: { property: [] }, error: String(e) }, { status: 500 });
     }
 }
-
 
