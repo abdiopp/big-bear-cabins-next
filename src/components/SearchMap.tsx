@@ -95,6 +95,7 @@ interface SearchMapProps {
     meta: { visibleCount: number; batchIndex: number; totalBatches: number }
   ) => void;
   onVisiblePropertiesChange?: (visibleProperties: Property[]) => void;
+  calculatedRates: Record<number, number>;
 }
 
 interface PropertyGroup {
@@ -474,6 +475,7 @@ export function SearchMap({
   activeBatchIndex: controlledBatchIndex,
   onRenderedPropertiesChange,
   onVisiblePropertiesChange,
+  calculatedRates
 }: SearchMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -933,7 +935,11 @@ export function SearchMap({
       if (node.moreCount && node.moreCount > 0) {
         label = `+${node.moreCount}`;
       } else if (node.property) {
-        label = node.property.price > 0 ? `$${node.property.price}` : "-";
+        // Safe parsing ke sath calculated rates se value uthayenge
+        const currentNightlyRate = calculatedRates[Number(node.property.id)] || node.property.price;
+
+        // Math.round() use kiya hai taake pin ke andar decimals (.00) na aane se text clean rahe
+        label = currentNightlyRate > 0 ? `$${Math.round(currentNightlyRate)}` : "-";
       }
       ctx.save();
       ctx.font = "700 11px sans-serif";
@@ -996,7 +1002,7 @@ export function SearchMap({
     });
 
     renderedCanvasNodesRef.current = visibleNodes;
-  }, [activePopup?.id, hoveredPopup?.id, mapZoom, renderedMarkers]);
+  }, [activePopup?.id, hoveredPopup?.id, mapZoom, renderedMarkers, calculatedRates]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -1155,7 +1161,11 @@ export function SearchMap({
               {/* Hover Preview */}
               {!activePopup && isMapIdle && hoveredPopup && hoveredNode && hoveredAnchorStyle && (
                 <MapHoverPreviewCard
-                  property={hoveredPopup}
+                  // property={hoveredPopup}
+                  property={{
+                    ...hoveredPopup,
+                    price: calculatedRates[Number(hoveredPopup.id)] || hoveredPopup.price
+                  }}
                   onMouseEnter={handleHoverCardMouseEnter}
                   onMouseLeave={handleHoverCardMouseLeave}
                   anchorStyle={hoveredAnchorStyle}
@@ -1166,7 +1176,11 @@ export function SearchMap({
               {activePopup && activeNode && activeAnchorStyle && (
                 <div className="max-lg:hidden">
                   <MapPopupCard
-                    property={activePopup}
+                    // property={activePopup}
+                    property={{
+                      ...activePopup,
+                      price: calculatedRates[Number(activePopup.id)] || activePopup.price
+                    }}
                     onClose={handleClosePopup}
                     variant="desktop"
                     anchorStyle={activeAnchorStyle}
@@ -1188,7 +1202,13 @@ export function SearchMap({
       {/* Mobile Fixed Popup Card */}
       {activePopup && (
         <div className="lg:hidden absolute bottom-[96px] left-4 right-4 z-10 pointer-events-auto transition-all animate-in slide-in-from-bottom-4 fade-in-50 duration-200">
-          <MapPopupCard property={activePopup} onClose={handleClosePopup} variant="mobile" />
+          <MapPopupCard
+            property={{
+              ...activePopup,
+              price: calculatedRates[Number(activePopup.id)] || activePopup.price
+            }}
+            // property={activePopup}
+            onClose={handleClosePopup} variant="mobile" />
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ import { Heart, BedDouble, Users, Bath } from "lucide-react";
 import { Button } from "./ui/button";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import Link from "next/link";
-
+import { useSearchParams } from "next/navigation";
 interface SearchPropertyCardProps {
   id: string | number;
   imageUrl: string;
@@ -26,6 +26,7 @@ interface SearchPropertyCardProps {
   onMouseLeave?: () => void;
   cardRef?: (node: HTMLAnchorElement | null) => void;
   onCardClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  averageNightlyRate?: number; // Naya optional prop
 }
 
 export function SearchPropertyCard({
@@ -39,19 +40,40 @@ export function SearchPropertyCard({
   isFavorite = false,
   bedrooms,
   bathrooms,
-  guests,
+  guests: initialGuests,
   amenities = [],
   isHovered = false,
   onMouseEnter,
   onMouseLeave,
   cardRef,
   onCardClick,
+  averageNightlyRate
 }: SearchPropertyCardProps) {
+  // 1. URL se exact wahi keys nikalenge jo handleSearch set kar raha hai
+  const searchParams = useSearchParams();
+  const checkIn = searchParams.get("checkIn") || "";
+  const checkOut = searchParams.get("checkOut") || "";
+  const occupants = searchParams.get("occupants") || "1";
+  const occupantsSmall = searchParams.get("occupants_small") || "0";
+  const pets = searchParams.get("pets") || "false";
+
   const cleanLocation = location.replace(/^[\d]+-?/, "").trim();
+
+  // 2. Ab strict handleSearch dynamic structure ke mutabiq params object banayein gey
+  const params = new URLSearchParams();
+
+  if (checkIn) params.set("checkIn", checkIn);
+  if (checkOut) params.set("checkOut", checkOut);
+  if (occupants) params.set("guests", occupants);
+  if (occupantsSmall && occupantsSmall !== "0") params.set("children", occupantsSmall);
+  if (pets === "true") {
+    params.set("pets", "true");
+  }
+  const queryString = params.toString();
 
   return (
     <Link
-      href={`/property/${id}`}
+      href={`/property/${id}?${queryString}`}
       className="group block cursor-pointer"
       ref={cardRef}
       onMouseEnter={onMouseEnter}
@@ -113,7 +135,7 @@ export function SearchPropertyCard({
           <p className="text-[12px] text-gray-500 truncate mb-2">{cleanLocation}</p>
 
           {/* Property specs */}
-          {(bedrooms || bathrooms || guests) && (
+          {(bedrooms || bathrooms || initialGuests) && (
             <div className="flex items-center gap-3 mb-2.5 flex-wrap">
               {bedrooms && (
                 <div className="flex items-center gap-1 text-gray-500">
@@ -127,10 +149,10 @@ export function SearchPropertyCard({
                   <span className="text-[11px]">{bathrooms} bath{bathrooms > 1 ? "s" : ""}</span>
                 </div>
               )}
-              {guests && (
+              {initialGuests && (
                 <div className="flex items-center gap-1 text-gray-500">
                   <Users className="h-3 w-3" />
-                  <span className="text-[11px]">{guests} guests</span>
+                  <span className="text-[11px]">{initialGuests} guests</span>
                 </div>
               )}
             </div>
@@ -139,9 +161,9 @@ export function SearchPropertyCard({
           {/* Price */}
           <div className="flex items-baseline gap-1">
             <span className="text-[15px] font-bold text-gray-900">
-              {price > 0 ? `$${price}` : "Select dates for price"}
+              {averageNightlyRate !== undefined && averageNightlyRate > 0 ? `$${averageNightlyRate.toFixed(2)}` : "Select dates for price"}
             </span>
-            {price > 0 && (
+            {averageNightlyRate !== undefined && averageNightlyRate > 0 && (
               <span className="text-[12px] text-gray-500">/ night</span>
             )}
           </div>

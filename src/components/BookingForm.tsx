@@ -24,6 +24,10 @@ interface BookingFormProps {
     maxGuests: number;
     checkInDate?: Date;
     checkOutDate?: Date;
+    // SLUG INJECTION: New props to receive initial guest counts from URL
+    initialAdults?: number;
+    initialChildren?: number;
+    initialPets?: boolean;
     onDateChange?: (range: { from?: Date; to?: Date }) => void;
     onDateClick?: () => void;
 }
@@ -35,6 +39,10 @@ export function BookingForm({
     maxGuests,
     checkInDate,
     checkOutDate,
+    // SLUG INJECTION: Injected dynamic values down to Booking Form state
+    initialAdults,
+    initialChildren,
+    initialPets,
     onDateChange,
     onDateClick
 }: BookingFormProps) {
@@ -44,9 +52,9 @@ export function BookingForm({
     const checkOut = checkOutDate ? format(checkOutDate, 'yyyy-MM-dd') : '';
 
     const [guestCounts, setGuestCounts] = useState<GuestCounts>({
-        adults: 1,
-        children: 0,
-        pets: false
+        adults: initialAdults || 1,
+        children: initialChildren || 0,
+        pets: initialPets || false
     });
 
     // Derived total for API calls that only take 'occupants'

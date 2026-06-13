@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "react-date-range/dist/styles.css";
+@import "react-date-range/dist/theme/default.css";
 
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
@@ -5473,3 +5475,15 @@ html {
   color: #374151;
   line-height: 1.75;
 }
+
+/* 640px (Small Screen) ya usse badi screens par apply hoga */
+/* @media (min-width: 640px) {
+  .rdp-nav {
+    display: none !important;
+  }
+
+  .rdp-nav+*>*:first-child,
+  .rdp-nav+div>*:first-child {
+    display: none !important;
+  }
+} */

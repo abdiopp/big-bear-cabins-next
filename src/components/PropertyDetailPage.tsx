@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
@@ -60,19 +60,53 @@ const defaultAmenities = [
   { group: "Safety", name: "Smoke alarm" },
 ];
 
+// Helper: To convert YYYY-MM-DD or MM/DD/YYYY from URL into correct local JS Date object safely
+const parseUrlDate = (dateStr: string): Date | undefined => {
+  if (!dateStr) return undefined;
+  const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
+  if (parts.length === 3) {
+    // Handle standard ISO YYYY-MM-DD format from API search input
+    if (dateStr.includes('-') && parts[0].length === 4) {
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+    // Handle MM/DD/YYYY fallback
+    return new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
+  }
+  const attemptDirectParse = new Date(dateStr);
+  return isNaN(attemptDirectParse.getTime()) ? undefined : attemptDirectParse;
+};
+
 export function PropertyDetailPage() {
   const { id } = useParams();
+  // 1. URL se exact wahi keys nikalenge jo handleSearch set kar raha hai
+  const searchParams = useSearchParams();
+  const checkIn = searchParams.get("checkIn") || "";
+  const checkOut = searchParams.get("checkOut") || "";
+  const guests = searchParams.get("guests") || "1";
+  const children = searchParams.get("children") || "0";
+  const pets = searchParams.get("pets") || "false";
+
   const { wishlist, toggleWishlist } = useWishlist();
   const { status } = useSession();
 
-
+  console.log("filters =>", id, checkIn, checkOut, guests, children, pets)
   const { property, loading, error } = useProperty(id as string);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  // 2. PERFECT RANGE MATCHING: Initial state directly parses slug values
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const fromDate = parseUrlDate(checkIn);
+    const toDate = parseUrlDate(checkOut);
+    if (fromDate) {
+      return { from: fromDate, to: toDate };
+    }
+    return undefined;
+  });
   const [copied, setCopied] = useState<Boolean>(false);
+
+
 
   const isFavorite = (property as any)?.isFavorite ?? false;
 
@@ -85,7 +119,15 @@ export function PropertyDetailPage() {
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
   };
-
+  useEffect(() => {
+    if (checkIn) {
+      const fromDate = parseUrlDate(checkIn);
+      const toDate = parseUrlDate(checkOut);
+      if (fromDate) {
+        setDateRange({ from: fromDate, to: toDate });
+      }
+    }
+  }, [checkIn, checkOut]);
   const handleShare = async () => {
     try {
       const url = window.location.href;
@@ -565,6 +607,10 @@ export function PropertyDetailPage() {
               maxGuests={property.guests || 10}
               checkInDate={dateRange?.from}
               checkOutDate={dateRange?.to}
+              // SLUG INJECTION: Injected dynamic values down to Booking Form state
+              initialAdults={Number(guests)}
+              initialChildren={Number(children)}
+              initialPets={pets === "true"}
               onDateChange={(range) => {
                 setDateRange({
                   from: range.from,
