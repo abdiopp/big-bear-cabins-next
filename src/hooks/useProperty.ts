@@ -55,7 +55,6 @@ export function useProperty(id: string | number) {
                         return_owner_id: 1
                     }),
                 });
-
                 if (!response.ok) {
                     throw new Error(`Failed to fetch property: ${response.statusText}`);
                 }
@@ -71,6 +70,7 @@ export function useProperty(id: string | number) {
                 const raw = rawProperties[0];
                 mappedProperty.description = raw.global_description || raw.description;
 
+                // console.log("useProperty:- Fetch response for property =>", response, data, rawProperties, mappedProperty);
                 // Fetch full gallery images
                 try {
                     const galleryResponse = await fetch('/api/properties/gallery', {

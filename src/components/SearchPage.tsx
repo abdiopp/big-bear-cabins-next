@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Filter, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Filter, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { SearchPropertyCard } from "./SearchPropertyCard";
@@ -276,6 +276,7 @@ export function SearchPage() {
   const { properties, loading, error } = useProperties(1, searchApiParams);
   const allCabins = properties;
   const [visibleCabins, setVisibleCabins] = useState<Property[]>([]);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [hasMapSyncInitialized, setHasMapSyncInitialized] = useState(false);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const mapSyncDebounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -801,13 +802,16 @@ export function SearchPage() {
         const listingsContent = (
           <>
             {/* Header */}
-            <div className="px-4 xl:px-6 pt-5 pb-3 bg-white">
+            <div className="px-4 xl:px-6 pt-5 pb-3 bg-white flex items-center justify-between">
               <h1 className="text-xl font-bold text-gray-900">Stay in Big Bear</h1>
-              {/* {!loading && !error && (
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {allCabins.length} propert{allCabins.length === 1 ? "y" : "ies"} found
-                </p>
-              )} */}
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)} // Drawer close handler callback trigger
+                className="lg:hidden text-xs flex items-center gap-1 font-semibold bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1.5 rounded-full transition cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+                Close
+              </button>
             </div>
 
             {/* Error */}
@@ -978,8 +982,20 @@ export function SearchPage() {
                   <span className="text-xs text-gray-500 leading-tight mt-0.5">Any week • {guests ? `${guests} guest${guests === '1' ? '' : 's'}` : '1 guest'}</span>
                 </div>
 
-                <button className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm ml-1">
+                {/* <button className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm ml-1">
                   <Filter size={16} className="text-gray-800" />
+                </button> */}
+                {/* ⚡ UPDATED: Mobile Filter Button Trigger */}
+                <button
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="relative p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors border border-gray-200 shadow-sm ml-1"
+                >
+                  <Filter size={16} className="text-gray-800" />
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -1026,7 +1042,7 @@ export function SearchPage() {
               >
                 <DrawerPrimitive.Portal>
                   <DrawerPrimitive.Content
-                    className="fixed bottom-0 left-0 right-0 z-30 flex flex-col bg-white rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.12)] outline-none border-t border-gray-200 lg:hidden pointer-events-auto"
+                    className="fixed bottom-0 left-0 right-0 z-100 flex flex-col bg-white rounded-t-3xl shadow-[0_-12px_40px_rgba(0,0,0,0.12)] outline-none border-t border-gray-200 lg:hidden pointer-events-auto"
                     style={{ height: `calc(100vh - ${MAP_TOP}px)` }}
                   >
                     {/* Accessibility requirements for Radix Dialog natively requested by vaul */}
@@ -1051,6 +1067,225 @@ export function SearchPage() {
           </div>
         );
       })()}
+
+
+      {/* ── Mobile Right-to-Left Filters Drawer ── */}
+      <div
+        className={`lg:hidden fixed inset-0 z-[150] transition-opacity duration-300 ${isMobileFilterOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+      >
+        {/* Backdrop overlay */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMobileFilterOpen(false)} />
+
+        {/* Drawer Container (Slides from Right to Left) */}
+        <div
+          className={`absolute top-0 right-0 h-full w-[85%] max-w-[400px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out transform ${isMobileFilterOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+        >
+          {/* Header */}
+          <div className="px-4 py-4 border-b flex items-center justify-between flex-shrink-0">
+            <h2 className="text-base font-bold text-gray-900">Filters</h2>
+            <button
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="p-1 rounded-full hover:bg-gray-100 text-gray-500"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Scrollable Filters Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+
+            {/* 1. Location */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">Location</label>
+              <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={selectClass + " w-full h-10 text-sm"}
+              >
+                {LOCATIONS.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. Check-In / Check-Out Date Picker */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">Dates</label>
+              <div className="border border-gray-200 rounded-lg p-2.5 bg-gray-50 space-y-2 text-xs">
+                <div className="flex justify-between items-center text-gray-700">
+                  <span>In: <strong>{checkIn ? formatDateToUiString(checkIn) : "Select"}</strong></span>
+                  <span className="text-gray-400">→</span>
+                  <span>Out: <strong>{checkOut ? formatDateToUiString(checkOut) : "Select"}</strong></span>
+                </div>
+
+                {/* Inline Mobile Date Picker Layout Wrapper */}
+                <div className="mobile-date-picker-wrapper overflow-x-auto pt-2 border-t border-gray-200">
+                  <DateRange
+                    ranges={[dateRangeSelection]}
+                    onChange={handleRangeChange}
+                    minDate={new Date()}
+                    rangeColors={["#000"]}
+                    showDateDisplay={false}
+                    direction="vertical"
+                    months={1} /* Mobile screen size ke mutabik ek month responsive scroll ke liye perfect hai */
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Bedrooms */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">Bedrooms</label>
+              <select
+                value={bedrooms}
+                onChange={(e) => setBedrooms(e.target.value)}
+                className={selectClass + " w-full h-10 text-sm"}
+              >
+                {BEDROOM_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* 4. Occupancy (Advanced Filter Portion) */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Occupancy</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">Guests</Label>
+                  <Input
+                    type="number"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    placeholder="Guests"
+                    min="0"
+                    className="h-10 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">Children</Label>
+                  <Input
+                    type="number"
+                    value={children}
+                    onChange={(e) => setChildren(e.target.value)}
+                    placeholder="Children"
+                    min="0"
+                    className="h-10 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Sort By */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Sort By</h3>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={selectClass + " w-full h-10 text-sm"}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 6. Preferences & Amenities */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Preferences & Amenities</h3>
+              <div className="space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="pets_mobile"
+                    checked={pets}
+                    onCheckedChange={(checked) => setPets(checked === true)}
+                  />
+                  <Label htmlFor="pets_mobile" className="text-sm cursor-pointer select-none">
+                    Pets Allowed
+                  </Label>
+                </div>
+                {[
+                  { key: "hotTub", label: "Hot Tub" },
+                  { key: "lakefront", label: "Lakefront Location" },
+                  { key: "boatDock", label: "Boat Dock" },
+                  { key: "evCharger", label: "EV Charger" },
+                  { key: "mountainView", label: "Mountain View" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center gap-2.5">
+                    <Checkbox
+                      id={`mobile_${key}`}
+                      checked={filters[key as keyof typeof filters]}
+                      onCheckedChange={() => handleFilterChange(key as keyof typeof filters)}
+                    />
+                    <Label htmlFor={`mobile_${key}`} className="text-sm cursor-pointer select-none">
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Footer Actions (Sticky Bottom) */}
+          <div className="p-4 border-t flex gap-3 bg-white flex-shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+            <Button
+              variant="outline"
+              className="flex-1 h-11 text-sm font-semibold rounded-xl"
+              onClick={() => {
+                // Clear All logic matching desktop perfectly
+                setFilters({
+                  mountainView: false,
+                  lakefront: false,
+                  boatDock: false,
+                  evCharger: false,
+                  hotTub: false,
+                });
+                setActiveFilters([]);
+                setGuests("");
+                setChildren("");
+                setPets(false);
+                setSortBy("price_daily_low");
+                setIsMobileFilterOpen(false);
+
+                const cleanParams = new URLSearchParams();
+                const currentCheckIn = searchParams.get("checkIn");
+                const currentCheckOut = searchParams.get("checkOut");
+                const currentLocation = searchParams.get("location");
+                const currentBedrooms = searchParams.get("bedrooms");
+
+                if (currentCheckIn) cleanParams.set("checkIn", currentCheckIn);
+                if (currentCheckOut) cleanParams.set("checkOut", currentCheckOut);
+                if (currentLocation) cleanParams.set("location", currentLocation);
+                if (currentBedrooms) cleanParams.set("bedrooms", currentBedrooms);
+
+                router.push(`/search?${cleanParams.toString()}`);
+              }}
+            >
+              Clear All
+            </Button>
+            <Button
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white h-11 text-sm font-semibold rounded-xl"
+              onClick={() => {
+                handleSearch();
+                setIsMobileFilterOpen(false); // Search apply hote hi close
+              }}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

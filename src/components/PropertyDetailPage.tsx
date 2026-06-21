@@ -89,8 +89,8 @@ export function PropertyDetailPage() {
   const { wishlist, toggleWishlist } = useWishlist();
   const { status } = useSession();
 
-  console.log("filters =>", id, checkIn, checkOut, guests, children, pets)
   const { property, loading, error } = useProperty(id as string);
+  // console.log("filters =>", id, checkIn, checkOut, guests, children, pets, "||||", property, loading, error);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
