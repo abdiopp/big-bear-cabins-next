@@ -16,8 +16,6 @@ import { Drawer as DrawerPrimitive } from "vaul";
 import { Property } from "@/lib/types";
 // ⚡ React Date Range Imports
 import { DateRange, Range } from "react-date-range";
-// Existing imports ke sath ye add karein
-import { useReservationPrice } from '@/hooks/useReservationPrice';
 
 // Lazy-load the map to avoid SSR issues and improve initial load
 const SearchMap = dynamic(
@@ -157,10 +155,6 @@ export function SearchPage() {
   });
   const [snap, setSnap] = useState<number | string | null>(0.65);
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // Isko replace karein taake string aur number donon keys balance ho jayein
-  const [calculatedRates, setCalculatedRates] = useState<Record<string | number, number>>({});
-  const { calculatePrice } = useReservationPrice();
 
 
 
@@ -415,25 +409,6 @@ export function SearchPage() {
     };
   }, []);
 
-  // Ek useEffect lagayein jo properties change ya dates change hone par fire ho:
-  useEffect(() => {
-    if (properties && checkIn && checkOut) {
-      properties.forEach(async (property) => {
-        const res = await calculatePrice({
-          unitId: Number(property.id),
-          startDate: checkIn, // YYYY-MM-DD format me
-          endDate: checkOut,
-          occupants: guests ? parseInt(guests) : 1, // aapke context ke mutabik
-        });
-        if (res && res.average_nightly_rate) {
-          setCalculatedRates(prev => ({
-            ...prev,
-            [property.id]: res.average_nightly_rate
-          }));
-        }
-      });
-    }
-  }, [properties, checkIn, checkOut]);
   // ⚡ Total Days / Nights Calculation Logic
   const totalNights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -852,7 +827,7 @@ export function SearchPage() {
                           onMouseEnter={() => setHoveredCardId(property.id)}
                           onMouseLeave={() => setHoveredCardId(null)}
                           onCardClick={(event) => handleListingCardClick(event, property.id)}
-                          averageNightlyRate={calculatedRates[property.id] || property.price}
+                          isMultipleNights={totalNights > 1}
                         />
                       </div>
                     ))}
@@ -961,7 +936,7 @@ export function SearchPage() {
                   pageSize={MAP_PAGE_SIZE}
                   onRenderedPropertiesChange={handleRenderedPropertiesChange}
                   onVisiblePropertiesChange={handleVisiblePropertiesChange}
-                  calculatedRates={calculatedRates}
+                  isMultipleNights={totalNights > 1}
                 />
               </div>
             </div>
@@ -1009,7 +984,7 @@ export function SearchPage() {
                 pageSize={MAP_PAGE_SIZE}
                 onRenderedPropertiesChange={handleRenderedPropertiesChange}
                 onVisiblePropertiesChange={handleVisiblePropertiesChange}
-                calculatedRates={calculatedRates}
+                isMultipleNights={totalNights > 1}
               />
             </div>
 

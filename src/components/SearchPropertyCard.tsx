@@ -26,7 +26,7 @@ interface SearchPropertyCardProps {
   onMouseLeave?: () => void;
   cardRef?: (node: HTMLAnchorElement | null) => void;
   onCardClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
-  averageNightlyRate?: number; // Naya optional prop
+  isMultipleNights: boolean;
 }
 
 export function SearchPropertyCard({
@@ -47,7 +47,7 @@ export function SearchPropertyCard({
   onMouseLeave,
   cardRef,
   onCardClick,
-  averageNightlyRate
+  isMultipleNights
 }: SearchPropertyCardProps) {
   // 1. URL se exact wahi keys nikalenge jo handleSearch set kar raha hai
   const searchParams = useSearchParams();
@@ -161,10 +161,10 @@ export function SearchPropertyCard({
           {/* Price */}
           <div className="flex items-baseline gap-1">
             <span className="text-[15px] font-bold text-gray-900">
-              {averageNightlyRate !== undefined && averageNightlyRate > 0 ? `$${averageNightlyRate.toFixed(2)}` : "Select dates for price"}
+              {price > 0 ? `$${price}` : "Select dates for price"}
             </span>
-            {averageNightlyRate !== undefined && averageNightlyRate > 0 && (
-              <span className="text-[12px] text-gray-500">/ night</span>
+            {price > 0 && (
+              <span className="text-[12px] text-gray-500">{isMultipleNights ? "/ Total Amount" : "/ night"}</span>
             )}
           </div>
 

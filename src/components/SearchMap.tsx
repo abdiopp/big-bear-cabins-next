@@ -95,7 +95,7 @@ interface SearchMapProps {
     meta: { visibleCount: number; batchIndex: number; totalBatches: number }
   ) => void;
   onVisiblePropertiesChange?: (visibleProperties: Property[]) => void;
-  calculatedRates: Record<number, number>;
+  isMultipleNights: boolean;
 }
 
 interface PropertyGroup {
@@ -147,11 +147,13 @@ const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
   onMouseEnter,
   onMouseLeave,
   anchorStyle,
+  isMultipleNights
 }: {
   property: Property;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   anchorStyle?: React.CSSProperties;
+  isMultipleNights: boolean
 }) {
   return (
     <div
@@ -252,7 +254,7 @@ const MapHoverPreviewCard = React.memo(function MapHoverPreviewCard({
             <span style={{ fontSize: "13px", fontWeight: 700 }}>
               {property.price > 0 && `$${property.price}`}
               {property.price > 0 && (
-                <span style={{ fontWeight: 400, fontSize: "11px", color: "#6b7280" }}>/night</span>
+                <span style={{ fontWeight: 400, fontSize: "11px", color: "#6b7280" }}> {isMultipleNights ? "/ Total Amount" : "/ night"}</span>
               )}
             </span>
           </div>
@@ -269,11 +271,13 @@ const MapPopupCard = React.memo(function MapPopupCard({
   variant = 'desktop'
   ,
   anchorStyle,
+  isMultipleNights
 }: {
   property: Property;
   onClose: () => void;
   variant?: 'desktop' | 'mobile';
   anchorStyle?: React.CSSProperties;
+  isMultipleNights: boolean
 }) {
   if (variant === 'mobile') {
     return (
@@ -435,7 +439,7 @@ const MapPopupCard = React.memo(function MapPopupCard({
             <span style={{ fontSize: "13px", fontWeight: 700, color: "#222222" }}>
               {property.price > 0 && `$${property.price}`}
               {property.price > 0 && (
-                <span style={{ fontWeight: 400, fontSize: "11px", color: "#717171" }}>/night</span>
+                <span style={{ fontWeight: 400, fontSize: "11px", color: "#717171" }}>{isMultipleNights ? "/ Total Amount" : "/ night"}</span>
               )}
             </span>
           </div>
@@ -475,7 +479,7 @@ export function SearchMap({
   activeBatchIndex: controlledBatchIndex,
   onRenderedPropertiesChange,
   onVisiblePropertiesChange,
-  calculatedRates
+  isMultipleNights
 }: SearchMapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -935,11 +939,7 @@ export function SearchMap({
       if (node.moreCount && node.moreCount > 0) {
         label = `+${node.moreCount}`;
       } else if (node.property) {
-        // Safe parsing ke sath calculated rates se value uthayenge
-        const currentNightlyRate = calculatedRates[Number(node.property.id)] || node.property.price;
-
-        // Math.round() use kiya hai taake pin ke andar decimals (.00) na aane se text clean rahe
-        label = currentNightlyRate > 0 ? `$${Math.round(currentNightlyRate)}` : "-";
+        label = node.property.price > 0 ? `$${node.property.price}` : "-";
       }
       ctx.save();
       ctx.font = "700 11px sans-serif";
@@ -1002,7 +1002,7 @@ export function SearchMap({
     });
 
     renderedCanvasNodesRef.current = visibleNodes;
-  }, [activePopup?.id, hoveredPopup?.id, mapZoom, renderedMarkers, calculatedRates]);
+  }, [activePopup?.id, hoveredPopup?.id, mapZoom, renderedMarkers]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -1161,14 +1161,11 @@ export function SearchMap({
               {/* Hover Preview */}
               {!activePopup && isMapIdle && hoveredPopup && hoveredNode && hoveredAnchorStyle && (
                 <MapHoverPreviewCard
-                  // property={hoveredPopup}
-                  property={{
-                    ...hoveredPopup,
-                    price: calculatedRates[Number(hoveredPopup.id)] || hoveredPopup.price
-                  }}
+                  property={hoveredPopup}
                   onMouseEnter={handleHoverCardMouseEnter}
                   onMouseLeave={handleHoverCardMouseLeave}
                   anchorStyle={hoveredAnchorStyle}
+                  isMultipleNights={isMultipleNights}
                 />
               )}
 
@@ -1176,14 +1173,11 @@ export function SearchMap({
               {activePopup && activeNode && activeAnchorStyle && (
                 <div className="max-lg:hidden">
                   <MapPopupCard
-                    // property={activePopup}
-                    property={{
-                      ...activePopup,
-                      price: calculatedRates[Number(activePopup.id)] || activePopup.price
-                    }}
+                    property={activePopup}
                     onClose={handleClosePopup}
                     variant="desktop"
                     anchorStyle={activeAnchorStyle}
+                    isMultipleNights={isMultipleNights}
                   />
                 </div>
               )}
@@ -1202,13 +1196,7 @@ export function SearchMap({
       {/* Mobile Fixed Popup Card */}
       {activePopup && (
         <div className="lg:hidden absolute bottom-[96px] left-4 right-4 z-10 pointer-events-auto transition-all animate-in slide-in-from-bottom-4 fade-in-50 duration-200">
-          <MapPopupCard
-            property={{
-              ...activePopup,
-              price: calculatedRates[Number(activePopup.id)] || activePopup.price
-            }}
-            // property={activePopup}
-            onClose={handleClosePopup} variant="mobile" />
+          <MapPopupCard property={activePopup} onClose={handleClosePopup} variant="mobile" isMultipleNights={isMultipleNights} />
         </div>
       )}
     </div>
