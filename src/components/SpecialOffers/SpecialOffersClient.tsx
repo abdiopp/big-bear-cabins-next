@@ -62,12 +62,7 @@ function OfferCard({ offer }: { offer: CouponOffer }) {
           {offer.icon && (
             <div className="absolute top-2 left-2">
               <div className="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm shadow-md">
-                <img src={offer.icon} alt="" className="h-4 w-4"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = starIcon.src;
-                  }}
-                />
+                <img src={starIcon.src} alt="star" className="h-4 w-4" />
               </div>
             </div>
           )}
@@ -213,7 +208,7 @@ export function SpecialOffersClient({ coupons }: SpecialOffersClientProps) {
             variant="outline"
             size="icon"
             className="absolute right-0 md:-right-16 top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-20 md:h-20 rounded-full shadow-lg disabled:opacity-30 disabled:cursor-not-allowed bg-white hover:bg-gray-50 border-2"
-          > 
+          >
             <ChevronRight className="h-6 w-6 md:h-12 md:w-12 text-black" />
           </Button>
 
