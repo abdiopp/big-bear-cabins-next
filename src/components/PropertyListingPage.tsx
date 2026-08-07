@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
 import Link from "next/link";
+import FilloutEmbed from "./FilloutEmbed";
 
 interface Service {
   title: string;
@@ -325,11 +326,11 @@ export function PropertyListingPage() {
 
               {/* Contact Information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <a href="tel:909-328-1526" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
+                <a href="tel:909-8866-200" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
                   <Phone className="h-8 w-8 text-white shrink-0" />
                   <div>
                     <p className="text-white/90 text-sm font-medium">Quick Call</p>
-                    <p className="text-white font-bold text-lg">909-328-1526</p>
+                    <p className="text-white font-bold text-lg">(909) 8866-200</p>
                   </div>
                 </a>
                 <a href="tel:877-473-5360" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
@@ -343,7 +344,7 @@ export function PropertyListingPage() {
             </div>
 
             {/* Right Content - Form */}
-            <div className={`scroll-slide-in-right ${formSection.isVisible ? 'animate' : ''}`}>
+            {/* <div className={`scroll-slide-in-right ${formSection.isVisible ? 'animate' : ''}`}>
               <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
@@ -433,7 +434,8 @@ export function PropertyListingPage() {
                   </div>
                 </form>
               </div>
-            </div>
+            </div> */}
+            <FilloutEmbed />
           </div>
         </div>
       </section>

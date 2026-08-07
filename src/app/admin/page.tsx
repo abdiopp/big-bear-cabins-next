@@ -7,9 +7,9 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Link href="/admin/reservations">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Reservations</CardTitle>
+                            <CardTitle className="font-bold text-lg">Reservations</CardTitle>
                         </CardHeader>
                         <CardContent>
                             View recent bookings and marketing surveys.
@@ -17,9 +17,9 @@ export default function AdminDashboard() {
                     </Card>
                 </Link>
                 <Link href="/admin/home-hero">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Home Hero</CardTitle>
+                            <CardTitle className="font-bold text-lg">Home Hero</CardTitle>
                         </CardHeader>
                         <CardContent>
                             Edit the main hero section of the home page.
@@ -27,9 +27,9 @@ export default function AdminDashboard() {
                     </Card>
                 </Link>
                 <Link href="/admin/coupons">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Coupons & Offers</CardTitle>
+                            <CardTitle className="font-bold text-lg">Coupons & Offers</CardTitle>
                         </CardHeader>
                         <CardContent>
                             Manage special offers and coupons content.
@@ -37,9 +37,9 @@ export default function AdminDashboard() {
                     </Card>
                 </Link>
                 <Link href="/admin/blog-categories">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Blog Categories</CardTitle>
+                            <CardTitle className="font-bold text-lg">Blog Categories</CardTitle>
                         </CardHeader>
                         <CardContent>
                             Manage blog category pages (e.g., Activities).
@@ -47,9 +47,9 @@ export default function AdminDashboard() {
                     </Card>
                 </Link>
                 <Link href="/admin/blogs">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Blog Posts</CardTitle>
+                            <CardTitle className="font-bold text-lg">Blog Posts</CardTitle>
                         </CardHeader>
                         <CardContent>
                             Create and manage blog posts.
@@ -57,9 +57,9 @@ export default function AdminDashboard() {
                     </Card>
                 </Link>
                 <Link href="/admin/experiences-page">
-                    <Card className="hover:shadow-lg transition cursor-pointer">
+                    <Card className="hover:shadow-lg transition cursor-pointer gap-3">
                         <CardHeader>
-                            <CardTitle>Experiences Page</CardTitle>
+                            <CardTitle className="font-bold text-lg">Experiences Page</CardTitle>
                         </CardHeader>
                         <CardContent>
                             Manage hero, experience cards, and form responses.
