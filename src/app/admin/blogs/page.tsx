@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ type BlogCategory = {
 export default function BlogsAdmin() {
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [categories, setCategories] = useState<BlogCategory[]>([]);
+    const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     async function loadData() {
@@ -41,8 +42,18 @@ export default function BlogsAdmin() {
             getAllBlogs(),
             getAllBlogCategories(),
         ]);
-        setBlogs(blogsData as Blog[]);
-        setCategories(categoriesData as BlogCategory[]);
+
+        const fetchedBlogs = (blogsData as Blog[]) || [];
+        const fetchedCategories = (categoriesData as BlogCategory[]) || [];
+
+        setBlogs(fetchedBlogs);
+        setCategories(fetchedCategories);
+
+        // Pehli category ko default active set karna
+        if (fetchedCategories.length > 0 && !activeCategoryId) {
+            setActiveCategoryId(fetchedCategories[0].id);
+        }
+
         setLoading(false);
     }
 
@@ -67,6 +78,14 @@ export default function BlogsAdmin() {
         return cat?.slug || "";
     }
 
+    // Active Category ke mutabiq blogs filter karna
+    const filteredBlogs = useMemo(() => {
+        if (!activeCategoryId || activeCategoryId === "all") {
+            return blogs;
+        }
+        return blogs.filter((blog) => blog.categoryId === activeCategoryId);
+    }, [blogs, activeCategoryId]);
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
@@ -79,9 +98,41 @@ export default function BlogsAdmin() {
                 </Link>
             </div>
 
+            {/* Category Filter Tabs */}
+            {!loading && categories.length > 0 && (
+                <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+                    <Button
+                        variant={activeCategoryId === "all" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveCategoryId("all")}
+                        className={activeCategoryId === "all" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                    >
+                        All Categories
+                    </Button>
+                    {categories.map((cat) => {
+                        const isActive = activeCategoryId === cat.id;
+                        return (
+                            <Button
+                                key={cat.id}
+                                variant={isActive ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setActiveCategoryId(cat.id)}
+                                className={isActive ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                            >
+                                {cat.title}
+                            </Button>
+                        );
+                    })}
+                </div>
+            )}
+
             <Card>
                 <CardHeader>
-                    <CardTitle>All Blog Posts</CardTitle>
+                    <CardTitle>
+                        {activeCategoryId === "all" || !activeCategoryId
+                            ? "All Blog Posts"
+                            : `${getCategoryTitle(activeCategoryId)} Blogs`}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
@@ -89,8 +140,10 @@ export default function BlogsAdmin() {
                             <Loader2 className="w-6 h-6 animate-spin text-green-600" />
                             <span className="ml-2 text-muted-foreground">Loading...</span>
                         </div>
-                    ) : blogs.length === 0 ? (
-                        <p className="text-muted-foreground">No blog posts yet. Create your first one!</p>
+                    ) : filteredBlogs.length === 0 ? (
+                        <p className="text-muted-foreground py-4">
+                            No blog posts found for this category.
+                        </p>
                     ) : (
                         <Table>
                             <TableHeader>
@@ -103,7 +156,7 @@ export default function BlogsAdmin() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {blogs.map((blog) => (
+                                {filteredBlogs.map((blog) => (
                                     <TableRow key={blog.id}>
                                         <TableCell className="font-medium">{blog.title}</TableCell>
                                         <TableCell>{getCategoryTitle(blog.categoryId)}</TableCell>
