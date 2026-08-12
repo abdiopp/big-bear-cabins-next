@@ -41,6 +41,7 @@ type Blog = {
     ogImage: string | null;
     tags: string[];
     published: boolean;
+    isShowOnHomePage?: boolean;
 };
 
 const SLUG_REGEX = /^[a-z0-9-]+$/;
@@ -84,6 +85,7 @@ export default function EditBlogPost({ params }: { params: Promise<{ id: string 
         ogImage: "",
         tags: "",
         published: false,
+        isShowOnHomePage: false,
     });
 
     useEffect(() => {
@@ -108,6 +110,7 @@ export default function EditBlogPost({ params }: { params: Promise<{ id: string 
                     ogImage: blog.ogImage || "",
                     tags: blog.tags?.join(", ") || "",
                     published: blog.published,
+                    isShowOnHomePage: blog.isShowOnHomePage || false,
                 });
             }
             setInitialLoading(false);
@@ -155,6 +158,7 @@ export default function EditBlogPost({ params }: { params: Promise<{ id: string 
                 ogImage: form.ogImage || undefined,
                 tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
                 published: form.published,
+                isShowOnHomePage: form.isShowOnHomePage,
             });
             if (!result.success) {
                 toast.error(result.error);
@@ -341,6 +345,20 @@ export default function EditBlogPost({ params }: { params: Promise<{ id: string 
                                     <Button type="button" variant="outline" className="w-full">Cancel</Button>
                                 </Link>
                             </div>
+                        </div>
+
+                        {/* Publish Card ke andar 'Published' switch ke neeche add karein */}
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t">
+                            <div>
+                                <p className="text-sm font-medium text-gray-800">Show on Home Page</p>
+                                <p className="text-xs text-muted-foreground">Feature this post on home page</p>
+                            </div>
+                            <Switch
+                                id="isShowOnHomePage"
+                                checked={form.isShowOnHomePage}
+                                onCheckedChange={(checked) => setForm({ ...form, isShowOnHomePage: checked })}
+                                className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-gray-300"
+                            />
                         </div>
 
                         {/* Category */}

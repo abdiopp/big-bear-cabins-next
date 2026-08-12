@@ -10,6 +10,7 @@ type Blog = {
   title: string;
   subtitle: string | null;
   heroImage: string;
+  isShowOnHomePage?: boolean;
 };
 
 type BlogCategory = {
@@ -29,9 +30,22 @@ export async function ThingsToDo() {
     return cat?.slug || "";
   };
 
-  const displayBlogs = (blogs as Blog[])
+  const activityBlogs = (blogs as Blog[])
     .filter((blog) => getCategorySlug(blog.categoryId) === "activities")
     .slice(0, 6);
+
+  // 2. Filter blogs that have isShowOnHomePage set to true
+  const homeFeaturedBlogs = activityBlogs.filter(
+    (blog) => blog.isShowOnHomePage === true
+  );
+
+  // 3. Logic: If there are featured blogs, display them (up to 6). Otherwise, display the first 6 activity blogs.
+  const displayBlogs =
+    homeFeaturedBlogs.length > 0
+      ? homeFeaturedBlogs
+      : activityBlogs.slice(0, 6);
+
+  console.log("displayBlogs =>", displayBlogs)
 
   return (
     <section className="py-16 bg-background">

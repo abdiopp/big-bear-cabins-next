@@ -13,7 +13,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { getAllBlogs, deleteBlog, getAllBlogCategories } from "@/actions/blogs";
+import { getAllBlogs, deleteBlog, getAllBlogCategories, toggleShowOnHomePage } from "@/actions/blogs";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 type Blog = {
     id: string;
@@ -21,6 +23,7 @@ type Blog = {
     slug: string;
     title: string;
     published: boolean;
+    isShowOnHomePage?: boolean;
     createdAt: Date;
 };
 
@@ -85,6 +88,22 @@ export default function BlogsAdmin() {
         }
         return blogs.filter((blog) => blog.categoryId === activeCategoryId);
     }, [blogs, activeCategoryId]);
+
+    async function handleHomeToggle(id: string, currentValue: boolean) {
+        const newValue = !currentValue;
+        // Optimistic state update
+        setBlogs((prev) =>
+            prev.map((b) => (b.id === id ? { ...b, isShowOnHomePage: newValue } : b))
+        );
+
+        const res = await toggleShowOnHomePage(id, newValue);
+        if (!res.success) {
+            toast.error("Failed to update status");
+            loadData(); // Revert on failure
+        } else {
+            toast.success("Home page visibility updated");
+        }
+    }
 
     return (
         <div>
@@ -152,6 +171,7 @@ export default function BlogsAdmin() {
                                     <TableHead>Category</TableHead>
                                     <TableHead>URL</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Show on Home</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -173,6 +193,14 @@ export default function BlogsAdmin() {
                                                     <EyeOff className="w-4 h-4 mr-1" /> Draft
                                                 </span>
                                             )}
+                                        </TableCell>
+                                        {/* <-- ADD TOGGLE SWITCH CELL --> */}
+                                        <TableCell>
+                                            <Switch
+                                                checked={!!blog.isShowOnHomePage}
+                                                onCheckedChange={() => handleHomeToggle(blog.id, !!blog.isShowOnHomePage)}
+                                                className="data-[state=checked]:bg-green-600 bg-gray-400 border"
+                                            />
                                         </TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Link href={`/admin/blogs/${blog.id}`}>

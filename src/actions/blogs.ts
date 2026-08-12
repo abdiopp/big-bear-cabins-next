@@ -163,6 +163,7 @@ export async function createBlog(data: {
     ogImage?: string;
     tags?: string[];
     published?: boolean;
+    isShowOnHomePage?: boolean;
 }): Promise<{ success: true; data: Awaited<ReturnType<typeof prisma.blog.create>> } | { success: false; error: string }> {
     // Slug validation
     const slugError = validateSlug(data.slug);
@@ -201,6 +202,7 @@ export async function updateBlog(
         ogImage?: string;
         tags?: string[];
         published?: boolean;
+        isShowOnHomePage?: boolean;
     }
 ): Promise<{ success: true; data: Awaited<ReturnType<typeof prisma.blog.update>> } | { success: false; error: string }> {
     if (data.slug) {
@@ -274,4 +276,19 @@ export async function deleteBlog(id: string) {
         revalidatePath(`/${categorySlug}/${existingBlog.slug}`);
     }
     return { success: true };
+}
+
+// 3. Table se Direct On/Off karne ke liye yeh NAYA FUNCTION file ke end me add karein:
+export async function toggleShowOnHomePage(id: string, isShowOnHomePage: boolean) {
+    try {
+        const blog = await prisma.blog.update({
+            where: { id },
+            data: { isShowOnHomePage },
+        });
+        revalidatePath("/admin/blogs");
+        return { success: true, data: blog };
+    } catch (error) {
+        console.error("toggleShowOnHomePage failed:", error);
+        return { success: false, error: "Failed to update home page visibility" };
+    }
 }
