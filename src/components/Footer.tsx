@@ -38,7 +38,7 @@ export async function Footer() {
 
   return (
     <footer className="border-t border-border bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-4 pt-10 md:py-12">
         {/* Main footer content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <Suspense fallback={null}>
@@ -77,23 +77,69 @@ export async function Footer() {
         <Separator className="mb-6" />
 
         {/* Bottom footer */}
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-3 md:gap-6">
+
+          {/* Left */}
+          <div className="flex flex-wrap items-center justify-center md:justify-start! gap-x-4 gap-y-2 text-sm text-muted-foreground order-1">
             <span>© {new Date().getFullYear()} BigBear Cabins</span>
-            <Link href="/terms" className="hover:text-foreground">Terms</Link>
-            <Link href="/privacy-policy" className="hover:text-foreground">Privacy Policy</Link>
-            <Link href="/contact-us" className="hover:text-foreground">Contact Us</Link>
+
+            <Link
+              href="/terms"
+              className="hover:text-foreground transition-colors"
+            >
+              Terms
+            </Link>
+
+            <Link
+              href="/privacy-policy"
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </Link>
+
+            <Link
+              href="/contact-us"
+              className="hover:text-foreground transition-colors"
+            >
+              Contact Us
+            </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="text-sm">
+          {/* Center - Desktop center, Mobile LAST */}
+          <div className="flex justify-center order-3 md:order-2">
+            <p className="text-gray-400 text-sm flex items-center gap-1.5">
+              Powered by{" "}
+              <a
+                href="https://www.instagram.com/thedigitalweb.co?igsh=b2UyZjJ1OWhienVt&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#3d72e6] font-semibold underline hover:brightness-110 tracking-wider transition-colors"
+              >
+                Digital Web
+              </a>
+            </p>
+          </div>
+
+          {/* Right */}
+          <div className="flex items-center justify-center md:justify-end! space-x-2 order-2 md:order-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-sm"
+            >
               <Globe className="h-4 w-4 mr-2" />
               English (US)
             </Button>
-            <Button variant="ghost" size="sm" className="text-sm">
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-sm"
+            >
               $ USD
             </Button>
           </div>
+
         </div>
       </div>
     </footer>
