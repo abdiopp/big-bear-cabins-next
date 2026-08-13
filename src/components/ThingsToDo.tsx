@@ -31,8 +31,7 @@ export async function ThingsToDo() {
   };
 
   const activityBlogs = (blogs as Blog[])
-    .filter((blog) => getCategorySlug(blog.categoryId) === "activities")
-    .slice(0, 6);
+    .filter((blog) => getCategorySlug(blog.categoryId) === "activities");
 
   // 2. Filter blogs that have isShowOnHomePage set to true
   const homeFeaturedBlogs = activityBlogs.filter(
