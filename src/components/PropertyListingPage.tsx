@@ -330,7 +330,7 @@ export function PropertyListingPage() {
                   <Phone className="h-8 w-8 text-white shrink-0" />
                   <div>
                     <p className="text-white/90 text-sm font-medium">Quick Call</p>
-                    <p className="text-white font-bold text-lg">909 866 8200</p>
+                    <p className="text-white font-bold text-lg">(909) 866 8200</p>
                   </div>
                 </a>
                 <a href="tel:877-473-5360" className="flex flex-1 items-center space-x-4 p-6 bg-white/20! hover:bg-white/30! duration-200 transition-colors backdrop-blur-sm rounded-xl border border-white/30">
